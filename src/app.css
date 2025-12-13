@@ -144,7 +144,7 @@ h3,
 h4,
 h5,
 h6 {
-  margin-block-start: 0;
+  margin-block-start: 0.125rem;
   font-weight: 600;
   color: var(--fg-primary);
 }
@@ -210,6 +210,12 @@ a {
   &:hover {
     text-decoration: underline;
   }
+}
+
+ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 @keyframes fade {

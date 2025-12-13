@@ -1,6 +1,6 @@
 <script lang="ts">
   /* 
-  There should be 3 views: 
+  There should be 2 views: 
   - Github style calendar view showing days with activity
   - Github style calendar view showing days/hours with activity
   */
@@ -167,7 +167,7 @@
     corner-shape: var(--el-corner-shape);
     cursor: pointer;
     transition: all ease-in-out 50ms;
-    &[data-level="0"] {
+    &[data-level="0"]:not([data-selected="true"]) {
       background-color: var(--heatmap-color-0);
       pointer-events: none;
     }

@@ -2,12 +2,25 @@
   import Search from "./lib/components/Search.svelte";
   import Card from "./lib/components/Card.svelte";
   import Calendar from "./lib/components/Calendar.svelte";
+  import MomentContent from "./lib/components/MomentContent.svelte";
 
   import { getHistoryByDay, type HistoryByDay } from "./lib/utils/chrome-api";
   import CardLoading from "./lib/components/CardLoading.svelte";
 
+  import { dateTimeFormatOptions } from "./lib/utils/general";
+
   let search: string = $state("");
   let selectedMoments: string[] = $state([]);
+  let history: HistoryByDay | null = $derived.by(() => {
+    return getHistoryByDay(search);
+  });
+  let historyWithEmptyDays;
+
+  function deleteHistoryItem(url: string) {
+    chrome.history.deleteUrl({ url }).then(() => {
+      updateHistory();
+    });
+  }
 </script>
 
 <header>
@@ -24,7 +37,21 @@
         <CardLoading />
       {:then history}
         {#each selectedMoments as date}
-          <Card {date} items={history[date]} />
+          {#if history[date] && history[date].length > 0}
+            <Card>
+              <MomentContent {date} items={history[date]} />
+            </Card>
+          {:else}
+            <Card>
+              <h3>
+                {new Date(date).toLocaleDateString(
+                  undefined,
+                  dateTimeFormatOptions
+                )}
+              </h3>
+              No results for this date
+            </Card>
+          {/if}
         {/each}
       {/await}
     {:else}
@@ -34,7 +61,9 @@
         <CardLoading />
       {:then history}
         {#each Object.entries(history) as [date, items]}
-          <Card {date} {items} />
+          <Card>
+            <MomentContent {date} {items} />
+          </Card>
         {/each}
       {:catch error}
         <p>Something went wrong: {error.message}</p>
