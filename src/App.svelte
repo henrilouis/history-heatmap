@@ -44,18 +44,24 @@
         {/each}
       {/await}
     {:else}
-      {#await getHistoryByDay(search, true)}
+      {#await getHistoryByDay(search)}
         <Card loading={true} />
         <Card loading={true} />
         <Card loading={true} />
       {:then historyData}
-        {#each Object.entries(historyData) as [date, items]}
-          {#if items.length > 0}
-            <Card>
-              <MomentContent {date} {items} />
-            </Card>
-          {/if}
-        {/each}
+        {#if Object.keys(historyData).length === 0}
+          <Card>
+            <h3>No results found</h3>
+          </Card>
+        {:else}
+          {#each Object.entries(historyData) as [date, items]}
+            {#if items.length > 0}
+              <Card>
+                <MomentContent {date} {items} />
+              </Card>
+            {/if}
+          {/each}
+        {/if}
       {:catch error}
         <p>Something went wrong: {error.message}</p>
       {/await}
