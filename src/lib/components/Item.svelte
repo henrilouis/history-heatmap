@@ -4,17 +4,17 @@
     title,
     url,
     domain,
+    deleteHistoryUrl,
   }: {
     time: number;
     title: string;
     url: string;
     domain: string;
+    deleteHistoryUrl: (url: string) => void;
   } = $props();
-
-  import { getFaviconURL, deleteHistoryUrl } from "../utils/chrome-api";
 </script>
 
-<li>
+<li transition:blur animate:flip={{ duration: 200 }}>
   <time
     >{new Date(time).toLocaleTimeString([], {
       hour: "numeric",

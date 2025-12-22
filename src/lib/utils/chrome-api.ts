@@ -176,7 +176,7 @@ export async function getHistoryByDayAndHour(
   return grouped;
 }
 
-export async function deleteHistoryUrl(url: string): Promise<void> {
+export async function deleteUrl(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!chrome?.history) {
       reject(new Error("Chrome history API not available"));

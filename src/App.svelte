@@ -4,12 +4,46 @@
   import Calendar from "./lib/components/Calendar.svelte";
   import MomentContent from "./lib/components/MomentContent.svelte";
 
-  import { getHistoryByDay, type HistoryByDay } from "./lib/utils/chrome-api";
+  import {
+    getHistory,
+    groupHistoryByDay,
+    fillEmptyDays,
+    deleteUrl,
+  } from "./lib/utils/chrome-api";
 
   import { dateTimeFormatOptions } from "./lib/utils/general";
 
+  let history: chrome.history.HistoryItem[] = $state([]);
   let search: string = $state("");
+  let filteredHistory: chrome.history.HistoryItem[] = $derived.by(() => {
+    if (!search) return history;
+    else {
+      return history.filter(
+        (item) =>
+          item.title?.toLowerCase().includes(search.toLowerCase()) ||
+          item.url?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+  });
   let selectedMoments: string[] = $state([]);
+
+  function fetchHistory() {
+    getHistory().then((data) => {
+      history = data;
+    });
+  }
+  fetchHistory();
+
+  function deleteUrlFromState(url: string) {
+    history = history.filter((item) => item.url !== url);
+    filteredHistory = filteredHistory.filter((item) => item.url !== url);
+  }
+
+  function deleteHistoryUrl(url: string) {
+    deleteUrl(url).then(() => {
+      deleteUrlFromState(url);
+    });
+  }
 </script>
 
 <header>
@@ -17,34 +51,36 @@
   <Search bind:value={search} />
 </header>
 <main>
-  <Calendar data={getHistoryByDay(search, true)} bind:selectedMoments />
+  <Calendar
+    data={fillEmptyDays(groupHistoryByDay(filteredHistory), history)}
+    bind:selectedMoments
+  />
   <section class="days">
     {#if selectedMoments.length > 0}
-      {#await getHistoryByDay(search, true)}
-        <Card loading={true} />
-        <Card loading={true} />
-        <Card loading={true} />
-      {:then historyData}
-        {#each selectedMoments as date}
-          {#if historyData[date] && historyData[date].length > 0}
-            <Card>
-              <MomentContent {date} items={historyData[date]} />
-            </Card>
-          {:else}
-            <Card>
-              <h3>
-                {new Date(date).toLocaleDateString(
-                  undefined,
-                  dateTimeFormatOptions
-                )}
-              </h3>
-              No results for this date
-            </Card>
-          {/if}
-        {/each}
-      {/await}
+      {@const groupedData = groupHistoryByDay(filteredHistory)}
+      {#each selectedMoments as date}
+        {#if groupedData[date] && groupedData[date].length > 0}
+          <Card>
+            <MomentContent
+              {date}
+              items={groupedData[date]}
+              {deleteHistoryUrl}
+            />
+          </Card>
+        {:else}
+          <Card>
+            <h3>
+              {new Date(date).toLocaleDateString(
+                undefined,
+                dateTimeFormatOptions
+              )}
+            </h3>
+            No results for this date
+          </Card>
+        {/if}
+      {/each}
     {:else}
-      {#await getHistoryByDay(search)}
+      {#await filteredHistory}
         <Card loading={true} />
         <Card loading={true} />
         <Card loading={true} />
@@ -54,12 +90,10 @@
             <h3>No results found</h3>
           </Card>
         {:else}
-          {#each Object.entries(historyData) as [date, items]}
-            {#if items.length > 0}
-              <Card>
-                <MomentContent {date} {items} />
-              </Card>
-            {/if}
+          {#each Object.entries(groupHistoryByDay(historyData)) as [date, items]}
+            <Card>
+              <MomentContent {date} {items} {deleteHistoryUrl} />
+            </Card>
           {/each}
         {/if}
       {:catch error}

@@ -12,7 +12,7 @@
     data,
     selectedMoments = $bindable(),
   }: {
-    data: Promise<HistoryByDay>;
+    data: HistoryByDay;
     selectedMoments: string[];
   } = $props();
 
@@ -86,6 +86,8 @@
     return { weeks, months };
   }
 
+  const { weeks, months } = $derived(organizeCalendar(data));
+
   function toggleSelectedMoment(date: string) {
     const index = selectedMoments.indexOf(date);
     if (index === -1) {
@@ -100,12 +102,9 @@
   };
 </script>
 
-{#await data}
-  <div id="calendar">
-    <p>Loading calendar...</p>
-  </div>
-{:then historyByDay}
-  {@const { weeks, months } = organizeCalendar(historyByDay)}
+{#if weeks.length === 0}
+  <p>No history data available to display the calendar.</p>
+{:else}
   <div
     id="calendar"
     class={selectedMoments.length > 0 ? "filtered" : ""}
@@ -139,11 +138,7 @@
       </tbody>
     </table>
   </div>
-{:catch error}
-  <div id="calendar">
-    <p>Error loading calendar: {error.message}</p>
-  </div>
-{/await}
+{/if}
 
 <style>
   #calendar {
