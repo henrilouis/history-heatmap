@@ -144,7 +144,9 @@
             <th>{row.hourLabel}</th>
             {#each row.cells as cell}
               <td
-                tabindex="0"
+                tabindex={cell.count > 0 || selectedMoments.includes(cell.key)
+                  ? 0
+                  : -1}
                 data-level={cell.level}
                 data-selected={selectedMoments.includes(cell.key)}
                 title="{cell.date} {row.hourLabel}: {cell.count} visits"
@@ -174,28 +176,28 @@
     border-collapse: separate;
     border-spacing: 0.25rem;
     margin: auto;
-    table-layout: fixed;
   }
   thead th {
-    font-size: 0.75rem;
+    font-size: 0.625rem;
     font-weight: 400;
     text-align: left;
   }
   thead tr.days th {
     font-size: 0.625rem;
+    text-align: left;
+    max-width: 0.75rem;
   }
   tbody th {
     font-size: 0.625rem;
+    line-height: 0.75rem;
     font-weight: 400;
     text-align: right;
-    padding-right: 0.25rem;
+    padding: 0 0.25rem 0 0;
     color: var(--text-secondary, #888);
   }
   td {
-    width: 1.5rem;
-    height: 1.5rem;
-    min-width: 1.5rem;
-    min-height: 1.5rem;
+    min-width: 0.75rem;
+    max-width: 0.75rem;
     background-color: var(--el-bg-default);
     border-radius: var(--el-border-radius);
     corner-shape: var(--el-corner-shape);
@@ -222,6 +224,12 @@
     }
     &:active {
       scale: 1;
+    }
+    &:focus-visible {
+      outline-color: var(--el-focus-outline-color);
+      outline-width: var(--el-focus-outline-width);
+      outline-offset: var(--el-focus-outline-offset);
+      outline-style: solid;
     }
     &[data-selected="true"] {
       outline: var(--el-outline-width-selected) solid

@@ -112,7 +112,9 @@
             <th>{week.dayName}</th>
             {#each week.days as day}
               <td
-                tabindex="0"
+                tabindex={day.count > 0 || selectedMoments.includes(day.date)
+                  ? 0
+                  : -1}
                 data-level={day.level}
                 data-date={day.date}
                 data-selected={selectedMoments.includes(day.date)}
@@ -143,7 +145,6 @@
     border-collapse: separate;
     border-spacing: 0.25rem;
     margin: auto;
-    table-layout: fixed;
   }
   td {
     width: 1.5rem;
@@ -176,6 +177,12 @@
     }
     &:active {
       scale: 1;
+    }
+    &:focus-visible {
+      outline-color: var(--el-focus-outline-color);
+      outline-width: var(--el-focus-outline-width);
+      outline-offset: var(--el-focus-outline-offset);
+      outline-style: solid;
     }
     &[data-selected="true"] {
       outline: var(--el-outline-width-selected) solid
