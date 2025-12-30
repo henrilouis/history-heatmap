@@ -143,8 +143,7 @@
   .selection-info {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    justify-content: space-between;
+    gap: 1ch;
   }
   .days {
     display: flex;

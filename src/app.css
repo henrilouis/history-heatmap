@@ -36,12 +36,12 @@
     oklch(from var(--neutral) 60% c h / 0.3)
   );
   --el-bg-selected: light-dark(
-    oklch(from var(--neutral) 20% c h / 0.15),
+    oklch(from var(--neutral) 0% c h / 0.2),
     oklch(from var(--neutral) 80% c h / 0.3)
   );
   --el-bg-primary: light-dark(
-    oklch(from var(--neutral) 0% c h),
-    oklch(from var(--neutral) 90% c h)
+    oklch(from var(--color) 50% c h),
+    oklch(from var(--color) 50% c h)
   );
 
   --el-border-color-default: light-dark(
