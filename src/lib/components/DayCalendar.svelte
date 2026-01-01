@@ -83,7 +83,9 @@
     return { weeks, months };
   }
 
-  const { weeks, months } = $derived(organizeCalendar(data));
+  const calendarData = $derived(organizeCalendar(data));
+  const weeks = $derived(calendarData.weeks);
+  const months = $derived(calendarData.months);
 
   const scrollRight: Attachment = (element) => {
     element.scrollLeft = element.scrollWidth;
