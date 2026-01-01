@@ -10,12 +10,11 @@
   } = $props();
 
   import { formatMomentKey } from "../utils/general";
-  // import { blur } from "svelte/transition";
-  // import { flip } from "svelte/animate";
-  // TODO: re-enable animations after implementing virtualization
+  import { blur } from "svelte/transition";
+  import { flip } from "svelte/animate";
+
   import { getFaviconURL } from "../utils/chrome-api";
 
-  // Safely extract hostname from URL, returns empty string if invalid
   function getHostname(url: string | undefined): string {
     if (!url) return "";
     try {
@@ -32,8 +31,11 @@
 <ol>
   {#each items as item, index (item.id)}
     {@const hostname = getHostname(item.url)}
-    <!-- <li out:blur={{ duration: 150 }} animate:flip={{ delay: 150,duration: 150 }}> -->
-    <li>
+    <li
+      out:blur={{ duration: 150 }}
+      animate:flip={{ delay: 150, duration: 150 }}
+    >
+      <!-- <li> -->
       <time
         >{item.lastVisitTime
           ? new Date(item.lastVisitTime).toLocaleTimeString([], {
