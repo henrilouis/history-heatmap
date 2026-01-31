@@ -19,7 +19,7 @@
   }
 
   // Infinite scroll state
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 5;
   let visibleCount = $state(ITEMS_PER_PAGE);
   let sentinelEl = $state<HTMLDivElement | null>(null);
 
@@ -68,25 +68,23 @@
 
 <header>
   <h1>History heatmap</h1>
-  <div class="search">
-    <Search bind:value={searchValue} />
-    <div class="button-group">
-      <button
-        class:selected={calendarMode === "day"}
-        onclick={() => setCalendarMode("day")}
-      >
-        Days
-      </button>
-      <button
-        class:selected={calendarMode === "hour"}
-        onclick={() => setCalendarMode("hour")}
-      >
-        Hours
-      </button>
-    </div>
-  </div>
+  <Search bind:value={searchValue} />
 </header>
 <nav>
+  <div class="button-group">
+    <button
+      class:selected={calendarMode === "day"}
+      onclick={() => setCalendarMode("day")}
+    >
+      Days
+    </button>
+    <button
+      class:selected={calendarMode === "hour"}
+      onclick={() => setCalendarMode("hour")}
+    >
+      Hours
+    </button>
+  </div>
   {#if calendarMode === "day"}
     <DayCalendar
       data={historyStore.byDayWithEmpty}
@@ -169,36 +167,36 @@
 </main>
 
 <style>
+  header {
+    width: 100%;
+    padding: 1rem;
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+
   nav {
     height: 100%;
-    overflow-y: hidden;
+    overflow-y: auto;
+    padding: 0 1rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
   }
   h1 {
     font-size: 1.375rem;
-  }
-
-  .search {
-    display: flex;
+    margin: 0;
   }
   .button-group {
   }
-  header {
-    width: 100%;
-    padding: 1rem 1rem 0;
-    grid-column: 1 / -1;
-    display: flex;
-  }
   main {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 1rem;
     height: 100%;
-    overflow-y: hidden;
+    overflow-y: auto;
   }
 
   .days {
-    overflow-y: auto;
-    padding: 0 1rem 1rem 0;
+    padding: 0 1rem 1rem 1rem;
   }
   .days-inner {
     display: flex;
