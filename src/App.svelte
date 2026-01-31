@@ -44,7 +44,7 @@
           }
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "200px" },
     );
 
     observer.observe(sentinelEl);
@@ -53,11 +53,11 @@
 
   // Get visible entries
   const visibleEntries = $derived(
-    Object.entries(historyStore.byDay).slice(0, visibleCount)
+    Object.entries(historyStore.byDay).slice(0, visibleCount),
   );
 
   const hasMore = $derived(
-    visibleCount < Object.keys(historyStore.byDay).length
+    visibleCount < Object.keys(historyStore.byDay).length,
   );
 
   // Sync search input to store
@@ -68,29 +68,25 @@
 
 <header>
   <h1>History heatmap</h1>
-  <Search bind:value={searchValue} />
-  <div class="button-group">
-    <button
-      class:selected={calendarMode === "day"}
-      onclick={() => setCalendarMode("day")}
-    >
-      Days
-    </button>
-    <button
-      class:selected={calendarMode === "hour"}
-      onclick={() => setCalendarMode("hour")}
-    >
-      Hours
-    </button>
+  <div class="search">
+    <Search bind:value={searchValue} />
+    <div class="button-group">
+      <button
+        class:selected={calendarMode === "day"}
+        onclick={() => setCalendarMode("day")}
+      >
+        Days
+      </button>
+      <button
+        class:selected={calendarMode === "hour"}
+        onclick={() => setCalendarMode("hour")}
+      >
+        Hours
+      </button>
+    </div>
   </div>
 </header>
-{#if historyStore.error}
-  <div class="error-banner" role="alert">
-    <span>{historyStore.error}</span>
-    <button onclick={() => historyStore.fetch()}>Retry</button>
-  </div>
-{/if}
-<main>
+<nav>
   {#if calendarMode === "day"}
     <DayCalendar
       data={historyStore.byDayWithEmpty}
@@ -104,100 +100,117 @@
       onToggleMoment={historyStore.toggleMoment}
     />
   {/if}
-
+</nav>
+<main>
+  {#if historyStore.error}
+    <div class="error-banner" role="alert">
+      <span>{historyStore.error}</span>
+      <button onclick={() => historyStore.fetch()}>Retry</button>
+    </div>
+  {/if}
   <section class="days">
-    {#if historyStore.selectedMoments.length > 0}
-      <div class="selection-info">
-        <span>
-          {historyStore.selectedMoments.length}
-          {calendarMode}{historyStore.selectedMoments.length > 1 ? "s" : ""} selected
-        </span>
-        <button onclick={() => historyStore.clearSelection()}
-          >Clear selection</button
-        >
-      </div>
+    <div class="days-inner">
+      {#if historyStore.selectedMoments.length > 0}
+        <div class="selection-info">
+          <span>
+            {historyStore.selectedMoments.length}
+            {calendarMode}{historyStore.selectedMoments.length > 1 ? "s" : ""} selected
+          </span>
+          <button onclick={() => historyStore.clearSelection()}
+            >Clear selection</button
+          >
+        </div>
 
-      {#each historyStore.selectedMoments as momentKey}
-        {@const items = historyStore.getItemsForMoment(momentKey)}
-        {#if items.length > 0}
+        {#each historyStore.selectedMoments as momentKey}
+          {@const items = historyStore.getItemsForMoment(momentKey)}
+          {#if items.length > 0}
+            <Card>
+              <MomentContent
+                date={momentKey}
+                {items}
+                deleteHistoryUrl={historyStore.removeUrl}
+              />
+            </Card>
+          {:else}
+            <Card>
+              <h3>{formatMomentKey(momentKey)}</h3>
+              No results for this time
+            </Card>
+          {/if}
+        {/each}
+      {:else if historyStore.isLoading}
+        <Card loading={true} />
+        <Card loading={true} />
+        <Card loading={true} />
+      {:else if historyStore.filtered.length === 0}
+        <Card>
+          <h3>No results found</h3>
+        </Card>
+      {:else}
+        {#each visibleEntries as [date, items]}
           <Card>
             <MomentContent
-              date={momentKey}
+              {date}
               {items}
               deleteHistoryUrl={historyStore.removeUrl}
             />
           </Card>
-        {:else}
-          <Card>
-            <h3>{formatMomentKey(momentKey)}</h3>
-            No results for this time
-          </Card>
-        {/if}
-      {/each}
-    {:else if historyStore.isLoading}
-      <Card loading={true} />
-      <Card loading={true} />
-      <Card loading={true} />
-    {:else if historyStore.filtered.length === 0}
-      <Card>
-        <h3>No results found</h3>
-      </Card>
-    {:else}
-      {#each visibleEntries as [date, items]}
-        <Card>
-          <MomentContent
-            {date}
-            {items}
-            deleteHistoryUrl={historyStore.removeUrl}
-          />
-        </Card>
-      {/each}
+        {/each}
 
-      <!-- Sentinel element for infinite scroll -->
-      {#if hasMore}
-        <div bind:this={sentinelEl} class="load-more-sentinel">
-          <Card loading={true} />
-        </div>
+        <!-- Sentinel element for infinite scroll -->
+        {#if hasMore}
+          <div bind:this={sentinelEl} class="load-more-sentinel">
+            <Card loading={true} />
+          </div>
+        {/if}
       {/if}
-    {/if}
+    </div>
   </section>
 </main>
 
 <style>
-  header {
-    position: sticky;
-    top: 0;
-    background-color: var(--bg-secondary);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
+  nav {
+    height: 100%;
+    overflow-y: hidden;
   }
   h1 {
-    margin: 0;
     font-size: 1.375rem;
-    display: none;
   }
-  @media (min-width: 840px) {
-    h1 {
-      display: block;
-    }
+
+  .search {
+    display: flex;
+  }
+  .button-group {
+  }
+  header {
+    width: 100%;
+    padding: 1rem 1rem 0;
+    grid-column: 1 / -1;
+    display: flex;
   }
   main {
-    padding: 0 1rem 1rem 1rem;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 1rem;
+    height: 100%;
+    overflow-y: hidden;
+  }
+
+  .days {
+    overflow-y: auto;
+    padding: 0 1rem 1rem 0;
+  }
+  .days-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     margin-inline: auto;
     max-width: 60rem;
   }
-
   .selection-info {
     display: flex;
     align-items: center;
     gap: 1ch;
-  }
-  .days {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
   }
   .error-banner {
     background-color: var(--error-bg, #4a1515);

@@ -130,7 +130,7 @@
 html,
 body,
 #app {
-  min-height: 100dvh;
+  height: 100dvh;
 }
 
 body {
@@ -138,7 +138,12 @@ body {
   padding: 0;
   background: var(--bg-secondary);
   font-size: 16px;
-  overflow-y: scroll;
+}
+
+#app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: auto 1fr;
 }
 
 h1,

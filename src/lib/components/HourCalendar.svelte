@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { HistoryByDayAndHour } from "../utils/chrome-api";
-  import type { Attachment } from "svelte/attachments";
   import "./calendar.css";
 
   let {
@@ -18,11 +17,11 @@
     return `${date}T${String(hour).padStart(2, "0")}`;
   }
 
-  type HourRow = {
-    hour: number;
-    hourLabel: string;
+  type DayRow = {
+    date: string;
+    dayLabel: string;
     cells: {
-      date: string;
+      hour: number;
       level: number;
       count: number;
       key: string;
@@ -30,49 +29,22 @@
   };
 
   type CalendarData = {
-    days: { date: string; dayName: string; dayNum: number; month: string }[];
-    hours: HourRow[];
-    months: { name: string; span: number }[];
+    hourLabels: string[];
+    rows: DayRow[];
   };
 
   function organizeCalendarData(
-    historyByDayAndHour: HistoryByDayAndHour
+    historyByDayAndHour: HistoryByDayAndHour,
   ): CalendarData {
-    const sortedDates = Object.keys(historyByDayAndHour).sort();
+    const sortedDates = Object.keys(historyByDayAndHour).sort().reverse();
     if (sortedDates.length === 0) {
-      return { days: [], hours: [], months: [] };
+      return { hourLabels: [], rows: [] };
     }
 
-    // Generate day headers
-    const days = sortedDates.map((dateKey) => {
-      const date = new Date(dateKey);
-      return {
-        date: dateKey,
-        dayName: date.toLocaleDateString(undefined, { weekday: "narrow" }),
-        dayNum: date.getDate(),
-        month: date.toLocaleDateString(undefined, { month: "short" }),
-      };
-    });
-
-    // Calculate month headers with colspan
-    const months: { name: string; span: number }[] = [];
-    let currentMonth = "";
-    let monthSpan = 0;
-
-    for (const day of days) {
-      if (day.month !== currentMonth) {
-        if (currentMonth) {
-          months.push({ name: currentMonth, span: monthSpan });
-        }
-        currentMonth = day.month;
-        monthSpan = 1;
-      } else {
-        monthSpan++;
-      }
-    }
-    if (currentMonth) {
-      months.push({ name: currentMonth, span: monthSpan });
-    }
+    // Generate hour labels for header (0-23)
+    const hourLabels = Array.from({ length: 24 }, (_, hour) =>
+      String(hour).padStart(2, "0"),
+    );
 
     // Find max count for level calculation
     let maxCount = 0;
@@ -82,57 +54,54 @@
       }
     }
 
-    // Generate 24 hour rows
-    const hours: HourRow[] = Array.from({ length: 24 }, (_, hour) => ({
-      hour,
-      hourLabel: `${String(hour).padStart(2, "0")}:00`,
-      cells: sortedDates.map((dateKey) => {
-        const hourKey = String(hour).padStart(2, "0");
-        const count = historyByDayAndHour[dateKey]?.[hourKey]?.length ?? 0;
-        const level =
-          maxCount === 0 ? 0 : Math.min(4, Math.ceil((count / maxCount) * 4));
-        return {
-          date: dateKey,
-          level,
-          count,
-          key: getHourKey(dateKey, hour),
-        };
-      }),
-    }));
+    // Generate rows (one per day)
+    const rows: DayRow[] = sortedDates.map((dateKey) => {
+      const date = new Date(dateKey);
+      const dayName = date.toLocaleDateString(undefined, { weekday: "short" });
+      const month = date.toLocaleDateString(undefined, { month: "short" });
+      const dayNum = date.getDate();
 
-    return { days, hours, months };
+      return {
+        date: dateKey,
+        dayLabel: `${month} ${dayNum} ${dayName}`,
+        cells: Array.from({ length: 24 }, (_, hour) => {
+          const hourKey = String(hour).padStart(2, "0");
+          const count = historyByDayAndHour[dateKey]?.[hourKey]?.length ?? 0;
+          const level =
+            maxCount === 0 ? 0 : Math.min(4, Math.ceil((count / maxCount) * 4));
+          return {
+            hour,
+            level,
+            count,
+            key: getHourKey(dateKey, hour),
+          };
+        }),
+      };
+    });
+
+    return { hourLabels, rows };
   }
 
   const calendarData = $derived(organizeCalendarData(data));
-
-  const scrollRight: Attachment = (element) => {
-    element.scrollLeft = element.scrollWidth;
-  };
 </script>
 
-{#if calendarData.days.length === 0}
+{#if calendarData.rows.length === 0}
   <p>No history data available to display the calendar.</p>
 {:else}
-  <div class="calendar" {@attach scrollRight}>
+  <div class="calendar">
     <table>
       <thead>
-        <tr class="months">
+        <tr class="hours">
           <th></th>
-          {#each calendarData.months as month}
-            <th colspan={month.span}>{month.name}</th>
-          {/each}
-        </tr>
-        <tr class="days">
-          <th></th>
-          {#each calendarData.days as day}
-            <th title={day.date}>{day.dayNum}</th>
+          {#each calendarData.hourLabels as hour}
+            <th>{hour}</th>
           {/each}
         </tr>
       </thead>
       <tbody>
-        {#each calendarData.hours as row}
+        {#each calendarData.rows as row}
           <tr>
-            <th>{row.hourLabel}</th>
+            <th>{row.dayLabel}</th>
             {#each row.cells as cell}
               <td
                 tabindex={cell.count > 0 || selectedMoments.includes(cell.key)
@@ -140,7 +109,10 @@
                   : -1}
                 data-level={cell.level}
                 data-selected={selectedMoments.includes(cell.key)}
-                title="{cell.date} {row.hourLabel}: {cell.count} visits"
+                title="{row.date} {String(cell.hour).padStart(
+                  2,
+                  '0',
+                )}:00: {cell.count} visits"
                 onclick={() => onToggleMoment(cell.key)}
                 onkeydown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {

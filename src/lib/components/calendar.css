@@ -1,12 +1,18 @@
 .calendar {
-  margin-block: 1rem 2rem;
-  max-width: calc(100vw - 3rem);
+  height: 100%;
+  padding: 1rem;
   overflow-y: auto;
 }
 table {
   border-collapse: separate;
   border-spacing: 0.25rem;
   margin: auto;
+}
+.calendar.vertical thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--el-bg-default, #fff);
 }
 td {
   min-width: 1.5rem;
@@ -57,14 +63,17 @@ th {
   text-align: left;
 }
 thead th {
-  max-width: 0.75rem;
-}
-thead tr.days th {
+  text-align: center;
   font-size: 0.625rem;
+  min-width: 0.75rem;
+}
+thead tr.hours th {
+  font-size: 0.625rem;
+  max-width: 0.75rem;
 }
 tbody th {
   font-size: 0.625rem;
   line-height: 0.75rem;
-  text-align: right;
-  padding: 0 0.25rem 0 0;
+  padding: 0 0.5rem 0 0;
+  white-space: nowrap;
 }

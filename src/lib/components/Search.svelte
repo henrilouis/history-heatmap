@@ -24,7 +24,6 @@
     padding-inline-end: 0;
     max-width: 32rem;
     width: 100%;
-    margin: auto;
     &:hover {
       background-color: var(--field-bg-hover);
       border-color: var(--el-border-color-hover);
