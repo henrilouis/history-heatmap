@@ -114,9 +114,6 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color: var(--fg-primary);
-  background-color: var(--bg-primary);
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -131,19 +128,16 @@ html,
 body,
 #app {
   height: 100dvh;
+  overflow-y: hidden;
 }
 
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg-secondary);
   font-size: 16px;
 }
 
 #app {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: auto 1fr;
 }
 
 h1,
@@ -213,6 +207,9 @@ button {
     /* outline: var(--el-outline-width-selected) solid
       var(--el-outline-color-selected);
     box-shadow: var(--el-box-shadow-selected); */
+  }
+  & svg {
+    display: block;
   }
 }
 

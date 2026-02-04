@@ -29,22 +29,22 @@ const filtered = $derived.by(() => {
   return rawHistory.filter(
     (item) =>
       item.title?.toLowerCase().includes(query) ||
-      item.url?.toLowerCase().includes(query)
+      item.url?.toLowerCase().includes(query),
   );
 });
 
 const byDay = $derived<HistoryByDay>(groupHistoryByDay(filtered));
 
 const byDayWithEmpty = $derived<HistoryByDay>(
-  fillEmptyDays({ ...byDay }, rawHistory)
+  fillEmptyDays({ ...byDay }, rawHistory),
 );
 
 const byDayAndHour = $derived<HistoryByDayAndHour>(
-  groupHistoryByDayAndHour(filtered)
+  groupHistoryByDayAndHour(filtered),
 );
 
 const byDayAndHourWithEmpty = $derived<HistoryByDayAndHour>(
-  fillEmptyHours({ ...byDayAndHour }, rawHistory)
+  fillEmptyHours({ ...byDayAndHour }, rawHistory),
 );
 
 // ============================================

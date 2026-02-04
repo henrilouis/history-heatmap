@@ -13,7 +13,6 @@
   } = $props();
 
   type WeekRow = {
-    weekLabel: string;
     days: {
       date: string;
       level: number;
@@ -55,12 +54,7 @@
         maxCount === 0 ? 0 : Math.min(4, Math.ceil((count / maxCount) * 4));
 
       if (!weekMap.has(weekKey)) {
-        const monthName = weekStart.toLocaleDateString(undefined, {
-          month: "short",
-        });
-        const dayNum = weekStart.getDate();
         weekMap.set(weekKey, {
-          weekLabel: `${monthName} ${dayNum}`,
           days: [],
         });
       }
@@ -98,7 +92,6 @@
     <table>
       <thead>
         <tr>
-          <th></th>
           {#each calendarData.dayNames as dayName}
             <th>{dayName}</th>
           {/each}
@@ -107,7 +100,6 @@
       <tbody>
         {#each calendarData.rows as row}
           <tr>
-            <th>{row.weekLabel}</th>
             {#each calendarData.dayNames as _, dayIndex}
               {@const day = row.days.find((d) => d.dayIndex === dayIndex)}
               {#if day}

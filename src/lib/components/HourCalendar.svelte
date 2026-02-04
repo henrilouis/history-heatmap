@@ -19,7 +19,6 @@
 
   type DayRow = {
     date: string;
-    dayLabel: string;
     cells: {
       hour: number;
       level: number;
@@ -56,14 +55,8 @@
 
     // Generate rows (one per day)
     const rows: DayRow[] = sortedDates.map((dateKey) => {
-      const date = new Date(dateKey);
-      const dayName = date.toLocaleDateString(undefined, { weekday: "short" });
-      const month = date.toLocaleDateString(undefined, { month: "short" });
-      const dayNum = date.getDate();
-
       return {
         date: dateKey,
-        dayLabel: `${month} ${dayNum} ${dayName}`,
         cells: Array.from({ length: 24 }, (_, hour) => {
           const hourKey = String(hour).padStart(2, "0");
           const count = historyByDayAndHour[dateKey]?.[hourKey]?.length ?? 0;
@@ -92,7 +85,6 @@
     <table>
       <thead>
         <tr class="hours">
-          <th></th>
           {#each calendarData.hourLabels as hour}
             <th>{hour}</th>
           {/each}
@@ -101,7 +93,6 @@
       <tbody>
         {#each calendarData.rows as row}
           <tr>
-            <th>{row.dayLabel}</th>
             {#each row.cells as cell}
               <td
                 tabindex={cell.count > 0 || selectedMoments.includes(cell.key)
@@ -135,5 +126,7 @@
     max-width: 0.75rem;
     min-height: 0.75rem;
     max-height: 0.75rem;
+    height: 0.75rem;
+    width: 0.75rem;
   }
 </style>

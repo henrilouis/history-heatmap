@@ -5,7 +5,7 @@
     clearTimeout(timer);
     timer = setTimeout(() => {
       value = (e.target as HTMLInputElement).value;
-    }, 750);
+    }, 300);
   };
 
   // To do: have an override making the search always light style and ajust accordingly.
@@ -24,6 +24,8 @@
     padding-inline-end: 0;
     max-width: 32rem;
     width: 100%;
+    font-size: 0.875rem;
+    line-height: 1.375rem;
     &:hover {
       background-color: var(--field-bg-hover);
       border-color: var(--el-border-color-hover);
