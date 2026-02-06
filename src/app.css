@@ -1,8 +1,10 @@
 :root {
   color-scheme: light dark;
 
-  --hue: 200;
+  --hue: 300;
+  --heatmap-hue: 220;
   --color: oklch(50% 0.3 var(--hue));
+  --heatmap-color: oklch(50% 0.3 var(--heatmap-hue));
   --neutral: oklch(0% 0% var(--hue));
 
   --fg-primary: light-dark(
@@ -90,20 +92,20 @@
     oklch(from var(--neutral) 25% c h)
   );
   --heatmap-color-1: light-dark(
-    oklch(from var(--neutral) 90% c h),
-    oklch(from var(--neutral) 40% c h)
+    oklch(from var(--heatmap-color) 90% 0.05 h),
+    oklch(from var(--heatmap-color) 40% 0.05 h)
   );
   --heatmap-color-2: light-dark(
-    oklch(from var(--neutral) 70% c h),
-    oklch(from var(--neutral) 60% c h)
+    oklch(from var(--heatmap-color) 70% 0.2 h),
+    oklch(from var(--heatmap-color) 60% 0.2 h)
   );
   --heatmap-color-3: light-dark(
-    oklch(from var(--neutral) 50% c h),
-    oklch(from var(--neutral) 80% c h)
+    oklch(from var(--heatmap-color) 50% 0.3 h),
+    oklch(from var(--heatmap-color) 80% 0.3 h)
   );
   --heatmap-color-4: light-dark(
-    oklch(from var(--neutral) 30% c h),
-    oklch(from var(--neutral) 100% c h)
+    oklch(from var(--heatmap-color) 30% 0.4 h),
+    oklch(from var(--heatmap-color) 100% 0.4 h)
   );
 
   --cn-border-radius: 1rem;
@@ -131,6 +133,7 @@ html,
 body,
 #app {
   min-height: 100dvh;
+  height: 100dvh;
 }
 
 body {
@@ -139,7 +142,6 @@ body {
   background: var(--bg-secondary);
   color: var(--fg-primary);
   font-size: 16px;
-  overflow-y: scroll;
 }
 
 h1,

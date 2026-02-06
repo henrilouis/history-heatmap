@@ -141,19 +141,32 @@
     </div>
   {/if}
   <main>
-    <div class="button-group">
-      <button
-        class:selected={calendarMode === "day"}
-        onclick={() => setCalendarMode("day")}
-      >
-        Days
-      </button>
-      <button
-        class:selected={calendarMode === "hour"}
-        onclick={() => setCalendarMode("hour")}
-      >
-        Hours
-      </button>
+    <div class="calendar-actions">
+      <div class="button-group">
+        <button
+          class:selected={calendarMode === "day"}
+          onclick={() => setCalendarMode("day")}
+        >
+          Days
+        </button>
+        <button
+          class:selected={calendarMode === "hour"}
+          onclick={() => setCalendarMode("hour")}
+        >
+          Hours
+        </button>
+      </div>
+      {#if historyStore.selectedMoments.length > 0}
+        <div class="selection-info">
+          <span>
+            {historyStore.selectedMoments.length}
+            {calendarMode}{historyStore.selectedMoments.length > 1 ? "s" : ""} selected
+          </span>
+          <button onclick={() => historyStore.clearSelection()}
+            >Clear selection</button
+          >
+        </div>
+      {/if}
     </div>
     {#if calendarMode === "day"}
       <DayCalendar
@@ -171,16 +184,6 @@
 
     <section class="days">
       {#if historyStore.selectedMoments.length > 0}
-        <div class="selection-info">
-          <span>
-            {historyStore.selectedMoments.length}
-            {calendarMode}{historyStore.selectedMoments.length > 1 ? "s" : ""} selected
-          </span>
-          <button onclick={() => historyStore.clearSelection()}
-            >Clear selection</button
-          >
-        </div>
-
         {#each historyStore.selectedMoments as momentKey}
           {@const items = historyStore.getItemsForMoment(momentKey)}
           {#if items.length > 0}
@@ -234,6 +237,7 @@
     background-color: var(--bg-secondary);
     overflow-y: hidden;
     height: 100%;
+    overflow-y: scroll;
   }
   .dark {
     color-scheme: only dark;
@@ -291,6 +295,11 @@
     padding: 0 1rem 1rem 1rem;
     margin-inline: auto;
     max-width: 60rem;
+  }
+
+  .calendar-actions {
+    display: flex;
+    justify-content: space-between;
   }
 
   .selection-info {
