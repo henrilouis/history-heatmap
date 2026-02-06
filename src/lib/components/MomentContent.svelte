@@ -31,10 +31,7 @@
 <ol>
   {#each items as item, index (item.id)}
     {@const hostname = getHostname(item.url)}
-    <li
-      out:blur={{ duration: 150 }}
-      animate:flip={{ delay: 150, duration: 150 }}
-    >
+    <li out:blur={{ duration: 150 }}>
       <!-- <li> -->
       <time
         >{item.lastVisitTime
