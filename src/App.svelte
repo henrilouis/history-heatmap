@@ -31,7 +31,6 @@
   };
   darkModeMql.addEventListener("change", listener);
 
-  // Infinite scroll state
   const ITEMS_PER_PAGE = 10;
   let visibleCount = $state(ITEMS_PER_PAGE);
   let sentinelEl = $state<HTMLDivElement | null>(null);
@@ -64,7 +63,6 @@
     return () => observer.disconnect();
   });
 
-  // Get visible entries
   const visibleEntries = $derived(
     Object.entries(historyStore.byDay).slice(0, visibleCount),
   );
@@ -73,7 +71,6 @@
     visibleCount < Object.keys(historyStore.byDay).length,
   );
 
-  // Sync search input to store
   $effect(() => {
     historyStore.setSearch(searchValue);
   });
@@ -220,7 +217,6 @@
           </Card>
         {/each}
 
-        <!-- Sentinel element for infinite scroll -->
         {#if hasMore}
           <div bind:this={sentinelEl} class="load-more-sentinel">
             <Card loading={true} />
@@ -251,6 +247,7 @@
     background-color: var(--bg-secondary);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
     padding: 1rem;
   }

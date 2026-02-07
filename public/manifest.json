@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "History heatmap",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Visualize and manage your browsing history",
   "permissions": ["history", "favicon"],
   "chrome_url_overrides": {
