@@ -251,6 +251,7 @@
     background-color: var(--bg-secondary);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
     padding: 1rem;
   }
