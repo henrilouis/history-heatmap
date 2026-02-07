@@ -92,19 +92,19 @@
     oklch(from var(--neutral) 25% c h)
   );
   --heatmap-color-1: light-dark(
-    oklch(from var(--heatmap-color) 90% 0.05 h),
+    oklch(from var(--heatmap-color) 80% 0.075 h),
     oklch(from var(--heatmap-color) 40% 0.05 h)
   );
   --heatmap-color-2: light-dark(
-    oklch(from var(--heatmap-color) 70% 0.2 h),
+    oklch(from var(--heatmap-color) 60% 0.2 h),
     oklch(from var(--heatmap-color) 60% 0.2 h)
   );
   --heatmap-color-3: light-dark(
-    oklch(from var(--heatmap-color) 50% 0.3 h),
+    oklch(from var(--heatmap-color) 20% 0.3 h),
     oklch(from var(--heatmap-color) 80% 0.3 h)
   );
   --heatmap-color-4: light-dark(
-    oklch(from var(--heatmap-color) 30% 0.4 h),
+    oklch(from var(--heatmap-color) 0% 0.4 h),
     oklch(from var(--heatmap-color) 100% 0.4 h)
   );
 

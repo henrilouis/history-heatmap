@@ -49,7 +49,6 @@ td {
       var(--el-outline-color-selected);
     box-shadow: var(--el-box-shadow-selected);
   }
-  /* Todo: dim all td's when one or more are selected */
 }
 th {
   font-size: 0.75rem;
