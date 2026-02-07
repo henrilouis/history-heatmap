@@ -15,7 +15,10 @@ td {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   cursor: pointer;
-  transition: all ease-in-out 50ms;
+  transition:
+    scale,
+    box-shadow,
+    outline ease-in-out 50ms;
   &[data-level="0"]:not([data-selected="true"]) {
     background-color: var(--heatmap-color-0);
     pointer-events: none;
