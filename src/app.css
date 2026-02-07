@@ -69,14 +69,17 @@
       oklch(from var(--color) 95% c h)
     );
 
-  --el-padding: 0.5rem 0.75rem;
-
   --el-focus-outline-color: light-dark(
     oklch(from var(--neutral) 20% c h),
     oklch(from var(--neutral) 80% c h)
   );
   --el-focus-outline-width: 0.125rem;
   --el-focus-outline-offset: 0.0625rem;
+
+  --el-padding: 0.5rem 0.75rem;
+
+  --el-font-size: 0.8125rem;
+  --el-line-height: 1.125rem;
 
   --field-bg-default: light-dark(
     oklch(from var(--neutral) 100% c h),
@@ -191,8 +194,11 @@ button {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  font-size: 0.8125rem;
+  transition:
+    outline,
+    background-color 0.15s ease-in-out;
+  font-size: var(--el-font-size);
+  line-height: var(--el-line-height);
   &.quiet {
     background: transparent;
   }

@@ -24,7 +24,8 @@
     padding-inline-end: 0;
     max-width: 32rem;
     width: 100%;
-    line-height: 1.375rem;
+    font-size: var(--el-font-size);
+    line-height: var(--el-line-height);
     &:hover {
       background-color: var(--field-bg-hover);
       border-color: var(--el-border-color-hover);

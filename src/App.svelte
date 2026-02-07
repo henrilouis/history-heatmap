@@ -260,13 +260,14 @@
   #theme-toggle-button {
     position: relative;
     overflow: hidden;
-    height: 2.5rem;
+    height: 2.25rem;
+    padding: 0.5rem;
     & .icon-wrapper {
       display: flex;
       flex-direction: column;
       gap: 1rem;
       transition: transform 0.3s ease-in-out;
-      transform: translateY(-2.5rem);
+      transform: translateY(-2.6125rem);
       & svg {
         transition: rotate 0.3s ease-in-out;
       }
@@ -277,7 +278,7 @@
   }
   .dark #theme-toggle-button {
     & .icon-wrapper {
-      transform: translateY(0);
+      transform: translateY(-0.125rem);
       & svg:last-child {
         rotate: 0deg;
       }
