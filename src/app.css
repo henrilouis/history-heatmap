@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
 
-  --hue: 300;
+  --hue: 1;
   --heatmap-hue: 220;
   --color: oklch(50% 0.3 var(--hue));
   --heatmap-color: oklch(50% 0.3 var(--heatmap-hue));
@@ -59,15 +59,16 @@
   --el-corner-shape: squircle;
 
   --el-outline-color-selected: light-dark(
-    oklch(from var(--color) 50% c h),
+    oklch(from var(--color) 80% c h),
     oklch(from var(--color) 95% c h)
   );
   --el-outline-width-selected: 0.125rem;
   --el-box-shadow-selected: 0 0 0.75rem
     light-dark(
-      oklch(from var(--color) 50% c h / 0.5),
+      oklch(from var(--color) 80% c h / 0.5),
       oklch(from var(--color) 95% c h)
     );
+  --el-outline-offset-selected: 0.0625rem;
 
   --el-focus-outline-color: light-dark(
     oklch(from var(--neutral) 20% c h),
@@ -91,7 +92,7 @@
   );
 
   --heatmap-color-0: light-dark(
-    oklch(from var(--neutral) 100% c h),
+    oklch(from var(--neutral) 90% c h),
     oklch(from var(--neutral) 25% c h)
   );
   --heatmap-color-1: light-dark(

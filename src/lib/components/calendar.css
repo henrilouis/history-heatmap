@@ -51,6 +51,7 @@ td {
     outline: var(--el-outline-width-selected) solid
       var(--el-outline-color-selected);
     box-shadow: var(--el-box-shadow-selected);
+    outline-offset: var(--el-outline-offset-selected);
   }
 }
 th {

@@ -256,7 +256,6 @@
     font-size: 1.375rem;
     display: none;
   }
-
   #theme-toggle-button {
     position: relative;
     overflow: hidden;
@@ -294,12 +293,10 @@
     margin-inline: auto;
     max-width: 60rem;
   }
-
   .calendar-actions {
     display: flex;
     justify-content: space-between;
   }
-
   .selection-info {
     display: flex;
     align-items: center;
