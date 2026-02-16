@@ -237,6 +237,8 @@
     overflow-y: hidden;
     height: 100%;
     overflow-y: scroll;
+    container-type: scroll-state;
+    container-name: scroll-container;
   }
   .dark {
     color-scheme: only dark;
@@ -254,6 +256,10 @@
     gap: 1rem;
     padding: 1rem;
     grid-template-columns: 1fr auto;
+    transition: box-shadow 0.3s;
+    @container scroll-container scroll-state(scrollable: top) {
+      box-shadow: var(--shadow-1);
+    }
   }
   h1 {
     margin: 0;
