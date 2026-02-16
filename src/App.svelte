@@ -234,6 +234,8 @@
     overflow-y: hidden;
     height: 100%;
     overflow-y: scroll;
+    container-type: scroll-state;
+    container-name: scroller;
   }
   .dark {
     color-scheme: only dark;
@@ -250,6 +252,10 @@
     justify-content: space-between;
     gap: 1rem;
     padding: 1rem;
+    transition: box-shadow 0.3s;
+    @container scroller scroll-state(scrollable: top) {
+      box-shadow: var(--shadow-1);
+    }
   }
   h1 {
     margin: 0;
