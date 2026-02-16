@@ -26,6 +26,7 @@
     width: 100%;
     font-size: var(--el-font-size);
     line-height: var(--el-line-height);
+    margin-inline: auto;
     &:hover {
       background-color: var(--field-bg-hover);
       border-color: var(--el-border-color-hover);

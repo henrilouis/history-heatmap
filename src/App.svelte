@@ -86,50 +86,53 @@
   <header>
     <h1>History heatmap</h1>
     <Search bind:value={searchValue} />
-    <button
-      onclick={() => (colorScheme = colorScheme === "dark" ? "light" : "dark")}
-      aria-label={colorScheme === "light"
-        ? "Switch to dark mode"
-        : "Switch to light mode"}
-      id="theme-toggle-button"
-    >
-      <div class="icon-wrapper">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-        </svg>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2"></path>
-          <path d="M12 20v2"></path>
-          <path d="m4.93 4.93 1.41 1.41"></path>
-          <path d="m17.66 17.66 1.41 1.41"></path>
-          <path d="M2 12h2"></path>
-          <path d="M20 12h2"></path>
-          <path d="m6.34 17.66-1.41 1.41"></path>
-          <path d="m19.07 4.93-1.41 1.41"></path>
-        </svg>
-      </div>
-    </button>
+    <div class="header-end">
+      <button
+        onclick={() =>
+          (colorScheme = colorScheme === "dark" ? "light" : "dark")}
+        aria-label={colorScheme === "light"
+          ? "Switch to dark mode"
+          : "Switch to light mode"}
+        id="theme-toggle-button"
+      >
+        <div class="icon-wrapper">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </div>
+      </button>
+    </div>
   </header>
   {#if historyStore.error}
     <div class="error-banner" role="alert">
@@ -245,16 +248,21 @@
     position: sticky;
     top: 0;
     background-color: var(--bg-secondary);
-    display: flex;
+    display: grid;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     padding: 1rem;
+    grid-template-columns: 1fr auto;
   }
   h1 {
     margin: 0;
     font-size: 1.375rem;
     display: none;
+  }
+  .header-end {
+    display: flex;
+    justify-content: end;
   }
   #theme-toggle-button {
     position: relative;
@@ -283,9 +291,17 @@
       }
     }
   }
-  @media (min-width: 840px) {
+  @media (min-width: 600px) {
     h1 {
       display: block;
+    }
+    header {
+      grid-template-columns: auto 1fr auto;
+    }
+  }
+  @media (min-width: 900px) {
+    header {
+      grid-template-columns: 12rem 1fr 12rem;
     }
   }
   main {
