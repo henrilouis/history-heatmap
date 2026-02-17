@@ -89,7 +89,9 @@
     <div class="header-end">
       <button
         onclick={() =>
-          (colorScheme = colorScheme === "dark" ? "light" : "dark")}
+          document.startViewTransition(() => {
+            colorScheme = colorScheme === "dark" ? "light" : "dark";
+          })}
         aria-label={colorScheme === "light"
           ? "Switch to dark mode"
           : "Switch to light mode"}
@@ -231,6 +233,21 @@
 </div>
 
 <style>
+  ::view-transition-old(root) {
+    animation-delay: 500ms;
+  }
+  ::view-transition-new(root) {
+    animation: circle-in 500ms ease-in-out;
+  }
+
+  @keyframes circle-in {
+    from {
+      clip-path: circle(0% at calc(100% - 3.25rem) 2.125rem);
+    }
+    to {
+      clip-path: circle(150% at calc(100% - 3.25rem) 2.125rem);
+    }
+  }
   .wrapper {
     color: var(--fg-primary);
     background-color: var(--bg-secondary);

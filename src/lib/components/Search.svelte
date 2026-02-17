@@ -12,7 +12,7 @@
   // It's ok if it attracts more attention.
 </script>
 
-<input type="search" placeholder="Search..." {oninput} />
+<input type="search" placeholder="Search..." {oninput} name="Search history" />
 
 <style>
   input[type="search"] {
