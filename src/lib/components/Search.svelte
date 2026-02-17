@@ -7,9 +7,6 @@
       value = (e.target as HTMLInputElement).value;
     }, 750);
   };
-
-  // To do: have an override making the search always light style and ajust accordingly.
-  // It's ok if it attracts more attention.
 </script>
 
 <input type="search" placeholder="Search..." {oninput} name="Search history" />
