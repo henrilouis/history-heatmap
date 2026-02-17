@@ -10,7 +10,7 @@ export async function getHistory(filter: string = "") {
       { text: filter, maxResults: 9999999, startTime: 0 },
       (results: chrome.history.HistoryItem[]) => {
         resolve(results);
-      }
+      },
     );
   });
 }
@@ -40,7 +40,7 @@ export type HistoryByDayAndHour = {
 
 // Pure grouping function - works on already-fetched data
 export function groupHistoryByDay(
-  history: chrome.history.HistoryItem[]
+  history: chrome.history.HistoryItem[],
 ): HistoryByDay {
   const grouped: HistoryByDay = {};
 
@@ -60,7 +60,7 @@ export function groupHistoryByDay(
 
 // Pure grouping function - by day and hour
 export function groupHistoryByDayAndHour(
-  history: chrome.history.HistoryItem[]
+  history: chrome.history.HistoryItem[],
 ): HistoryByDayAndHour {
   const grouped: HistoryByDayAndHour = {};
 
@@ -87,7 +87,7 @@ export function groupHistoryByDayAndHour(
 // Fill empty days in a date range
 export function fillEmptyDays(
   grouped: HistoryByDay,
-  allHistory: chrome.history.HistoryItem[]
+  allHistory: chrome.history.HistoryItem[],
 ): HistoryByDay {
   const timestamps = allHistory
     .map((item) => item.lastVisitTime)
@@ -116,7 +116,7 @@ export function fillEmptyDays(
 // Fill empty hours (00-23) for each day
 export function fillEmptyHours(
   grouped: HistoryByDayAndHour,
-  allHistory: chrome.history.HistoryItem[]
+  allHistory: chrome.history.HistoryItem[],
 ): HistoryByDayAndHour {
   const timestamps = allHistory
     .map((item) => item.lastVisitTime)
@@ -166,6 +166,6 @@ export async function deleteUrl(url: string): Promise<void> {
 export function getFaviconURL(pageUrl: string) {
   const url = new URL(chrome.runtime.getURL("/_favicon/"));
   url.searchParams.set("pageUrl", pageUrl);
-  url.searchParams.set("size", "16");
+  url.searchParams.set("size", "32");
   return url.toString();
 }

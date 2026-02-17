@@ -45,6 +45,7 @@
       <img
         src={item.url ? getFaviconURL(item.url) : ""}
         alt={hostname ? `Favicon for ${hostname}` : ""}
+        style="width: 16px"
       />
       <div>
         <a href={item.url}>{item.title}</a>
