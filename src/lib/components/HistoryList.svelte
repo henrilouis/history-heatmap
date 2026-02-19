@@ -4,12 +4,6 @@
   import { formatMomentKey } from "../utils/general";
   import { historyStore } from "../stores/history.svelte";
 
-  let {
-    calendarMode,
-  }: {
-    calendarMode: "day" | "hour";
-  } = $props();
-
   const ITEMS_PER_PAGE = 10;
   let visibleCount = $state(ITEMS_PER_PAGE);
   let sentinelEl = $state<HTMLDivElement | null>(null);
@@ -49,7 +43,7 @@
   );
 </script>
 
-<section class="days">
+<section class="moments">
   {#if historyStore.selectedMoments.length > 0}
     {#each historyStore.selectedMoments as momentKey}
       {@const items = historyStore.getItemsForMoment(momentKey)}
@@ -96,7 +90,7 @@
 </section>
 
 <style>
-  .days {
+  .moments {
     display: flex;
     flex-direction: column;
     gap: 1rem;

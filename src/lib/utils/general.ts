@@ -1,3 +1,5 @@
+export type CalendarMode = "day" | "hour";
+
 export const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
   weekday: "long",
   year: "numeric",

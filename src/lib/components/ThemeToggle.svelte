@@ -1,37 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-
-  let {
-    colorScheme = $bindable(),
-  }: {
-    colorScheme: "light" | "dark";
-  } = $props();
-
-  // Detect initial preference and listen for OS changes
-  const mql = window.matchMedia("(prefers-color-scheme: dark)");
-  colorScheme = mql.matches ? "dark" : "light";
-
-  onMount(() => {
-    const listener = (e: MediaQueryListEvent) => {
-      colorScheme = e.matches ? "dark" : "light";
-    };
-    mql.addEventListener("change", listener);
-    return () => mql.removeEventListener("change", listener);
-  });
-
-  function toggle() {
-    document.startViewTransition(() => {
-      colorScheme = colorScheme === "dark" ? "light" : "dark";
-    });
-  }
+  import { themeStore } from "../stores/theme.svelte";
 </script>
 
 <button
-  onclick={toggle}
-  aria-label={colorScheme === "light"
+  onclick={themeStore.toggle}
+  aria-label={themeStore.colorScheme === "light"
     ? "Switch to dark mode"
     : "Switch to light mode"}
-  class={{ dark: colorScheme === "dark" }}
+  class={{ dark: themeStore.colorScheme === "dark" }}
   id="theme-toggle-button"
 >
   <div class="icon-wrapper">
@@ -73,10 +49,10 @@
 </button>
 
 <style>
-  :global(::view-transition-old(root)) {
+  ::view-transition-old(root) {
     animation-delay: 500ms;
   }
-  :global(::view-transition-new(root)) {
+  ::view-transition-new(root) {
     animation: circle-in 500ms ease-in-out;
   }
 

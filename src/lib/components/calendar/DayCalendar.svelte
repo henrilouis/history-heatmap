@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { HistoryByDay } from "../utils/chrome-api";
+  import type { HistoryByDay } from "../../utils/chrome-api";
   import type { Attachment } from "svelte/attachments";
   import "./calendar.css";
 
@@ -28,7 +28,7 @@
 
     // Find max count for level calculation
     const maxCount = Math.max(
-      ...Object.values(historyByDay).map((items) => items.length)
+      ...Object.values(historyByDay).map((items) => items.length),
     );
 
     // Organize by weeks (Mon-Sun) - localized

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { HistoryByDayAndHour } from "../utils/chrome-api";
+  import type { HistoryByDayAndHour } from "../../utils/chrome-api";
   import type { Attachment } from "svelte/attachments";
   import "./calendar.css";
 
@@ -36,7 +36,7 @@
   };
 
   function organizeCalendarData(
-    historyByDayAndHour: HistoryByDayAndHour
+    historyByDayAndHour: HistoryByDayAndHour,
   ): CalendarData {
     const sortedDates = Object.keys(historyByDayAndHour).sort();
     if (sortedDates.length === 0) {
