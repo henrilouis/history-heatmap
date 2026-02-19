@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { HistoryByDay } from "../../utils/chrome-api";
   import type { Attachment } from "svelte/attachments";
-  import "./calendar.css";
+  import "./heatmap.css";
 
   let {
     data,
@@ -105,7 +105,7 @@
     <div class="skeleton"></div>
   </div>
 {:else}
-  <div class="calendar" {@attach scrollRight}>
+  <div class="heatmap" {@attach scrollRight}>
     <table>
       <thead>
         <tr>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { HistoryByDayAndHour } from "../../utils/chrome-api";
   import type { Attachment } from "svelte/attachments";
-  import "./calendar.css";
+  import "./heatmap.css";
 
   let {
     data,
@@ -111,9 +111,9 @@
 </script>
 
 {#if calendarData.days.length === 0}
-  <p>No history data available to display the calendar.</p>
+  <p>No history data available to display the heatmap.</p>
 {:else}
-  <div class="calendar" {@attach scrollRight}>
+  <div class="heatmap" {@attach scrollRight}>
     <table>
       <thead>
         <tr class="months">

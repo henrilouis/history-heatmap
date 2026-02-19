@@ -1,22 +1,11 @@
 <script lang="ts">
-  import Days from "./lib/components/calendar/Days.svelte";
-  import Hours from "./lib/components/calendar/Hours.svelte";
+  import Heatmap from "./lib/components/heatmap/Heatmap.svelte";
   import HistoryList from "./lib/components/HistoryList.svelte";
-  import CalendarSelectionInfo from "./lib/components/calendar/SelectionInfo.svelte";
-  import CalendarModeSwitch from "./lib/components/calendar/ModeSwitch.svelte";
   import { historyStore } from "./lib/stores/history.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
   import Header from "./lib/components/Header.svelte";
-  import type { CalendarMode } from "./lib/utils/general";
 
   historyStore.fetch();
-
-  let calendarMode = $state<CalendarMode>("days");
-
-  function setCalendarMode(mode: CalendarMode) {
-    calendarMode = mode;
-    historyStore.clearSelection();
-  }
 </script>
 
 <div class={["wrapper", themeStore.colorScheme]}>
@@ -28,23 +17,7 @@
     </div>
   {/if}
   <main>
-    <div class="calendar-actions">
-      <CalendarModeSwitch {calendarMode} {setCalendarMode} />
-      <CalendarSelectionInfo {calendarMode} />
-    </div>
-    {#if calendarMode === "days"}
-      <Days
-        data={historyStore.byDayWithEmpty}
-        selectedMoments={historyStore.selectedMoments}
-        onToggleMoment={historyStore.toggleMoment}
-      />
-    {:else}
-      <Hours
-        data={historyStore.byDayAndHourWithEmpty}
-        selectedMoments={historyStore.selectedMoments}
-        onToggleMoment={historyStore.toggleMoment}
-      />
-    {/if}
+    <Heatmap />
 
     <HistoryList />
   </main>
@@ -71,10 +44,6 @@
     padding: 0 1rem 1rem 1rem;
     margin-inline: auto;
     max-width: 60rem;
-  }
-  .calendar-actions {
-    display: flex;
-    justify-content: space-between;
   }
   .error-banner {
     background-color: var(--error-bg, #4a1515);
