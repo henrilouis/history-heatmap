@@ -19,13 +19,7 @@
   }
 </script>
 
-<div
-  class={{
-    wrapper: true,
-    dark: themeStore.colorScheme === "dark",
-    light: themeStore.colorScheme === "light",
-  }}
->
+<div class={["wrapper", themeStore.colorScheme]}>
   <Header />
   {#if historyStore.error}
     <div class="error-banner" role="alert">
