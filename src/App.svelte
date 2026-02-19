@@ -1,15 +1,12 @@
 <script lang="ts">
   import Search from "./lib/components/Search.svelte";
-  import Card from "./lib/components/Card.svelte";
   import DayCalendar from "./lib/components/DayCalendar.svelte";
   import HourCalendar from "./lib/components/HourCalendar.svelte";
-  import MomentContent from "./lib/components/MomentContent.svelte";
+  import HistoryList from "./lib/components/HistoryList.svelte";
   import ThemeToggle from "./lib/components/ThemeToggle.svelte";
   import { historyStore } from "./lib/stores/history.svelte";
-  import { formatMomentKey } from "./lib/utils/general";
 
   historyStore.fetch();
-  let searchValue = $state("");
 
   type CalendarMode = "day" | "hour";
   let calendarMode = $state<CalendarMode>("day");
@@ -19,62 +16,7 @@
     historyStore.clearSelection();
   }
 
-  let colorScheme = $state<"light" | "dark">(
-    window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light",
-  );
-
-  const darkModeMql = window.matchMedia("(prefers-color-scheme: dark)");
-  const listener = (e: MediaQueryListEvent) => {
-    colorScheme = e.matches ? "dark" : "light";
-  };
-  darkModeMql.addEventListener("change", listener);
-
-  const ITEMS_PER_PAGE = 10;
-  let visibleCount = $state(ITEMS_PER_PAGE);
-  let sentinelEl = $state<HTMLDivElement | null>(null);
-
-  // Reset visible count when data changes
-  $effect(() => {
-    // Track dependencies
-    historyStore.byDay;
-    searchValue;
-    // Reset to initial count
-    visibleCount = ITEMS_PER_PAGE;
-  });
-
-  $effect(() => {
-    if (!sentinelEl) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          const totalItems = Object.keys(historyStore.byDay).length;
-          if (visibleCount < totalItems) {
-            visibleCount = Math.min(visibleCount + ITEMS_PER_PAGE, totalItems);
-          }
-        }
-      },
-      { rootMargin: "200px" },
-    );
-
-    observer.observe(sentinelEl);
-    return () => observer.disconnect();
-  });
-
-  const visibleEntries = $derived(
-    Object.entries(historyStore.byDay).slice(0, visibleCount),
-  );
-
-  const hasMore = $derived(
-    visibleCount < Object.keys(historyStore.byDay).length,
-  );
-
-  $effect(() => {
-    historyStore.setSearch(searchValue);
-  });
+  let colorScheme = $state<"light" | "dark">("light");
 </script>
 
 <div
@@ -86,7 +28,7 @@
 >
   <header>
     <h1>History heatmap</h1>
-    <Search bind:value={searchValue} />
+    <Search onSearch={historyStore.setSearch} />
     <div class="header-end">
       <ThemeToggle bind:colorScheme />
     </div>
@@ -139,70 +81,11 @@
       />
     {/if}
 
-    <section class="days">
-      {#if historyStore.selectedMoments.length > 0}
-        {#each historyStore.selectedMoments as momentKey}
-          {@const items = historyStore.getItemsForMoment(momentKey)}
-          {#if items.length > 0}
-            <Card>
-              <MomentContent
-                date={momentKey}
-                {items}
-                deleteHistoryUrl={historyStore.removeUrl}
-              />
-            </Card>
-          {:else}
-            <Card>
-              <h3>{formatMomentKey(momentKey)}</h3>
-              No results for this time
-            </Card>
-          {/if}
-        {/each}
-      {:else if historyStore.isLoading}
-        <Card loading={true} />
-        <Card loading={true} />
-        <Card loading={true} />
-      {:else if historyStore.filtered.length === 0}
-        <Card>
-          <h3>No results found</h3>
-        </Card>
-      {:else}
-        {#each visibleEntries as [date, items]}
-          <Card>
-            <MomentContent
-              {date}
-              {items}
-              deleteHistoryUrl={historyStore.removeUrl}
-            />
-          </Card>
-        {/each}
-
-        {#if hasMore}
-          <div bind:this={sentinelEl} class="load-more-sentinel">
-            <Card loading={true} />
-          </div>
-        {/if}
-      {/if}
-    </section>
+    <HistoryList {calendarMode} />
   </main>
 </div>
 
 <style>
-  ::view-transition-old(root) {
-    animation-delay: 500ms;
-  }
-  ::view-transition-new(root) {
-    animation: circle-in 500ms ease-in-out;
-  }
-
-  @keyframes circle-in {
-    from {
-      clip-path: circle(0% at calc(100% - 3.25rem) 2.125rem);
-    }
-    to {
-      clip-path: circle(150% at calc(100% - 3.25rem) 2.125rem);
-    }
-  }
   .wrapper {
     color: var(--fg-primary);
     background-color: var(--bg-secondary);
@@ -269,11 +152,6 @@
     display: flex;
     align-items: center;
     gap: 1ch;
-  }
-  .days {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
   }
   .error-banner {
     background-color: var(--error-bg, #4a1515);

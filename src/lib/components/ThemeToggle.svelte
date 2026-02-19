@@ -1,9 +1,23 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+
   let {
     colorScheme = $bindable(),
   }: {
     colorScheme: "light" | "dark";
   } = $props();
+
+  // Detect initial preference and listen for OS changes
+  const mql = window.matchMedia("(prefers-color-scheme: dark)");
+  colorScheme = mql.matches ? "dark" : "light";
+
+  onMount(() => {
+    const listener = (e: MediaQueryListEvent) => {
+      colorScheme = e.matches ? "dark" : "light";
+    };
+    mql.addEventListener("change", listener);
+    return () => mql.removeEventListener("change", listener);
+  });
 
   function toggle() {
     document.startViewTransition(() => {
@@ -59,6 +73,22 @@
 </button>
 
 <style>
+  :global(::view-transition-old(root)) {
+    animation-delay: 500ms;
+  }
+  :global(::view-transition-new(root)) {
+    animation: circle-in 500ms ease-in-out;
+  }
+
+  @keyframes circle-in {
+    from {
+      clip-path: circle(0% at calc(100% - 3.25rem) 2.125rem);
+    }
+    to {
+      clip-path: circle(150% at calc(100% - 3.25rem) 2.125rem);
+    }
+  }
+
   #theme-toggle-button {
     position: relative;
     overflow: hidden;
