@@ -11,7 +11,6 @@
 
   import { formatMomentKey } from "../utils/general";
   import { blur } from "svelte/transition";
-  import { flip } from "svelte/animate";
 
   import { getFaviconURL } from "../utils/chrome-api";
 
