@@ -1,6 +1,6 @@
 <script lang="ts">
-  import DayCalendar from "./lib/components/calendar/DayCalendar.svelte";
-  import HourCalendar from "./lib/components/calendar/HourCalendar.svelte";
+  import Days from "./lib/components/calendar/Days.svelte";
+  import Hours from "./lib/components/calendar/Hours.svelte";
   import HistoryList from "./lib/components/HistoryList.svelte";
   import CalendarSelectionInfo from "./lib/components/calendar/SelectionInfo.svelte";
   import CalendarModeSwitch from "./lib/components/calendar/ModeSwitch.svelte";
@@ -11,7 +11,7 @@
 
   historyStore.fetch();
 
-  let calendarMode = $state<CalendarMode>("day");
+  let calendarMode = $state<CalendarMode>("days");
 
   function setCalendarMode(mode: CalendarMode) {
     calendarMode = mode;
@@ -32,14 +32,14 @@
       <CalendarModeSwitch {calendarMode} {setCalendarMode} />
       <CalendarSelectionInfo {calendarMode} />
     </div>
-    {#if calendarMode === "day"}
-      <DayCalendar
+    {#if calendarMode === "days"}
+      <Days
         data={historyStore.byDayWithEmpty}
         selectedMoments={historyStore.selectedMoments}
         onToggleMoment={historyStore.toggleMoment}
       />
     {:else}
-      <HourCalendar
+      <Hours
         data={historyStore.byDayAndHourWithEmpty}
         selectedMoments={historyStore.selectedMoments}
         onToggleMoment={historyStore.toggleMoment}

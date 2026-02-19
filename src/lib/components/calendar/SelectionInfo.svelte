@@ -1,10 +1,11 @@
 <script lang="ts">
   import { historyStore } from "../../stores/history.svelte";
+  import type { CalendarMode } from "../../utils/general";
 
   let {
     calendarMode,
   }: {
-    calendarMode: "day" | "hour";
+    calendarMode: CalendarMode;
   } = $props();
 </script>
 
