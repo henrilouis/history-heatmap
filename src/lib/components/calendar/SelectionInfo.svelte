@@ -13,7 +13,9 @@
   <div class="selection-info">
     <span>
       {historyStore.selectedMoments.length}
-      {calendarMode}{historyStore.selectedMoments.length > 1 ? "s" : ""} selected
+      {historyStore.selectedMoments.length === 1
+        ? calendarMode.slice(0, -1)
+        : calendarMode} selected
     </span>
     <button onclick={() => historyStore.clearSelection()}
       >Clear selection</button
