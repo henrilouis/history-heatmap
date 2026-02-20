@@ -1,12 +1,12 @@
 <script lang="ts">
   import Search from "./Search.svelte";
   import ThemeToggle from "./ThemeToggle.svelte";
-  import { historyStore } from "../../lib/stores/history.svelte";
+  import { historyStore } from "../../stores/history.svelte";
 </script>
 
 <header>
   <h1>History heatmap</h1>
-  <Search onSearch={historyStore.setSearch} />
+  <Search setSearch={historyStore.setSearch} />
   <div class="header-end">
     <ThemeToggle />
   </div>

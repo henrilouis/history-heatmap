@@ -1,10 +1,10 @@
 <script lang="ts">
-  let { onSearch }: { onSearch: (query: string) => void } = $props();
+  let { setSearch }: { setSearch: (query: string) => void } = $props();
   let timer: ReturnType<typeof setTimeout>;
   const oninput = (e: Event) => {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      onSearch((e.target as HTMLInputElement).value);
+      setSearch((e.target as HTMLInputElement).value);
     }, 750);
   };
 </script>

@@ -9,10 +9,10 @@
     deleteHistoryUrl: (url: string) => void;
   } = $props();
 
-  import { formatMomentKey } from "../utils/general";
+  import { formatMomentKey } from "../../utils/general";
   import { blur } from "svelte/transition";
 
-  import { getFaviconURL } from "../utils/chrome-api";
+  import { getFaviconURL } from "../../utils/chrome-api";
 
   function getHostname(url: string | undefined): string {
     if (!url) return "";

@@ -1,8 +1,8 @@
 <script lang="ts">
   import Card from "./Card.svelte";
   import MomentContent from "./MomentContent.svelte";
-  import { formatMomentKey } from "../utils/general";
-  import { historyStore } from "../stores/history.svelte";
+  import { formatMomentKey } from "../../utils/general";
+  import { historyStore } from "../../stores/history.svelte";
 
   const ITEMS_PER_PAGE = 10;
   let visibleCount = $state(ITEMS_PER_PAGE);

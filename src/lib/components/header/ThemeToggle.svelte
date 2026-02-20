@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { themeStore } from "../stores/theme.svelte";
+  import { themeStore } from "../../stores/theme.svelte";
 </script>
 
 <button
