@@ -141,7 +141,6 @@
                   disabled={cell.count === 0 &&
                     !selectedMoments.includes(cell.key)}
                   aria-label={`Toggle moment for ${cell.date} at ${row.hourLabel}`}
-                  title="{cell.date} {row.hourLabel}: {cell.count} visits"
                   onclick={() => onToggleMoment(cell.key)}
                   onkeydown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -149,7 +148,15 @@
                       onToggleMoment(cell.key);
                     }
                   }}
+                  interestfor={`popover-${cell.date}-${row.hourLabel}`}
                 ></button>
+                <div id={`popover-${cell.date}-${row.hourLabel}`} popover>
+                  <div class="count">{cell.count} visits</div>
+                  <div class="moment">
+                    {cell.date}
+                    {row.hourLabel}
+                  </div>
+                </div>
               </td>
             {/each}
           </tr>

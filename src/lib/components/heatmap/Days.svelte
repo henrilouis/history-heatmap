@@ -125,7 +125,6 @@
                   data-level={day.level}
                   data-date={day.date}
                   data-selected={selectedMoments.includes(day.date)}
-                  title="{day.date}: {day.count} visits"
                   aria-label={`Toggle moment for ${day.date}`}
                   disabled={day.count === 0 &&
                     !selectedMoments.includes(day.date)}
@@ -136,7 +135,12 @@
                       onToggleMoment(day.date);
                     }
                   }}
+                  interestfor={`popover-${day.date}`}
                 ></button>
+                <div id={`popover-${day.date}`} popover>
+                  <div class="count">{day.count} visits</div>
+                  <div class="moment">{day.date}</div>
+                </div>
               </td>
             {/each}
           </tr>

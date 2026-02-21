@@ -256,6 +256,19 @@ ol {
   margin: 0;
 }
 
+:popover-open {
+  position-area: top;
+  padding: 0.25rem 0.5rem;
+  border: var(--el-border-width) solid var(--el-border-color-default);
+  border-radius: var(--el-border-radius);
+  corner-shape: var(--el-corner-shape);
+  background-color: var(--bg-primary);
+  box-shadow: var(--shadow-1);
+  font-size: var(--el-font-size);
+  line-height: var(--el-line-height);
+  margin-bottom: 0.125rem;
+}
+
 @keyframes fade {
   0% {
     background-color: transparent;
