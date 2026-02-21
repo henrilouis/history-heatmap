@@ -120,22 +120,24 @@
           <tr>
             <th>{week.dayName}</th>
             {#each week.days as day}
-              <td
-                tabindex={day.count > 0 || selectedMoments.includes(day.date)
-                  ? 0
-                  : -1}
-                data-level={day.level}
-                data-date={day.date}
-                data-selected={selectedMoments.includes(day.date)}
-                title="{day.date}: {day.count} visits"
-                onclick={() => onToggleMoment(day.date)}
-                onkeydown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onToggleMoment(day.date);
-                  }
-                }}
-              ></td>
+              <td>
+                <button
+                  data-level={day.level}
+                  data-date={day.date}
+                  data-selected={selectedMoments.includes(day.date)}
+                  title="{day.date}: {day.count} visits"
+                  aria-label={`Toggle moment for ${day.date}`}
+                  disabled={day.count === 0 &&
+                    !selectedMoments.includes(day.date)}
+                  onclick={() => onToggleMoment(day.date)}
+                  onkeydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onToggleMoment(day.date);
+                    }
+                  }}
+                ></button>
+              </td>
             {/each}
           </tr>
         {/each}
@@ -143,10 +145,3 @@
     </table>
   </div>
 {/if}
-
-<style>
-  td {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-</style>

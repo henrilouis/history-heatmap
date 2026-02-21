@@ -134,21 +134,23 @@
           <tr>
             <th>{row.hourLabel}</th>
             {#each row.cells as cell}
-              <td
-                tabindex={cell.count > 0 || selectedMoments.includes(cell.key)
-                  ? 0
-                  : -1}
-                data-level={cell.level}
-                data-selected={selectedMoments.includes(cell.key)}
-                title="{cell.date} {row.hourLabel}: {cell.count} visits"
-                onclick={() => onToggleMoment(cell.key)}
-                onkeydown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onToggleMoment(cell.key);
-                  }
-                }}
-              ></td>
+              <td>
+                <button
+                  data-level={cell.level}
+                  data-selected={selectedMoments.includes(cell.key)}
+                  disabled={cell.count === 0 &&
+                    !selectedMoments.includes(cell.key)}
+                  aria-label={`Toggle moment for ${cell.date} at ${row.hourLabel}`}
+                  title="{cell.date} {row.hourLabel}: {cell.count} visits"
+                  onclick={() => onToggleMoment(cell.key)}
+                  onkeydown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onToggleMoment(cell.key);
+                    }
+                  }}
+                ></button>
+              </td>
             {/each}
           </tr>
         {/each}
@@ -158,10 +160,8 @@
 {/if}
 
 <style>
-  td {
-    min-width: 0.75rem;
-    max-width: 0.75rem;
-    min-height: 0.75rem;
-    max-height: 0.75rem;
+  td button {
+    width: 0.75rem;
+    height: 0.75rem;
   }
 </style>

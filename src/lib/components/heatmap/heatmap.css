@@ -2,15 +2,21 @@
   margin-block: 1rem 2rem;
   max-width: calc(100vw - 3rem);
   overflow-y: auto;
+  padding-block-end: 0.125rem;
 }
 table {
   border-collapse: separate;
-  border-spacing: 0.25rem;
+  border-spacing: 0;
   margin: auto;
 }
 td {
-  min-width: 1.5rem;
-  min-height: 1.5rem;
+  padding: 0.125rem;
+}
+td button {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
   background-color: var(--el-bg-default);
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
@@ -19,6 +25,7 @@ td {
     scale,
     box-shadow,
     outline ease-in-out 50ms;
+
   &[data-level="0"]:not([data-selected="true"]) {
     background-color: var(--heatmap-color-0);
     pointer-events: none;
@@ -35,6 +42,12 @@ td {
   &[data-level="4"] {
     background-color: var(--heatmap-color-4);
   }
+  &[data-selected="true"] {
+    outline: var(--el-outline-width-selected) solid
+      var(--el-outline-color-selected);
+    box-shadow: var(--el-box-shadow-selected);
+    outline-offset: var(--el-outline-offset-selected);
+  }
   &:hover {
     scale: 1.1;
   }
@@ -46,12 +59,6 @@ td {
     outline-width: var(--el-focus-outline-width);
     outline-offset: var(--el-focus-outline-offset);
     outline-style: solid;
-  }
-  &[data-selected="true"] {
-    outline: var(--el-outline-width-selected) solid
-      var(--el-outline-color-selected);
-    box-shadow: var(--el-box-shadow-selected);
-    outline-offset: var(--el-outline-offset-selected);
   }
 }
 th {
