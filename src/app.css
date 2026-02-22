@@ -47,11 +47,11 @@
   );
 
   --el-border-color-default: light-dark(
-    oklch(from var(--neutral) 80% c h),
+    oklch(from var(--neutral) 90% c h),
     oklch(from var(--neutral) 40% c h)
   );
   --el-border-color-hover: light-dark(
-    oklch(from var(--neutral) 70% c h),
+    oklch(from var(--neutral) 80% c h),
     oklch(from var(--neutral) 50% c h)
   );
   --el-border-width: 0.0625rem;
@@ -195,9 +195,8 @@ button {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   cursor: pointer;
-  transition:
-    outline,
-    background-color 0.15s ease-in-out;
+  transition: all 0.15s ease-in-out;
+  transition-property: border, outline, background-color;
   font-size: var(--el-font-size);
   line-height: var(--el-line-height);
   &.quiet {

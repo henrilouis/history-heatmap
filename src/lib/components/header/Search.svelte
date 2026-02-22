@@ -24,6 +24,8 @@
     font-size: var(--el-font-size);
     line-height: var(--el-line-height);
     margin-inline: auto;
+    transition: all 0.15s ease-in-out;
+    transition-property: border, outline, background-color;
     &:hover {
       background-color: var(--field-bg-hover);
       border-color: var(--el-border-color-hover);
@@ -32,7 +34,6 @@
       outline-color: var(--el-focus-outline-color);
       outline-width: var(--el-focus-outline-width);
       outline-offset: var(--el-focus-outline-offset);
-      outline-style: solid;
     }
     &::-webkit-search-cancel-button {
       cursor: pointer;

@@ -21,10 +21,8 @@ td button {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   cursor: pointer;
-  transition:
-    scale,
-    box-shadow,
-    outline ease-in-out 50ms;
+  transition: all 0.15s ease-in-out;
+  transition-property: scale, box-shadow, border, outline, background-color;
 
   &[data-level="0"]:not([data-selected="true"]) {
     background-color: var(--heatmap-color-0);
