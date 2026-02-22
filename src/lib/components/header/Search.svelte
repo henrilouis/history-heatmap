@@ -31,6 +31,7 @@
       border-color: var(--el-border-color-hover);
     }
     &:focus-visible {
+      outline-style: solid;
       outline-color: var(--el-focus-outline-color);
       outline-width: var(--el-focus-outline-width);
       outline-offset: var(--el-focus-outline-offset);
