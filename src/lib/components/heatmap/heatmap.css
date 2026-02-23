@@ -82,11 +82,12 @@ tbody th {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  & .moment {
-    color: var(--fg-secondary);
-  }
   & .count {
     font-weight: 600;
     color: var(--fg-primary);
+  }
+  & .moment {
+    color: var(--fg-secondary);
+    font-size: 0.75rem;
   }
 }

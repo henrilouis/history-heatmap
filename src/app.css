@@ -12,8 +12,8 @@
     oklch(from var(--neutral) 95% c h)
   );
   --fg-secondary: light-dark(
-    oklch(from var(--neutral) 35% c h),
-    oklch(from var(--neutral) 65% c h)
+    oklch(from var(--neutral) 45% c h),
+    oklch(from var(--neutral) 70% c h)
   );
   --fg-on-primary: light-dark(
     oklch(from var(--neutral) 90% c h),

@@ -5,7 +5,7 @@
     clearTimeout(timer);
     timer = setTimeout(() => {
       setSearch((e.target as HTMLInputElement).value);
-    }, 750);
+    }, 300);
   };
 </script>
 
