@@ -9,7 +9,11 @@ export async function getHistory(filter: string = "") {
     chrome.history.search(
       { text: filter, maxResults: 9999999, startTime: 0 },
       (results: chrome.history.HistoryItem[]) => {
-        resolve(results);
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve(results);
+        }
       },
     );
   });
