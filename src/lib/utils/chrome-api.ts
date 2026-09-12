@@ -1,4 +1,4 @@
-// Todo: after Jan 7 replace date with temporal API which should be in chrome then
+import { getDateKey } from "./date";
 
 export async function getHistory(filter: string = "") {
   return new Promise<chrome.history.HistoryItem[]>((resolve, reject) => {
@@ -17,14 +17,6 @@ export async function getHistory(filter: string = "") {
       },
     );
   });
-}
-
-// Helper to get date key
-function getDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 // Helper to get hour key
@@ -88,28 +80,49 @@ export function groupHistoryByDayAndHour(
   return grouped;
 }
 
+// Scan bounds without allocating a timestamp array or spreading it into a call.
+function getHistoryDateRange(history: chrome.history.HistoryItem[]) {
+  let earliest = Infinity;
+  let latest = -Infinity;
+
+  for (const { lastVisitTime } of history) {
+    if (lastVisitTime === undefined) continue;
+    if (lastVisitTime < earliest) earliest = lastVisitTime;
+    if (lastVisitTime > latest) latest = lastVisitTime;
+  }
+
+  if (earliest === Infinity) return;
+
+  const startDate = new Date(earliest);
+  const endDate = new Date(latest);
+  // Compare calendar dates so an earlier time on the final day cannot omit it.
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(0, 0, 0, 0);
+  return { startDate, endDate };
+}
+
 // Fill empty days in a date range
 export function fillEmptyDays(
   grouped: HistoryByDay,
   allHistory: chrome.history.HistoryItem[],
 ): HistoryByDay {
-  const timestamps = allHistory
-    .map((item) => item.lastVisitTime)
-    .filter((t): t is number => t !== undefined);
-
-  if (timestamps.length === 0) return grouped;
-
-  const startDate = new Date(Math.min(...timestamps));
-  const endDate = new Date(Math.max(...timestamps));
+  const range = getHistoryDateRange(allHistory);
+  if (!range) return grouped;
+  const { startDate, endDate } = range;
 
   // Adjust to start on Monday
   startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
 
-  // Fill all days in range
+  // Construct each local midnight afresh: a midnight DST jump must not carry
+  // an hour offset into subsequent days and exclude the final date.
   for (
     let current = new Date(startDate);
     current <= endDate;
-    current.setDate(current.getDate() + 1)
+    current = new Date(
+      current.getFullYear(),
+      current.getMonth(),
+      current.getDate() + 1,
+    )
   ) {
     grouped[getDateKey(current)] ??= [];
   }
@@ -122,20 +135,19 @@ export function fillEmptyHours(
   grouped: HistoryByDayAndHour,
   allHistory: chrome.history.HistoryItem[],
 ): HistoryByDayAndHour {
-  const timestamps = allHistory
-    .map((item) => item.lastVisitTime)
-    .filter((t): t is number => t !== undefined);
-
-  if (timestamps.length === 0) return grouped;
-
-  const startDate = new Date(Math.min(...timestamps));
-  const endDate = new Date(Math.max(...timestamps));
+  const range = getHistoryDateRange(allHistory);
+  if (!range) return grouped;
+  const { startDate, endDate } = range;
 
   // Fill all days and hours in range
   for (
     let current = new Date(startDate);
     current <= endDate;
-    current.setDate(current.getDate() + 1)
+    current = new Date(
+      current.getFullYear(),
+      current.getMonth(),
+      current.getDate() + 1,
+    )
   ) {
     const dayKey = getDateKey(current);
     grouped[dayKey] ??= {};

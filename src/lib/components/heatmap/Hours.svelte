@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { HistoryByDayAndHour } from "../../utils/chrome-api";
+  import { parseDateKey } from "../../utils/date";
   import type { Attachment } from "svelte/attachments";
   import "./heatmap.css";
 
@@ -45,7 +46,7 @@
 
     // Generate day headers
     const days = sortedDates.map((dateKey) => {
-      const date = new Date(dateKey);
+      const date = parseDateKey(dateKey);
       return {
         date: dateKey,
         dayName: date.toLocaleDateString(undefined, { weekday: "narrow" }),

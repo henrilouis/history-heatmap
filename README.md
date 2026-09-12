@@ -30,12 +30,16 @@ are mocked, so tests do not require an extension installation or access real
 browsing history. The suite covers history search and deletion callbacks, API
 failures and retries, unavailable Chrome history APIs, and day/hour grouping,
 including sorting, missing timestamps, local-midnight boundaries, DST transitions,
-and input preservation.
+and input preservation. Regression tests also cover local date parsing, rendered
+calendar rows and headers, fallback selection labels, inclusive filtered date
+ranges, leap days, and range computation with 150,000 history records.
 
 Grouping tests construct fixed local dates and require no timezone setup for a
 normal run. GitHub Actions runs `npm ci` and `npm test` on every pull request and
-push to `main`, using UTC, America/Los_Angeles, and Asia/Tokyo to catch differences
-between local-time and UTC grouping. The UTC job also runs `npm run build`.
+push to `main`, using UTC, America/Los_Angeles, Asia/Tokyo, and America/Sao_Paulo to
+catch differences between local-time and UTC grouping, date labels, and calendar
+rendering. Sao Paulo also exercises historical midnight DST transitions in date
+ranges. The UTC job also runs `npm run build`.
 
 The Los Angeles job additionally checks spring-forward normalization and both
 occurrences of the repeated fall-back hour. These two tests are skipped in other

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { HistoryByDay } from "../../utils/chrome-api";
+  import { parseDateKey } from "../../utils/date";
   import type { Attachment } from "svelte/attachments";
   import "./heatmap.css";
 
@@ -43,7 +44,7 @@
 
     // Fill in the days
     sortedDates.forEach((dateKey) => {
-      const date = new Date(dateKey);
+      const date = parseDateKey(dateKey);
       const dayOfWeek = date.getDay(); // 0 = Sunday
       const rowIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to Mon-Sun (0-6)
 
@@ -62,7 +63,7 @@
     let weekCount = 0;
 
     weeks[0].days.forEach((day) => {
-      const monthName = new Date(day.date).toLocaleString("default", {
+      const monthName = parseDateKey(day.date).toLocaleString("default", {
         month: "short",
       });
       if (monthName !== currentMonth) {

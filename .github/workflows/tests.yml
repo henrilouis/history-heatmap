@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        timezone: [UTC, America/Los_Angeles, Asia/Tokyo]
+        timezone: [UTC, America/Los_Angeles, Asia/Tokyo, America/Sao_Paulo]
     env:
       TZ: ${{ matrix.timezone }}
     steps:
