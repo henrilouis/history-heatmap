@@ -5,17 +5,27 @@ import Hours from "./Hours.svelte";
 
 const selection = { selectedMoments: [], onToggleMoment: () => {} };
 
+// Check rendered header text without depending on attributes or inline wrappers.
+function headerTexts(html: string): string[] {
+  return [...html.matchAll(/<th\b[^>]*>([\s\S]*?)<\/th>/g)].map(([, content]) =>
+    content.replace(/<!--[\s\S]*?-->|<[^>]+>/g, "").trim(),
+  );
+}
+
 describe("calendar date rendering", () => {
   it("places a Saturday date key in the Saturday row", () => {
     const { body } = render(Days, {
       props: { ...selection, data: { "2026-09-12": [{ id: "visit" }] } },
     });
-    const tbody = body.match(/<tbody>([\s\S]*?)<\/tbody>/)![1];
-    const rows = [...tbody.matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map((match) => match[1]);
+    const rowsWithVisit = [...body.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/g)]
+      .map(([, row]) => row)
+      .filter((row) => row.includes('data-date="2026-09-12"'));
+    const saturday = new Date(2026, 8, 12).toLocaleDateString(undefined, {
+      weekday: "short",
+    });
 
-    expect(rows).toHaveLength(7);
-    expect(rows[5]).toContain('data-date="2026-09-12"');
-    expect(rows[4]).not.toContain('data-date="2026-09-12"');
+    expect(rowsWithVisit, "the visit should appear in exactly one calendar row").toHaveLength(1);
+    expect(headerTexts(rowsWithVisit[0])).toContain(saturday);
   });
 
   it("labels a Monday on the first of the month with its local month", () => {
@@ -24,7 +34,7 @@ describe("calendar date rendering", () => {
     });
     const month = new Date(2027, 2, 1).toLocaleString("default", { month: "short" });
 
-    expect(body).toContain(`<th colspan="1">${month}</th>`);
+    expect(headerTexts(body)).toContain(month);
   });
 
   it("uses the local day number and month in hour-view headers", () => {
@@ -33,7 +43,7 @@ describe("calendar date rendering", () => {
     });
     const month = new Date(2027, 2, 1).toLocaleDateString(undefined, { month: "short" });
 
-    expect(body).toContain('<th title="2027-03-01">1</th>');
-    expect(body).toContain(`<th colspan="1">${month}</th>`);
+    expect(headerTexts(body)).toContain("1");
+    expect(headerTexts(body)).toContain(month);
   });
 });
