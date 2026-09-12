@@ -7,6 +7,9 @@ Find the plugin [in the chrome web store](https://chromewebstore.google.com/deta
 ## Development
 
 Use Node.js 24 (also used in CI) and install dependencies with `npm ci`.
+`@types/node` intentionally follows major 24 to match that runtime. The toolchain
+uses Vitest 5 and TypeScript 6; TypeScript 6 is the newest major currently supported
+by `svelte-check`'s peer dependency range.
 
 ### Unit tests
 
@@ -43,3 +46,11 @@ TZ=America/Los_Angeles npm test
 ```
 
 Run static checks with `npm run check` and build the extension with `npm run build`.
+
+`npm run check` enables JavaScript/TypeScript and Svelte diagnostics, but disables
+the embedded CSS language-service diagnostics because that validator does not yet
+understand Chrome's `corner-shape` property and `scroll-state()` container queries.
+This keeps those rules scoped to their components. Svelte compiler diagnostics
+remain enabled, and the production build processes CSS with Lightning CSS, but
+these are not a replacement for all CSS lint checks. Remove the diagnostic-source
+restriction once the embedded validator supports these features.
