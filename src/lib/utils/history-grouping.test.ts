@@ -81,18 +81,55 @@ describe("groupHistoryByDayAndHour", () => {
   });
 });
 
-const datedItem = historyItem("dated", new Date(2026, 8, 12, 9, 0));
+// These fixtures specify Los Angeles transition rules, not the host zone's rules.
+// The LA CI matrix job always runs them; other zones run the general tests above.
+describe.runIf(
+  Intl.DateTimeFormat().resolvedOptions().timeZone === "America/Los_Angeles",
+)("Los Angeles DST grouping", () => {
+  it("normalizes a nonexistent spring-forward time into hour 03", () => {
+    const beforeJump = historyItem("before", new Date("2026-03-08T09:30:00Z"));
+    const afterJump = historyItem("after", new Date("2026-03-08T10:15:00Z"));
+    // 02:30 does not exist locally; Date normalizes it to 03:30 PDT.
+    const normalized = historyItem("normalized", new Date(2026, 2, 8, 2, 30));
+    const input = [beforeJump, normalized, afterJump];
+
+    expect(groupHistoryByDay(input)).toEqual({
+      "2026-03-08": [normalized, afterJump, beforeJump],
+    });
+    expect(groupHistoryByDayAndHour(input)).toEqual({
+      "2026-03-08": { "01": [beforeJump], "03": [normalized, afterJump] },
+    });
+  });
+
+  it("keeps both fall-back visits in hour 01 ordered by actual visit time", () => {
+    // Explicit instants distinguish the two occurrences of local 01:30.
+    const first = historyItem("first", new Date("2026-11-01T08:30:00Z"));
+    const second = historyItem("second", new Date("2026-11-01T09:30:00Z"));
+    const input = [first, second];
+
+    expect(groupHistoryByDay(input)).toEqual({
+      "2026-11-01": [second, first],
+    });
+    expect(groupHistoryByDayAndHour(input)).toEqual({
+      "2026-11-01": { "01": [second, first] },
+    });
+  });
+});
+
+const makeDatedItem = () => historyItem("dated", new Date(2026, 8, 12, 9, 0));
 
 describe.each([
   {
     name: "groupHistoryByDay",
     group: groupHistoryByDay,
-    expected: { "2026-09-12": [datedItem] },
+    expected: (item: chrome.history.HistoryItem) => ({ "2026-09-12": [item] }),
   },
   {
     name: "groupHistoryByDayAndHour",
     group: groupHistoryByDayAndHour,
-    expected: { "2026-09-12": { "09": [datedItem] } },
+    expected: (item: chrome.history.HistoryItem) => ({
+      "2026-09-12": { "09": [item] },
+    }),
   },
 ])("$name input handling", ({ group, expected }) => {
   it("returns no groups for empty input", () => {
@@ -100,10 +137,12 @@ describe.each([
   });
 
   it("skips records without timestamps while retaining dated records", () => {
-    expect(group([{ id: "undated" }, datedItem])).toEqual(expected);
+    const datedItem = makeDatedItem();
+    expect(group([{ id: "undated" }, datedItem])).toEqual(expected(datedItem));
   });
 
   it("preserves the original records and their input order", () => {
+    const datedItem = makeDatedItem();
     const laterItem = historyItem("later", new Date(2026, 8, 12, 9, 30));
     const input = [datedItem, laterItem];
     const original = structuredClone(input);

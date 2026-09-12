@@ -97,36 +97,38 @@ describe("getHistory", () => {
 
     await expect(retried).resolves.toEqual(records);
   });
+
+  it.each([undefined, {}])(
+    "rejects when Chrome history is unavailable (%j)",
+    async (chromeApi) => {
+      vi.stubGlobal("chrome", chromeApi);
+
+      await expect(getHistory()).rejects.toThrow(
+        "Chrome history API not available",
+      );
+      expect(search).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("deleteUrl", () => {
   const url = "https://example.com/page?query=history#section";
 
-  it("forwards the exact URL and resolves after successful deletion", async () => {
+  it("forwards the exact URL and resolves only after Chrome completes deletion", async () => {
     const result = deleteUrl(url);
 
     expect(deleteHistoryUrl).toHaveBeenCalledExactlyOnceWith(
       { url },
       expect.any(Function),
     );
-    completeDeletion();
-
-    await expect(result).resolves.toBeUndefined();
-  });
-
-  it("stays pending until Chrome completes the deletion", async () => {
-    const result = deleteUrl(url);
     const onSettled = vi.fn();
-    const settlement = result.then(onSettled, onSettled);
+    void result.then(onSettled, onSettled);
 
     // Yield an event-loop turn so any premature settlement becomes observable.
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(onSettled).not.toHaveBeenCalled();
 
     completeDeletion();
-    await settlement;
-
-    expect(onSettled).toHaveBeenCalledExactlyOnceWith(undefined);
     await expect(result).resolves.toBeUndefined();
   });
 
@@ -136,4 +138,16 @@ describe("deleteUrl", () => {
 
     await expect(result).rejects.toThrow("History deletion failed");
   });
+
+  it.each([undefined, {}])(
+    "rejects when Chrome history is unavailable (%j)",
+    async (chromeApi) => {
+      vi.stubGlobal("chrome", chromeApi);
+
+      await expect(deleteUrl(url)).rejects.toThrow(
+        "Chrome history API not available",
+      );
+      expect(deleteHistoryUrl).not.toHaveBeenCalled();
+    },
+  );
 });

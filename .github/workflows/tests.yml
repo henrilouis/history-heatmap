@@ -1,4 +1,4 @@
-name: Unit tests
+name: Tests and build
 
 on:
   pull_request:
@@ -20,10 +20,13 @@ jobs:
     env:
       TZ: ${{ matrix.timezone }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Build extension
+        if: matrix.timezone == 'UTC'
+        run: npm run build
