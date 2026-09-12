@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getHistory } from "./chrome-api";
+import { deleteUrl, getHistory } from "./chrome-api";
 
 // Chrome can omit results when a callback reports runtime.lastError.
 type SearchCallback = (results?: chrome.history.HistoryItem[]) => void;
@@ -7,25 +7,43 @@ type SearchCallback = (results?: chrome.history.HistoryItem[]) => void;
 const search = vi.fn<
   (query: chrome.history.HistoryQuery, callback: SearchCallback) => void
 >();
+const deleteHistoryUrl = vi.fn<
+  (details: chrome.history.UrlDetails, callback: () => void) => void
+>();
 let runtime: { lastError?: chrome.runtime.LastError };
+
+function completeCallback(
+  callback: () => void,
+  error?: chrome.runtime.LastError,
+) {
+  // lastError is only available while the Chrome API callback executes.
+  runtime.lastError = error;
+  try {
+    callback();
+  } finally {
+    delete runtime.lastError;
+  }
+}
 
 function completeSearch(
   results?: chrome.history.HistoryItem[],
   error?: chrome.runtime.LastError,
 ) {
   const [, callback] = search.mock.lastCall!;
-  // lastError is only available while the Chrome API callback executes.
-  runtime.lastError = error;
-  try {
-    callback(results);
-  } finally {
-    delete runtime.lastError;
-  }
+  completeCallback(() => callback(results), error);
+}
+
+function completeDeletion(error?: chrome.runtime.LastError) {
+  const [, callback] = deleteHistoryUrl.mock.lastCall!;
+  completeCallback(callback, error);
 }
 
 beforeEach(() => {
   runtime = {};
-  vi.stubGlobal("chrome", { history: { search }, runtime });
+  vi.stubGlobal("chrome", {
+    history: { search, deleteUrl: deleteHistoryUrl },
+    runtime,
+  });
 });
 
 describe("getHistory", () => {
@@ -79,4 +97,57 @@ describe("getHistory", () => {
 
     await expect(retried).resolves.toEqual(records);
   });
+
+  it.each([undefined, {}])(
+    "rejects when Chrome history is unavailable (%j)",
+    async (chromeApi) => {
+      vi.stubGlobal("chrome", chromeApi);
+
+      await expect(getHistory()).rejects.toThrow(
+        "Chrome history API not available",
+      );
+      expect(search).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe("deleteUrl", () => {
+  const url = "https://example.com/page?query=history#section";
+
+  it("forwards the exact URL and resolves only after Chrome completes deletion", async () => {
+    const result = deleteUrl(url);
+
+    expect(deleteHistoryUrl).toHaveBeenCalledExactlyOnceWith(
+      { url },
+      expect.any(Function),
+    );
+    const onSettled = vi.fn();
+    void result.then(onSettled, onSettled);
+
+    // Yield an event-loop turn so any premature settlement becomes observable.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(onSettled).not.toHaveBeenCalled();
+
+    completeDeletion();
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it("rejects with the error reported by the deletion callback", async () => {
+    const result = deleteUrl(url);
+    completeDeletion({ message: "History deletion failed" });
+
+    await expect(result).rejects.toThrow("History deletion failed");
+  });
+
+  it.each([undefined, {}])(
+    "rejects when Chrome history is unavailable (%j)",
+    async (chromeApi) => {
+      vi.stubGlobal("chrome", chromeApi);
+
+      await expect(deleteUrl(url)).rejects.toThrow(
+        "Chrome history API not available",
+      );
+      expect(deleteHistoryUrl).not.toHaveBeenCalled();
+    },
+  );
 });
