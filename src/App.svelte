@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onMount } from "svelte";
   import Heatmap from "./lib/components/heatmap/Heatmap.svelte";
   import HistoryList from "./lib/components/history-list/HistoryList.svelte";
   import { historyStore } from "./lib/stores/history.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
   import Header from "./lib/components/header/Header.svelte";
 
-  historyStore.fetch();
-  onDestroy(historyStore.cancelFetch);
+  onMount(historyStore.connect);
 </script>
 
 <div class={["wrapper", themeStore.colorScheme]}>
@@ -16,6 +15,12 @@
     <div class="error-banner" role="alert">
       <span>{historyStore.error}</span>
       <button disabled={historyStore.isLoading} onclick={() => historyStore.fetch()}>Retry</button>
+    </div>
+  {/if}
+  {#if historyStore.syncError}
+    <div class="loading-status" role="status">
+      <span>{historyStore.syncError}</span>
+      <button disabled={historyStore.isLoading} onclick={() => historyStore.fetch()}>Refresh history</button>
     </div>
   {/if}
   {#if historyStore.isLoading}
