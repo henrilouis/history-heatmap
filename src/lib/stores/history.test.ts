@@ -1,11 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getHistory, deleteUrl, type HistoryVisit } from "../utils/chrome-api";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getHistory, getHistoryForUrls, deleteUrl, type HistoryVisit } from "../utils/chrome-api";
 import { historyVisit } from "../utils/history-fixtures";
 let historyStore: typeof import("./history.svelte").historyStore;
 
 vi.mock("../utils/chrome-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("../utils/chrome-api")>(),
   getHistory: vi.fn(),
+  getHistoryForUrls: vi.fn(),
   deleteUrl: vi.fn(),
 }));
 
@@ -20,6 +21,7 @@ beforeEach(async () => {
   ({ historyStore } = await import("./history.svelte"));
   vi.mocked(getHistory).mockReset().mockResolvedValue(visits);
   vi.mocked(deleteUrl).mockReset().mockResolvedValue(undefined);
+  vi.mocked(getHistoryForUrls).mockReset().mockResolvedValue([]);
   await historyStore.fetch();
 });
 
@@ -54,6 +56,16 @@ describe("visit-level store actions", () => {
 
     expect(historyStore.raw).toEqual(visits);
     expect(historyStore.error).toBe("Deletion failed");
+  });
+
+  it("does not resurrect locally deleted visits from a pending fetch", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+    const fetching = historyStore.fetch();
+    await historyStore.removeUrl(url);
+    pending.resolve(visits);
+    await fetching;
+    expect(historyStore.raw).toEqual([other]);
   });
 
   it("exposes a failed visit load and recovers on retry", async () => {
@@ -125,5 +137,208 @@ describe("visit-level store actions", () => {
     pending.resolve([other]);
     await fetching;
     expect(historyStore.raw).toEqual(visits);
+  });
+});
+
+function historyEvent<T>() {
+  const listeners = new Set<(value: T) => void>();
+  return {
+    addListener: vi.fn((listener: (value: T) => void) => { listeners.add(listener); }),
+    removeListener: vi.fn((listener: (value: T) => void) => { listeners.delete(listener); }),
+    emit: (value: T) => { for (const listener of listeners) listener(value); },
+  };
+}
+
+describe("live history synchronization", () => {
+  let onVisited: ReturnType<typeof historyEvent<chrome.history.HistoryItem>>;
+  let onVisitRemoved: ReturnType<typeof historyEvent<chrome.history.RemovedResult>>;
+  let disconnect: () => void;
+  const item = { id: "repeated", url, title: "Updated title" };
+  const revisit = historyVisit("revisit", new Date(2026, 8, 13, 8), { url, title: item.title });
+
+  beforeEach(async () => {
+    onVisited = historyEvent();
+    onVisitRemoved = historyEvent();
+    vi.stubGlobal("chrome", { history: { onVisited, onVisitRemoved } });
+    disconnect = historyStore.connect();
+    await vi.waitFor(() => expect(historyStore.isLoading).toBe(false));
+    vi.mocked(getHistory).mockClear();
+  });
+
+  afterEach(() => disconnect());
+
+  it("removes all visits to externally deleted URLs immediately", () => {
+    onVisitRemoved.emit({ allHistory: false, urls: [url] });
+    expect(historyStore.raw).toEqual([other]);
+    expect(getHistory).not.toHaveBeenCalled();
+  });
+
+  it("suppresses deleted URLs in a pending snapshot while keeping other records", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+    const fetching = historyStore.fetch();
+    onVisitRemoved.emit({ allHistory: false, urls: [url] });
+    expect(historyStore.raw).toEqual([other]);
+    pending.resolve(visits);
+    await fetching;
+    expect(historyStore.raw).toEqual([other]);
+  });
+
+  it.each(["success", "failure"])("clears all history and ignores late snapshot %s", async (outcome) => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+    const fetching = historyStore.fetch();
+    const options = vi.mocked(getHistory).mock.lastCall![1]!;
+    historyStore.toggleMoment("2026-09-12");
+    onVisitRemoved.emit({ allHistory: true });
+    expect(historyStore.raw).toEqual([]);
+    expect(historyStore.selectedMoments).toEqual([]);
+    expect(options.signal?.aborted).toBe(true);
+    options.onProgress?.({ completed: 1, total: 2 });
+    if (outcome === "success") pending.resolve(visits);
+    else pending.reject(new Error("Late failure"));
+    await fetching;
+    expect(historyStore.raw).toEqual([]);
+    expect(historyStore.isLoading).toBe(false);
+    expect(historyStore.progress).toBeNull();
+    expect(historyStore.error).toBeNull();
+  });
+
+  it("reconciles only visited URLs, preserving earlier visits without duplicates", async () => {
+    const updated = [revisit, { ...newer, title: item.title }, { ...older, title: item.title }];
+    vi.mocked(getHistoryForUrls).mockResolvedValue(updated);
+    onVisited.emit(item);
+    await vi.waitFor(() => expect(historyStore.raw).toEqual([updated[0], updated[1], other, updated[2]]));
+    onVisited.emit(item);
+    await vi.waitFor(() => expect(getHistoryForUrls).toHaveBeenCalledTimes(2));
+    expect(historyStore.raw).toHaveLength(4);
+    expect(getHistoryForUrls).toHaveBeenCalledWith([item], expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(getHistory).not.toHaveBeenCalled();
+  });
+
+  it("queues and coalesces visit events received during the initial snapshot", async () => {
+    disconnect();
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+    vi.mocked(getHistoryForUrls).mockResolvedValue([revisit, newer, older]);
+    disconnect = historyStore.connect();
+    onVisited.emit({ ...item, title: "Earlier title" });
+    onVisited.emit(item);
+    expect(getHistoryForUrls).not.toHaveBeenCalled();
+    pending.resolve(visits);
+    await vi.waitFor(() => expect(historyStore.raw).toEqual([revisit, newer, other, older]));
+    expect(getHistoryForUrls).toHaveBeenCalledExactlyOnceWith([item], expect.any(Object));
+  });
+
+  it("ignores an incremental result superseded by another visit to the same URL", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    const latest = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise).mockReturnValueOnce(latest.promise);
+    onVisited.emit(item);
+    onVisited.emit(item);
+    onVisited.emit(item);
+    pending.resolve([revisit]);
+    await vi.waitFor(() => expect(getHistoryForUrls).toHaveBeenCalledTimes(2));
+    expect(historyStore.raw).toEqual(visits);
+    latest.resolve([revisit, newer, older]);
+    await vi.waitFor(() => expect(historyStore.raw).toEqual([revisit, newer, other, older]));
+  });
+
+  it("does not restore a removed URL from a pending incremental read or queued event", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise);
+    onVisited.emit(item);
+    onVisited.emit(item);
+    onVisitRemoved.emit({ allHistory: false, urls: [url] });
+    pending.resolve([revisit, newer, older]);
+    await Promise.resolve();
+    expect(historyStore.raw).toEqual([other]);
+    expect(getHistoryForUrls).toHaveBeenCalledTimes(1);
+  });
+
+  it("accepts a genuinely new visit after deletion without restoring the old visits", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise).mockResolvedValueOnce([revisit]);
+    onVisited.emit(item);
+    onVisitRemoved.emit({ allHistory: false, urls: [url] });
+    onVisited.emit(item);
+    pending.resolve([newer, older]);
+    await vi.waitFor(() => expect(historyStore.raw).toEqual([revisit, other]));
+  });
+
+  it("clears in-flight and queued incremental work and can reconcile visits afterward", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise).mockResolvedValueOnce([revisit]);
+    onVisited.emit(item);
+    const signal = vi.mocked(getHistoryForUrls).mock.lastCall![1]!.signal!;
+    onVisited.emit({ id: "other", url: other.url });
+    onVisitRemoved.emit({ allHistory: true, urls: [] });
+    expect(signal.aborted).toBe(true);
+    onVisited.emit(item);
+    await vi.waitFor(() => expect(historyStore.raw).toEqual([revisit]));
+    pending.resolve(visits);
+    await Promise.resolve();
+    expect(historyStore.raw).toEqual([revisit]);
+    expect(getHistoryForUrls).toHaveBeenCalledTimes(2);
+  });
+
+  it("supersedes incremental results when a fresh full load starts", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise);
+    onVisited.emit(item);
+    const signal = vi.mocked(getHistoryForUrls).mock.lastCall![1]!.signal!;
+    vi.mocked(getHistory).mockResolvedValueOnce([other]);
+    await historyStore.fetch();
+    expect(signal.aborted).toBe(true);
+    pending.resolve(visits);
+    await Promise.resolve();
+    expect(historyStore.raw).toEqual([other]);
+  });
+
+  it("surfaces incremental failures and lets Retry recover", async () => {
+    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(new Error("Visit service unavailable"));
+    onVisited.emit(item);
+    await vi.waitFor(() => expect(historyStore.error).toBe("Visit service unavailable"));
+    expect(historyStore.raw).toEqual(visits);
+    vi.mocked(getHistory).mockResolvedValueOnce([revisit, newer, other, older]);
+    await historyStore.fetch();
+    expect(historyStore.raw).toEqual([revisit, newer, other, older]);
+    expect(historyStore.error).toBeNull();
+  });
+
+  it("shares listeners and removes them only after the last consumer disconnects", () => {
+    const second = historyStore.connect();
+    expect(onVisited.addListener).toHaveBeenCalledTimes(1);
+    expect(onVisitRemoved.addListener).toHaveBeenCalledTimes(1);
+    expect(getHistory).not.toHaveBeenCalled();
+    second();
+    second();
+    expect(onVisited.removeListener).not.toHaveBeenCalled();
+    onVisitRemoved.emit({ allHistory: false, urls: [url] });
+    expect(historyStore.raw).toEqual([other]);
+    disconnect();
+    expect(onVisited.removeListener).toHaveBeenCalledExactlyOnceWith(onVisited.addListener.mock.calls[0][0]);
+    expect(onVisitRemoved.removeListener).toHaveBeenCalledExactlyOnceWith(onVisitRemoved.addListener.mock.calls[0][0]);
+    onVisitRemoved.emit({ allHistory: true });
+    onVisited.emit(item);
+    expect(historyStore.raw).toEqual([other]);
+    expect(getHistoryForUrls).not.toHaveBeenCalled();
+  });
+
+  it("aborts pending work on teardown and ignores late results", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise);
+    onVisited.emit(item);
+    const signal = vi.mocked(getHistoryForUrls).mock.lastCall![1]!.signal!;
+    disconnect();
+    expect(signal.aborted).toBe(true);
+    pending.resolve([revisit]);
+    await Promise.resolve();
+    expect(historyStore.raw).toEqual(visits);
+  });
+
+  it("ignores URL-less visit events", () => {
+    onVisited.emit({ id: "missing-url" });
+    expect(getHistoryForUrls).not.toHaveBeenCalled();
   });
 });

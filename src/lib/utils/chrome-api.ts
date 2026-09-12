@@ -53,10 +53,17 @@ function getVisits(url: string): Promise<chrome.history.VisitItem[]> {
 
 async function loadHistory(
   filter: string,
+  options: HistoryLoadOptions,
+): Promise<HistoryVisit[]> {
+  options.signal?.throwIfAborted();
+  const results = await searchHistory(filter);
+  return loadVisits(results, options);
+}
+
+async function loadVisits(
+  results: chrome.history.HistoryItem[],
   { signal, onProgress }: HistoryLoadOptions,
 ): Promise<HistoryVisit[]> {
-  signal?.throwIfAborted();
-  const results = await searchHistory(filter);
   signal?.throwIfAborted();
   // Only requestable URLs contribute to the worker count and progress total.
   const history = results.filter(
@@ -125,8 +132,22 @@ export function getHistory(
   filter: string = "",
   options: HistoryLoadOptions = {},
 ): Promise<HistoryVisit[]> {
-  const load = loadHistory(filter, options);
-  const { signal } = options;
+  return withCancellation(loadHistory(filter, options), options.signal);
+}
+
+// History events already supply URL metadata; reuse the bounded, retrying visit
+// loader without searching and expanding the entire browsing history again.
+export function getHistoryForUrls(
+  items: chrome.history.HistoryItem[],
+  options: HistoryLoadOptions = {},
+): Promise<HistoryVisit[]> {
+  return withCancellation(loadVisits(items, options), options.signal);
+}
+
+function withCancellation(
+  load: Promise<HistoryVisit[]>,
+  signal?: AbortSignal,
+): Promise<HistoryVisit[]> {
   if (!signal) return load;
 
   // Chrome cannot cancel an issued IPC call. Reject promptly on cancellation;

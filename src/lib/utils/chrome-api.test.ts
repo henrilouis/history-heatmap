@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   deleteUrl,
   getHistory,
+  getHistoryForUrls,
   groupHistoryByDay,
   groupHistoryByDayAndHour,
   fillEmptyDays,
@@ -369,6 +370,37 @@ describe("visit request scheduling", () => {
     await Promise.resolve();
     expect(getVisits).toHaveBeenCalledTimes(8);
     expect(progress.mock.calls).toEqual([[{ completed: 0, total: 20 }]]);
+  });
+});
+
+describe("getHistoryForUrls", () => {
+  it("expands event metadata into sorted visits without a history search", async () => {
+    const older = chromeVisit("older", new Date(2026, 8, 10));
+    const newer = chromeVisit("newer", new Date(2026, 8, 12));
+    getVisits.mockImplementation((_details, callback) => completeCallback(() => callback([older, newer])));
+    const item = { id: "url-id", url: "https://example.com/", title: "Updated title" };
+
+    await expect(getHistoryForUrls([item])).resolves.toEqual([newer, older].map((visit) => ({
+      visitId: visit.visitId, visitTime: visit.visitTime, url: item.url, title: item.title,
+    })));
+    expect(search).not.toHaveBeenCalled();
+    expect(getVisits).toHaveBeenCalledExactlyOnceWith({ url: item.url }, expect.any(Function));
+  });
+
+  it("bounds event-batch requests and stops queued requests after cancellation", async () => {
+    const pending: VisitsCallback[] = [];
+    getVisits.mockImplementation((_details, callback) => pending.push(callback));
+    const controller = new AbortController();
+    const result = getHistoryForUrls(Array.from({ length: 20 }, (_, i) => ({
+      id: String(i), url: `https://example.com/${i}`,
+    })), { signal: controller.signal });
+    expect(getVisits).toHaveBeenCalledTimes(8);
+    controller.abort();
+    await expect(result).rejects.toMatchObject({ name: "AbortError" });
+    for (const callback of pending) completeCallback(() => callback([]));
+    await Promise.resolve();
+    expect(getVisits).toHaveBeenCalledTimes(8);
+    expect(search).not.toHaveBeenCalled();
   });
 });
 
