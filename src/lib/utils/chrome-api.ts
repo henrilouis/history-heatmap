@@ -1,6 +1,14 @@
 import { eachLocalDate, getDateKey } from "./date";
 
-export async function getHistory(filter: string = "") {
+// HistoryItem.id identifies a URL; visitId identifies an individual visit.
+export type HistoryVisit = chrome.history.VisitItem & {
+  url: string;
+  title?: string;
+};
+
+const VISIT_REQUEST_CONCURRENCY = 8;
+
+function searchHistory(filter: string): Promise<chrome.history.HistoryItem[]> {
   return new Promise<chrome.history.HistoryItem[]>((resolve, reject) => {
     if (!chrome?.history) {
       reject(new Error("Chrome history API not available"));
@@ -19,36 +27,86 @@ export async function getHistory(filter: string = "") {
   });
 }
 
+function getVisits(url: string): Promise<chrome.history.VisitItem[]> {
+  return new Promise((resolve, reject) => {
+    chrome.history.getVisits({ url }, (results) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(
+          `Failed to retrieve history visits: ${chrome.runtime.lastError.message}`,
+        ));
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+export async function getHistory(filter: string = ""): Promise<HistoryVisit[]> {
+  const history = await searchHistory(filter);
+  const visits: HistoryVisit[] = [];
+  let nextIndex = 0;
+  let failed = false;
+
+  async function worker(): Promise<void> {
+    while (!failed && nextIndex < history.length) {
+      const item = history[nextIndex++];
+      // Chrome makes URL optional; without it we cannot request individual visits.
+      if (!item.url) continue;
+
+      try {
+        const urlVisits = await getVisits(item.url);
+        for (const visit of urlVisits) {
+          visits.push({ ...visit, url: item.url, title: item.title });
+        }
+      } catch (error) {
+        // Stop scheduling work and reject the load rather than show partial counts.
+        failed = true;
+        throw error;
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(VISIT_REQUEST_CONCURRENCY, history.length) },
+      () => worker(),
+    ),
+  );
+
+  // API response order and worker completion order do not define chronology.
+  return visits.sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
+}
+
 // Helper to get hour key
 function getHourKey(date: Date): string {
   return String(date.getHours()).padStart(2, "0");
 }
 
 export type HistoryByDay = {
-  [day: string]: chrome.history.HistoryItem[];
+  [day: string]: HistoryVisit[];
 };
 
 export type HistoryByDayAndHour = {
   [day: string]: {
-    [hour: string]: chrome.history.HistoryItem[];
+    [hour: string]: HistoryVisit[];
   };
 };
 
 // Pure grouping function - works on already-fetched data
 export function groupHistoryByDay(
-  history: chrome.history.HistoryItem[],
+  history: HistoryVisit[],
 ): HistoryByDay {
   const grouped: HistoryByDay = {};
 
   for (const item of history) {
-    if (!item.lastVisitTime) continue;
-    const dayKey = getDateKey(new Date(item.lastVisitTime));
+    if (item.visitTime === undefined) continue;
+    const dayKey = getDateKey(new Date(item.visitTime));
     (grouped[dayKey] ??= []).push(item);
   }
 
   // Sort items within each day (newest first)
   for (const items of Object.values(grouped)) {
-    items.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+    items.sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
   }
 
   return grouped;
@@ -56,13 +114,13 @@ export function groupHistoryByDay(
 
 // Pure grouping function - by day and hour
 export function groupHistoryByDayAndHour(
-  history: chrome.history.HistoryItem[],
+  history: HistoryVisit[],
 ): HistoryByDayAndHour {
   const grouped: HistoryByDayAndHour = {};
 
   for (const item of history) {
-    if (!item.lastVisitTime) continue;
-    const date = new Date(item.lastVisitTime);
+    if (item.visitTime === undefined) continue;
+    const date = new Date(item.visitTime);
     const dayKey = getDateKey(date);
     const hourKey = getHourKey(date);
 
@@ -73,7 +131,7 @@ export function groupHistoryByDayAndHour(
   // Sort items within each hour (newest first)
   for (const day of Object.values(grouped)) {
     for (const items of Object.values(day)) {
-      items.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+      items.sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
     }
   }
 
@@ -82,15 +140,15 @@ export function groupHistoryByDayAndHour(
 
 // Scan bounds without allocating a timestamp array or spreading it into a call.
 function getHistoryDateRange(
-  history: chrome.history.HistoryItem[],
+  history: HistoryVisit[],
 ): { startDate: Date; endDate: Date } | undefined {
   let earliest = Infinity;
   let latest = -Infinity;
 
-  for (const { lastVisitTime } of history) {
-    if (lastVisitTime === undefined) continue;
-    if (lastVisitTime < earliest) earliest = lastVisitTime;
-    if (lastVisitTime > latest) latest = lastVisitTime;
+  for (const { visitTime } of history) {
+    if (visitTime === undefined) continue;
+    if (visitTime < earliest) earliest = visitTime;
+    if (visitTime > latest) latest = visitTime;
   }
 
   if (earliest === Infinity) return;
@@ -106,7 +164,7 @@ function getHistoryDateRange(
 // Fill empty days in a date range
 export function fillEmptyDays(
   grouped: HistoryByDay,
-  allHistory: chrome.history.HistoryItem[],
+  allHistory: HistoryVisit[],
 ): HistoryByDay {
   const range = getHistoryDateRange(allHistory);
   if (!range) return grouped;
@@ -125,7 +183,7 @@ export function fillEmptyDays(
 // Fill empty hours (00-23) for each day
 export function fillEmptyHours(
   grouped: HistoryByDayAndHour,
-  allHistory: chrome.history.HistoryItem[],
+  allHistory: HistoryVisit[],
 ): HistoryByDayAndHour {
   const range = getHistoryDateRange(allHistory);
   if (!range) return grouped;

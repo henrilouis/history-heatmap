@@ -4,6 +4,16 @@ This is a chromium plugin that adds an interactive calendar heatmap to the brows
 
 Find the plugin [in the chrome web store](https://chromewebstore.google.com/detail/history-heatmap/laddklgjajohacmmgojapiealpgfbfod).
 
+## History data
+
+The heatmap counts individual visits at their recorded local date and hour.
+`chrome.history.search()` supplies URLs and their latest titles; the extension
+retrieves each URL's visit records with `chrome.history.getVisits()`, with at most
+eight requests in flight. Repeated visits remain visible in their original cells.
+If a visit request fails, the load shows an error and Retry rather than partial
+counts. The history list displays each visit separately; **Delete all visits**
+removes every visit to that URL, including visits on other days.
+
 ## Development
 
 Use Node.js 24 (also used in CI) and install dependencies with `npm ci`.
@@ -33,6 +43,10 @@ including sorting, missing timestamps, local-midnight boundaries, DST transition
 and input preservation. Regression tests also cover local date parsing, rendered
 calendar rows and headers, fallback selection labels, inclusive filtered date
 ranges, leap days, and range computation with 150,000 history records.
+Visit-level regressions cover repeated visits across days and hours, revisiting a
+URL, bounded request concurrency, out-of-order responses, and retrieval failures.
+List-rendering tests check individual timestamps, and store-action tests verify
+URL-wide deletion, failed-deletion preservation, and load retries.
 
 Grouping tests construct fixed local dates and require no timezone setup for a
 normal run. GitHub Actions runs `npm ci` and `npm test` on every pull request and

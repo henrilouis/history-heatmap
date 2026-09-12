@@ -4,11 +4,9 @@ import {
   fillEmptyHours,
   groupHistoryByDay,
   groupHistoryByDayAndHour,
+  type HistoryVisit,
 } from "./chrome-api";
-
-function historyItem(id: string, date: Date): chrome.history.HistoryItem {
-  return { id, lastVisitTime: date.getTime() };
-}
+import { historyVisit } from "./history-fixtures";
 
 // Keep expected keys independent of production hour formatting.
 const hourKeys =
@@ -19,32 +17,32 @@ describe.each([
   {
     name: "fillEmptyDays",
     fill: (
-      filtered: chrome.history.HistoryItem[],
-      all: chrome.history.HistoryItem[],
+      filtered: HistoryVisit[],
+      all: HistoryVisit[],
     ) => fillEmptyDays(groupHistoryByDay(filtered), all),
     emptyDay: [],
     mondayPadding: ["2026-09-07", "2026-09-08", "2026-09-09"],
-    populatedDay: (item: chrome.history.HistoryItem) => [item],
+    populatedDay: (item: HistoryVisit) => [item],
   },
   {
     name: "fillEmptyHours",
     fill: (
-      filtered: chrome.history.HistoryItem[],
-      all: chrome.history.HistoryItem[],
+      filtered: HistoryVisit[],
+      all: HistoryVisit[],
     ) => fillEmptyHours(groupHistoryByDayAndHour(filtered), all),
     emptyDay: emptyHours,
     mondayPadding: [],
-    populatedDay: (item: chrome.history.HistoryItem) => ({
+    populatedDay: (item: HistoryVisit) => ({
       ...emptyHours,
       "18": [item],
     }),
   },
 ])("$name", ({ fill, emptyDay, mondayPadding, populatedDay }) => {
   it("keeps both endpoints from unsorted history when filtering out the newest day", () => {
-    const oldest = historyItem("oldest", new Date(2026, 8, 10, 18));
-    const middle = historyItem("middle", new Date(2026, 8, 11, 12));
-    const newest = historyItem("newest", new Date(2026, 8, 12, 9));
-    const all = [newest, oldest, { id: "undated" }, middle];
+    const oldest = historyVisit("oldest", new Date(2026, 8, 10, 18));
+    const middle = historyVisit("middle", new Date(2026, 8, 11, 12));
+    const newest = historyVisit("newest", new Date(2026, 8, 12, 9));
+    const all = [newest, oldest, historyVisit("undated"), middle];
     const result = fill([oldest], all);
 
     expect(Object.keys(result).sort()).toEqual([
@@ -62,11 +60,11 @@ describe.each([
 
   it.each([
     { name: "empty history", all: [] },
-    { name: "missing timestamps", all: [{ id: "undated" }] },
+    { name: "missing timestamps", all: [historyVisit("undated")] },
   ])("preserves existing groups for $name", ({ all }) => {
     expect(fill([], all)).toEqual({});
 
-    const item = historyItem("existing", new Date(2026, 8, 10, 18));
+    const item = historyVisit("existing", new Date(2026, 8, 10, 18));
     const result = fill([item], all);
     expect(Object.keys(result)).toEqual(["2026-09-10"]);
     // Without date bounds, filling should not introduce any empty hours either.
@@ -76,7 +74,7 @@ describe.each([
   });
 
   it("fills a single calendar day", () => {
-    const all = [historyItem("only", new Date(2026, 8, 7, 18))];
+    const all = [historyVisit("only", new Date(2026, 8, 7, 18))];
 
     expect(fill([], all)).toEqual({ "2026-09-07": emptyDay });
   });
@@ -126,7 +124,7 @@ describe.each([
       ],
     },
   ])("includes every calendar date across the $name", ({ start, end, keys }) => {
-    const result = fill([], [historyItem("end", end), historyItem("start", start)]);
+    const result = fill([], [historyVisit("end", end), historyVisit("start", start)]);
 
     expect(Object.keys(result).sort()).toEqual(keys);
     for (const key of keys) expect(result[key]).toEqual(emptyDay);
@@ -135,13 +133,13 @@ describe.each([
   it("computes bounds for 150,000 records without exceeding the argument limit", () => {
     // Many records, but a short date range: exercise the argument-limit regression
     // without generating an unnecessarily large calendar or relying on timing.
-    const timestamp = new Date(2026, 8, 8, 12).getTime();
-    const all: chrome.history.HistoryItem[] = Array.from(
+    const date = new Date(2026, 8, 8, 12);
+    const all = Array.from(
       { length: 150_000 },
-      (_, i) => ({ id: String(i), lastVisitTime: timestamp }),
+      (_, i) => historyVisit(String(i), date),
     );
-    all[50_000] = historyItem("oldest", new Date(2026, 8, 7, 18));
-    all[100_000] = historyItem("newest", new Date(2026, 8, 9, 9));
+    all[50_000] = historyVisit("oldest", new Date(2026, 8, 7, 18));
+    all[100_000] = historyVisit("newest", new Date(2026, 8, 9, 9));
 
     expect(fill([], all)).toEqual({
       "2026-09-07": emptyDay,

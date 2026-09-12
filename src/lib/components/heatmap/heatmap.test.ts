@@ -2,6 +2,7 @@ import { render } from "svelte/server";
 import { describe, expect, it } from "vitest";
 import Days from "./Days.svelte";
 import Hours from "./Hours.svelte";
+import { historyVisit } from "../../utils/history-fixtures";
 
 const selection = { selectedMoments: [], onToggleMoment: () => {} };
 
@@ -15,7 +16,7 @@ function headerTexts(html: string): string[] {
 describe("calendar date rendering", () => {
   it("places a Saturday date key in the Saturday row", () => {
     const { body } = render(Days, {
-      props: { ...selection, data: { "2026-09-12": [{ id: "visit" }] } },
+      props: { ...selection, data: { "2026-09-12": [historyVisit("visit")] } },
     });
     const rowsWithVisit = [...body.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/g)]
       .map(([, row]) => row)
@@ -30,7 +31,7 @@ describe("calendar date rendering", () => {
 
   it("labels a Monday on the first of the month with its local month", () => {
     const { body } = render(Days, {
-      props: { ...selection, data: { "2027-03-01": [{ id: "visit" }] } },
+      props: { ...selection, data: { "2027-03-01": [historyVisit("visit")] } },
     });
     const month = new Date(2027, 2, 1).toLocaleString("default", { month: "short" });
 
@@ -39,7 +40,7 @@ describe("calendar date rendering", () => {
 
   it("uses the local day number and month in hour-view headers", () => {
     const { body } = render(Hours, {
-      props: { ...selection, data: { "2027-03-01": { "09": [{ id: "visit" }] } } },
+      props: { ...selection, data: { "2027-03-01": { "09": [historyVisit("visit")] } } },
     });
     const month = new Date(2027, 2, 1).toLocaleDateString(undefined, { month: "short" });
 

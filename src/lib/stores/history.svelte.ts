@@ -7,13 +7,14 @@ import {
   deleteUrl,
   type HistoryByDay,
   type HistoryByDayAndHour,
+  type HistoryVisit,
 } from "../utils/chrome-api";
 
 // ============================================
 // Core State
 // ============================================
 
-let rawHistory = $state<chrome.history.HistoryItem[]>([]);
+let rawHistory = $state<HistoryVisit[]>([]);
 let searchQuery = $state("");
 let selectedMoments = $state<string[]>([]);
 let isLoading = $state(false);
@@ -91,7 +92,7 @@ function clearSelection(): void {
 }
 
 // Helper to get history items for a selected moment (works for both day and hour keys)
-function getItemsForMoment(key: string): chrome.history.HistoryItem[] {
+function getItemsForMoment(key: string): HistoryVisit[] {
   // Hour key format: "2024-01-15T14"
   // Day key format: "2024-01-15"
   if (key.includes("T")) {
