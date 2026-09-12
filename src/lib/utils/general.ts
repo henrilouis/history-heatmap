@@ -1,3 +1,5 @@
+import { parseDateKey } from "./date";
+
 export type CalendarMode = "days" | "hours";
 
 export const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
@@ -28,7 +30,7 @@ export function formatMomentKey(key: string, timestamp?: number): string {
   // Fallback to parsing the key
   if (key.includes("T")) {
     const [dateKey, hour] = key.split("T");
-    return `${formatDate(new Date(dateKey))} at ${hour}:00`;
+    return `${formatDate(parseDateKey(dateKey))} at ${hour}:00`;
   }
-  return formatDate(new Date(key));
+  return formatDate(parseDateKey(key));
 }
