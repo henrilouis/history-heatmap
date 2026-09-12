@@ -52,6 +52,7 @@
       <button
         class="quiet"
         title="Delete every visit to this URL, including visits on other days"
+        aria-label={`Delete all visits to ${item.url}, including visits on other days`}
         onclick={() => deleteHistoryUrl(item.url)}>Delete all visits</button
       >
     </li>

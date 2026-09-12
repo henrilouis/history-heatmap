@@ -10,8 +10,10 @@ The heatmap counts individual visits at their recorded local date and hour.
 `chrome.history.search()` supplies URLs and their latest titles; the extension
 retrieves each URL's visit records with `chrome.history.getVisits()`, with at most
 eight requests in flight. Repeated visits remain visible in their original cells.
-If a visit request fails, the load shows an error and Retry rather than partial
-counts. The history list displays each visit separately; **Delete all visits**
+Loading shows URL progress and can be cancelled. A failed visit request is retried
+once for that URL; if it still fails, the load shows an error and Retry rather than
+partial counts. Starting a new load cancels the previous one, and stale results
+cannot replace the newer load. The history list displays each visit separately; **Delete all visits**
 removes every visit to that URL, including visits on other days.
 
 ## Development
@@ -47,6 +49,8 @@ Visit-level regressions cover repeated visits across days and hours, revisiting 
 URL, bounded request concurrency, out-of-order responses, and retrieval failures.
 List-rendering tests check individual timestamps, and store-action tests verify
 URL-wide deletion, failed-deletion preservation, and load retries.
+Tests also cover progress, cancellation, stale fetches, compact visit records,
+and case-insensitive matching of all visits sharing URL metadata.
 
 Grouping tests construct fixed local dates and require no timezone setup for a
 normal run. GitHub Actions runs `npm ci` and `npm test` on every pull request and
@@ -64,6 +68,17 @@ TZ=America/Los_Angeles npm test
 ```
 
 Run static checks with `npm run check` and build the extension with `npm run build`.
+
+### Large-history benchmark
+
+Run `npm run benchmark:history` to measure real Chrome history API calls against
+a disposable synthetic profile with 100,000 URLs and 500,000 visits. It defaults
+to Google Chrome on macOS; set `CHROME_PATH` to use another Chrome executable.
+The script creates its own profile and extension in a temporary directory and
+prints that location along with timings and retained JavaScript heap usage.
+
+See [the benchmark methodology and results](docs/history-performance.md) for
+measurements, configuration options, and the scope of the benchmark.
 
 `npm run check` enables JavaScript/TypeScript and Svelte diagnostics, but disables
 the embedded CSS language-service diagnostics because that validator does not yet

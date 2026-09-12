@@ -6,7 +6,7 @@ import {
   groupHistoryByDayAndHour,
   fillEmptyDays,
 } from "./chrome-api";
-import { historyVisit } from "./history-fixtures";
+import { chromeVisit } from "./history-fixtures";
 
 // Chrome can omit results when a callback reports runtime.lastError.
 type SearchCallback = (results?: chrome.history.HistoryItem[]) => void;
@@ -68,13 +68,14 @@ describe("getHistory", () => {
     },
   ];
 
-  const older = historyVisit("older", new Date(2026, 8, 10, 18), { id: "1" });
-  const early = historyVisit("early", new Date(2026, 8, 12, 9, 5), { id: "1" });
-  const late = historyVisit("late", new Date(2026, 8, 12, 9, 45), { id: "1" });
-  const nextHour = historyVisit("next-hour", new Date(2026, 8, 12, 14), { id: "1" });
+  const older = chromeVisit("older", new Date(2026, 8, 10, 18), { id: "1" });
+  const early = chromeVisit("early", new Date(2026, 8, 12, 9, 5), { id: "1" });
+  const late = chromeVisit("late", new Date(2026, 8, 12, 9, 45), { id: "1" });
+  const nextHour = chromeVisit("next-hour", new Date(2026, 8, 12, 14), { id: "1" });
   const visits = [early, older, nextHour, late];
   const expected = [nextHour, late, early, older].map((visit) => ({
-    ...visit,
+    visitId: visit.visitId,
+    visitTime: visit.visitTime,
     url: "https://example.com/",
     title: "Example",
   }));
@@ -126,7 +127,7 @@ describe("getHistory", () => {
     const initial = getHistory();
     completeSearch(records);
     const before = groupHistoryByDayAndHour(await initial);
-    const revisit = historyVisit("revisit", new Date(2026, 8, 13, 8), { id: "1" });
+    const revisit = chromeVisit("revisit", new Date(2026, 8, 13, 8), { id: "1" });
     getVisits.mockImplementation((_details, callback) => {
       completeCallback(() => callback([...visits, revisit]));
     });
@@ -138,7 +139,7 @@ describe("getHistory", () => {
     expect(after["2026-09-10"]).toEqual(before["2026-09-10"]);
     expect(after["2026-09-12"]).toEqual(before["2026-09-12"]);
     expect(after["2026-09-13"]?.["08"]).toEqual([
-      { ...revisit, url: "https://example.com/", title: "Example" },
+      { visitId: "revisit", visitTime: revisit.visitTime, url: "https://example.com/", title: "Example" },
     ]);
   });
 
@@ -192,18 +193,44 @@ describe("getHistory", () => {
     await expect(retried).resolves.toEqual(expected);
   });
 
-  it("rejects visit API failures with a useful error and allows a successful retry", async () => {
+  it("retries a transient visit API failure once without repeating the search", async () => {
     getVisits.mockImplementationOnce((_details, callback) => {
+      completeCallback(() => callback(undefined), { message: "Visit service unavailable" });
+    });
+    const result = getHistory();
+    completeSearch(records);
+
+    await expect(result).resolves.toEqual(expected);
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(getVisits).toHaveBeenCalledTimes(2);
+    expect(getVisits.mock.calls.map(([details]) => details.url)).toEqual([
+      "https://example.com/", "https://example.com/",
+    ]);
+  });
+
+  it("rejects persistent visit API failures and allows a later load to succeed", async () => {
+    getVisits.mockImplementation((_details, callback) => {
       completeCallback(() => callback(undefined), { message: "Visit service unavailable" });
     });
     const failed = getHistory();
     completeSearch(records);
 
     await expect(failed).rejects.toThrow("Failed to retrieve history visits: Visit service unavailable");
+    expect(getVisits).toHaveBeenCalledTimes(2);
 
+    getVisits.mockImplementation((_details, callback) => completeCallback(() => callback(visits)));
     const retried = getHistory();
     completeSearch(records);
     await expect(retried).resolves.toEqual(expected);
+  });
+
+  it("checks API availability again when retrieving visits", async () => {
+    const result = getHistory();
+    completeSearch(records);
+    vi.stubGlobal("chrome", undefined);
+
+    await expect(result).rejects.toThrow("Chrome history API not available");
+    expect(getVisits).not.toHaveBeenCalled();
   });
 
   it.each([undefined, {}])(
@@ -245,7 +272,7 @@ describe("visit request scheduling", () => {
       const callback = pending.get(url)!;
       pending.delete(url);
       const index = records.findIndex((record) => record.url === url);
-      const visit = historyVisit(`visit-${index}`, new Date(2026, 8, 12, index), {
+      const visit = chromeVisit(`visit-${index}`, new Date(2026, 8, 12, index), {
         id: records[index].id,
       });
       completeCallback(() => callback([visit]));
@@ -274,18 +301,74 @@ describe("visit request scheduling", () => {
     expect(getVisits).toHaveBeenCalledTimes(8);
 
     const successful = pending.shift()!;
-    completeCallback(() => successful([historyVisit("loaded", new Date(2026, 8, 12))]));
+    completeCallback(() => successful([chromeVisit("loaded", new Date(2026, 8, 12))]));
     await Promise.resolve();
     expect(getVisits).toHaveBeenCalledTimes(9);
 
     const failed = pending.shift()!;
     completeCallback(() => failed(undefined), { message: "Visit request failed" });
+    await Promise.resolve();
+    const retry = pending.pop()!;
+    completeCallback(() => retry(undefined), { message: "Visit request failed" });
     await rejected;
 
     // Requests already in flight may finish, but cannot start more queued work.
     for (const callback of pending) completeCallback(() => callback([]));
     await Promise.resolve();
-    expect(getVisits).toHaveBeenCalledTimes(9);
+    expect(getVisits).toHaveBeenCalledTimes(10);
+  });
+
+  it("reports progress over requestable URLs and completes at the exact total", async () => {
+    getVisits.mockImplementation((_details, callback) => completeCallback(() => callback([])));
+    const progress = vi.fn();
+    const result = getHistory("", { onProgress: progress });
+    completeSearch([{ id: "url-less" }, ...records]);
+    await result;
+
+    expect(progress.mock.calls[0]).toEqual([{ completed: 0, total: 20 }]);
+    expect(progress.mock.lastCall).toEqual([{ completed: 20, total: 20 }]);
+    expect(getVisits).toHaveBeenCalledTimes(20);
+  });
+
+  it("does not start a search when already cancelled", async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(getHistory("", { signal: controller.signal })).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it("cancels promptly while search is pending and never schedules visits", async () => {
+    const controller = new AbortController();
+    const result = getHistory("", { signal: controller.signal });
+    controller.abort();
+    await expect(result).rejects.toMatchObject({ name: "AbortError" });
+
+    completeSearch(records);
+    await Promise.resolve();
+    expect(getVisits).not.toHaveBeenCalled();
+  });
+
+  it("cancels in-flight loading without scheduling new URLs or retries", async () => {
+    const pending: VisitsCallback[] = [];
+    getVisits.mockImplementation((_details, callback) => pending.push(callback));
+    const controller = new AbortController();
+    const progress = vi.fn();
+    const result = getHistory("", { signal: controller.signal, onProgress: progress });
+    completeSearch(records);
+    await Promise.resolve();
+    expect(getVisits).toHaveBeenCalledTimes(8);
+
+    controller.abort();
+    await expect(result).rejects.toMatchObject({ name: "AbortError" });
+    for (const callback of pending) {
+      completeCallback(() => callback(undefined), { message: "Late API failure" });
+    }
+    await Promise.resolve();
+    expect(getVisits).toHaveBeenCalledTimes(8);
+    expect(progress.mock.calls).toEqual([[{ completed: 0, total: 20 }]]);
   });
 });
 

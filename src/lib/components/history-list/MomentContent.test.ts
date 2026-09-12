@@ -13,7 +13,7 @@ describe("individual visit rendering", () => {
   it("shows each visit to the same URL with its own timestamp", () => {
     const earlyTime = new Date(2026, 8, 12, 9, 5);
     const lateTime = new Date(2026, 8, 12, 9, 45);
-    const metadata = { id: "same-url", url: "https://example.com/", title: "Example" };
+    const metadata = { url: "https://example.com/", title: "Example" };
     const { body } = render(MomentContent, {
       props: {
         date: "2026-09-12T09",
@@ -32,6 +32,7 @@ describe("individual visit rendering", () => {
     ));
     expect(body).toContain("Delete all visits");
     expect(body).toContain("including visits on other days");
+    expect(body).toContain('aria-label="Delete all visits to https://example.com/, including visits on other days"');
   });
 
   it("renders an epoch timestamp and falls back to the URL when a title is missing", () => {

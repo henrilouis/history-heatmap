@@ -1,16 +1,22 @@
 import { eachLocalDate, getDateKey } from "./date";
 
-// HistoryItem.id identifies a URL; visitId identifies an individual visit.
-export type HistoryVisit = chrome.history.VisitItem & {
+// Keep only fields consumed by the UI; URL/title strings are shared per URL.
+export type HistoryVisit = Pick<chrome.history.VisitItem, "visitId" | "visitTime"> & {
   url: string;
   title?: string;
 };
 
 const VISIT_REQUEST_CONCURRENCY = 8;
 
+export type HistoryLoadProgress = { completed: number; total: number };
+export type HistoryLoadOptions = {
+  signal?: AbortSignal;
+  onProgress?: (progress: HistoryLoadProgress) => void;
+};
+
 function searchHistory(filter: string): Promise<chrome.history.HistoryItem[]> {
   return new Promise<chrome.history.HistoryItem[]>((resolve, reject) => {
-    if (!chrome?.history) {
+    if (!globalThis.chrome?.history) {
       reject(new Error("Chrome history API not available"));
       return;
     }
@@ -29,6 +35,10 @@ function searchHistory(filter: string): Promise<chrome.history.HistoryItem[]> {
 
 function getVisits(url: string): Promise<chrome.history.VisitItem[]> {
   return new Promise((resolve, reject) => {
+    if (!globalThis.chrome?.history) {
+      reject(new Error("Chrome history API not available"));
+      return;
+    }
     chrome.history.getVisits({ url }, (results) => {
       if (chrome.runtime.lastError) {
         reject(new Error(
@@ -41,25 +51,59 @@ function getVisits(url: string): Promise<chrome.history.VisitItem[]> {
   });
 }
 
-export async function getHistory(filter: string = ""): Promise<HistoryVisit[]> {
-  const history = await searchHistory(filter);
+async function loadHistory(
+  filter: string,
+  { signal, onProgress }: HistoryLoadOptions,
+): Promise<HistoryVisit[]> {
+  signal?.throwIfAborted();
+  const results = await searchHistory(filter);
+  signal?.throwIfAborted();
+  // Only requestable URLs contribute to the worker count and progress total.
+  const history = results.filter(
+    (item): item is chrome.history.HistoryItem & { url: string } => !!item.url,
+  );
   const visits: HistoryVisit[] = [];
   let nextIndex = 0;
   let failed = false;
+  let completed = 0;
+  let lastProgress = performance.now();
+  onProgress?.({ completed, total: history.length });
 
   async function worker(): Promise<void> {
     while (!failed && nextIndex < history.length) {
+      signal?.throwIfAborted();
       const item = history[nextIndex++];
-      // Chrome makes URL optional; without it we cannot request individual visits.
-      if (!item.url) continue;
 
       try {
-        const urlVisits = await getVisits(item.url);
+        let urlVisits: chrome.history.VisitItem[];
+        try {
+          urlVisits = await getVisits(item.url);
+        } catch (error) {
+          signal?.throwIfAborted();
+          if (failed) throw error;
+          // At high URL counts, retry one transient failure locally instead of
+          // forcing the user to repeat an otherwise successful full-history load.
+          urlVisits = await getVisits(item.url);
+        }
+        signal?.throwIfAborted();
+        if (failed) return;
         for (const visit of urlVisits) {
-          visits.push({ ...visit, url: item.url, title: item.title });
+          visits.push({
+            visitId: visit.visitId,
+            visitTime: visit.visitTime,
+            url: item.url,
+            title: item.title,
+          });
+        }
+        completed++;
+        const now = performance.now();
+        if (completed === history.length || now - lastProgress >= 100) {
+          onProgress?.({ completed, total: history.length });
+          lastProgress = now;
         }
       } catch (error) {
-        // Stop scheduling work and reject the load rather than show partial counts.
+        // A persistent failure still rejects the load: incomplete counts would
+        // misrepresent browsing activity. Already-issued Chrome calls may finish.
         failed = true;
         throw error;
       }
@@ -75,6 +119,43 @@ export async function getHistory(filter: string = ""): Promise<HistoryVisit[]> {
 
   // API response order and worker completion order do not define chronology.
   return visits.sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
+}
+
+export function getHistory(
+  filter: string = "",
+  options: HistoryLoadOptions = {},
+): Promise<HistoryVisit[]> {
+  const load = loadHistory(filter, options);
+  const { signal } = options;
+  if (!signal) return load;
+
+  // Chrome cannot cancel an issued IPC call. Reject promptly on cancellation;
+  // the workers check the signal before queuing any further work or retrying.
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason);
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) abort();
+    load.then(
+      (visits) => { signal.removeEventListener("abort", abort); resolve(visits); },
+      (error) => { signal.removeEventListener("abort", abort); reject(error); },
+    );
+  });
+}
+
+export function filterHistory(history: HistoryVisit[], query: string): HistoryVisit[] {
+  if (!query) return history;
+  const normalized = query.toLowerCase();
+  const matchesByUrl = new Map<string, boolean>();
+  return history.filter((visit) => {
+    let matches = matchesByUrl.get(visit.url);
+    if (matches === undefined) {
+      // Every visit to a URL shares its latest title and URL metadata.
+      matches = !!visit.title?.toLowerCase().includes(normalized) ||
+        visit.url.toLowerCase().includes(normalized);
+      matchesByUrl.set(visit.url, matches);
+    }
+    return matches;
+  });
 }
 
 // Helper to get hour key
@@ -206,7 +287,7 @@ export function fillEmptyHours(
 
 export async function deleteUrl(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (!chrome?.history) {
+    if (!globalThis.chrome?.history) {
       reject(new Error("Chrome history API not available"));
       return;
     }

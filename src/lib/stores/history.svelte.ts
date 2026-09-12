@@ -1,5 +1,6 @@
 import {
   getHistory,
+  filterHistory,
   groupHistoryByDay,
   groupHistoryByDayAndHour,
   fillEmptyDays,
@@ -8,31 +9,28 @@ import {
   type HistoryByDay,
   type HistoryByDayAndHour,
   type HistoryVisit,
+  type HistoryLoadProgress,
 } from "../utils/chrome-api";
 
 // ============================================
 // Core State
 // ============================================
 
-let rawHistory = $state<HistoryVisit[]>([]);
+// Visits are immutable; avoid creating a reactive proxy for every visit object.
+let rawHistory = $state.raw<HistoryVisit[]>([]);
 let searchQuery = $state("");
 let selectedMoments = $state<string[]>([]);
 let isLoading = $state(false);
 let error = $state<string | null>(null);
+let progress = $state<HistoryLoadProgress | null>(null);
+let requestId = 0;
+let currentLoad: AbortController | undefined;
 
 // ============================================
 // Derived State
 // ============================================
 
-const filtered = $derived.by(() => {
-  if (!searchQuery) return rawHistory;
-  const query = searchQuery.toLowerCase();
-  return rawHistory.filter(
-    (item) =>
-      item.title?.toLowerCase().includes(query) ||
-      item.url?.toLowerCase().includes(query)
-  );
-});
+const filtered = $derived(filterHistory(rawHistory, searchQuery));
 
 const byDay = $derived<HistoryByDay>(groupHistoryByDay(filtered));
 
@@ -53,16 +51,41 @@ const byDayAndHourWithEmpty = $derived<HistoryByDayAndHour>(
 // ============================================
 
 async function fetch(): Promise<void> {
+  const id = ++requestId;
+  currentLoad?.abort();
+  const controller = new AbortController();
+  currentLoad = controller;
   isLoading = true;
   error = null;
+  progress = null;
   try {
-    rawHistory = await getHistory();
+    const visits = await getHistory("", {
+      signal: controller.signal,
+      onProgress: (value) => { if (id === requestId) progress = value; },
+    });
+    if (id === requestId) rawHistory = visits;
   } catch (e) {
-    error = e instanceof Error ? e.message : "Failed to fetch history";
-    rawHistory = [];
+    if (id === requestId) {
+      error = e instanceof Error ? e.message : "Failed to fetch history";
+      rawHistory = [];
+    }
   } finally {
-    isLoading = false;
+    if (id === requestId) {
+      isLoading = false;
+      progress = null;
+      currentLoad = undefined;
+    }
   }
+}
+
+function cancelFetch(): void {
+  if (!currentLoad) return;
+  requestId++;
+  currentLoad.abort();
+  currentLoad = undefined;
+  isLoading = false;
+  progress = null;
+  error = "History loading cancelled. Retry to load your visits.";
 }
 
 async function removeUrl(url: string): Promise<void> {
@@ -123,6 +146,9 @@ export const historyStore = {
   get error() {
     return error;
   },
+  get progress() {
+    return progress;
+  },
 
   // Derived state (computed)
   get filtered() {
@@ -143,6 +169,7 @@ export const historyStore = {
 
   // Actions
   fetch,
+  cancelFetch,
   removeUrl,
   setSearch,
   toggleMoment,
