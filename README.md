@@ -23,6 +23,10 @@ restore deleted records. Newly visited URLs are refreshed in bounded batches usi
 `getVisits()`, preserving earlier visits without reloading the entire history.
 Events arriving during the initial load are reconciled afterward. Listeners are
 shared while the page is mounted and removed on teardown.
+Background refresh failures show a separate, non-blocking notice while preserving
+loaded history. The notice clears when affected URLs recover or are removed, or
+when a full refresh starts. After a full load fails or is cancelled, incremental
+updates wait for a successful Retry so they cannot create a partial heatmap.
 
 ## Development
 
@@ -45,7 +49,9 @@ Run tests in watch mode while developing:
 npm run test:watch
 ```
 
-Tests live alongside source files as `*.test.ts` and run in Node. Chrome APIs
+Tests live alongside source files as `*.test.ts`. The default Vitest project runs
+in Node; `*-client.test.ts` files run in a jsdom project with browser resolution.
+Chrome APIs
 are mocked, so tests do not require an extension installation or access real
 browsing history. The suite covers history search and deletion callbacks, API
 failures and retries, unavailable Chrome history APIs, and day/hour grouping,
@@ -60,9 +66,9 @@ URL-wide deletion, failed-deletion preservation, and load retries.
 Tests also cover progress, cancellation, stale fetches, compact visit records,
 and case-insensitive matching of all visits sharing URL metadata.
 Live-history tests cover external removals, clear-all, new visits, event/load races,
-and listener cleanup. A client-compiled store test runs Svelte's reactive runtime
-in memory to verify that previously evaluated search and calendar views update;
-it uses mocked Chrome APIs and does not simulate DOM rendering.
+and listener cleanup. Client tests import the store normally and exercise Svelte's
+reactive runtime to verify that previously evaluated search and calendar views
+update. Run those tests alone with `npm test -- --project client`.
 
 Grouping tests construct fixed local dates and require no timezone setup for a
 normal run. GitHub Actions runs `npm ci` and `npm test` on every pull request and

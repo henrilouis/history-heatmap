@@ -1,14 +1,8 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { runInNewContext } from "node:vm";
-import { resolve } from "node:path";
-import { build } from "vite";
-import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chromeVisit } from "../utils/history-fixtures";
 
-// The usual Node/SSR compilation evaluates derived state only once. Build the
-// actual client store/runtime in memory so these regressions exercise reactive
-// search, calendar bounds, and selected-day/hour data after Chrome events.
-let clientCode: string;
+// The client Vitest project uses jsdom and browser resolution so these imports
+// exercise Svelte reactivity rather than the one-time SSR derived expressions.
 let store: typeof import("./history.svelte").historyStore;
 let disconnect: () => void;
 let removed: (event: chrome.history.RemovedResult) => void;
@@ -16,29 +10,6 @@ let visited: (item: chrome.history.HistoryItem) => void;
 let visitsByUrl: Map<string, chrome.history.VisitItem[]>;
 const sensitiveUrl = "https://example.com/sensitive";
 const publicUrl = "https://example.com/public";
-
-beforeAll(async () => {
-  const bundle = await build({
-    configFile: false,
-    publicDir: false,
-    logLevel: "silent",
-    plugins: [svelte()],
-    build: {
-      write: false,
-      minify: false,
-      lib: {
-        entry: resolve("src/lib/stores/history.svelte.ts"),
-        formats: ["iife"],
-        name: "HistoryClient",
-      },
-    },
-  });
-  const result = Array.isArray(bundle) ? bundle[0] : bundle;
-  if (!("output" in result)) throw new Error("Expected a client bundle");
-  const chunk = result.output.find((output) => output.type === "chunk");
-  if (!chunk) throw new Error("Client store bundle is missing");
-  clientCode = chunk.code;
-});
 
 beforeEach(async () => {
   visitsByUrl = new Map([
@@ -70,9 +41,9 @@ beforeEach(async () => {
       },
     },
   };
-  store = runInNewContext(`${clientCode}\nHistoryClient.historyStore`, {
-    chrome: chromeApi, AbortController, performance, queueMicrotask, setTimeout,
-  });
+  vi.stubGlobal("chrome", chromeApi);
+  vi.resetModules();
+  ({ historyStore: store } = await import("./history.svelte"));
   disconnect = store.connect();
   await vi.waitFor(() => expect(store.raw).toHaveLength(3));
 });

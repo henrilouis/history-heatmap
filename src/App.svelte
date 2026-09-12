@@ -17,6 +17,12 @@
       <button disabled={historyStore.isLoading} onclick={() => historyStore.fetch()}>Retry</button>
     </div>
   {/if}
+  {#if historyStore.syncError}
+    <div class="loading-status" role="status">
+      <span>{historyStore.syncError}</span>
+      <button disabled={historyStore.isLoading} onclick={() => historyStore.fetch()}>Refresh history</button>
+    </div>
+  {/if}
   {#if historyStore.isLoading}
     <div class="loading-status" role="status">
       <span>

@@ -12,6 +12,7 @@ import {
   type HistoryVisit,
   type HistoryLoadProgress,
 } from "../utils/chrome-api";
+import { mergeHistoryVisits } from "../utils/history-merge";
 
 // ============================================
 // Core State
@@ -23,6 +24,9 @@ let searchQuery = $state("");
 let selectedMoments = $state<string[]>([]);
 let isLoading = $state(false);
 let error = $state<string | null>(null);
+let syncError = $state<string | null>(null);
+const failedSyncUrls = new Set<string>();
+let hasSnapshot = false;
 let progress = $state<HistoryLoadProgress | null>(null);
 let requestId = 0;
 let currentLoad: AbortController | undefined;
@@ -65,6 +69,9 @@ async function fetch(): Promise<void> {
   // The new snapshot supersedes earlier incremental reads. Events received
   // after it starts are queued and reconciled once the snapshot settles.
   stopSync();
+  hasSnapshot = false;
+  failedSyncUrls.clear();
+  syncError = null;
   removedDuringLoad = new Set();
   const controller = new AbortController();
   currentLoad = controller;
@@ -80,11 +87,13 @@ async function fetch(): Promise<void> {
       rawHistory = removedDuringLoad.size
         ? visits.filter((visit) => !removedDuringLoad.has(visit.url))
         : visits;
+      hasSnapshot = true;
     }
   } catch (e) {
     if (id === requestId) {
       error = e instanceof Error ? e.message : "Failed to fetch history";
       rawHistory = [];
+      pendingVisits.clear();
     }
   } finally {
     if (id === requestId) {
@@ -100,13 +109,16 @@ async function fetch(): Promise<void> {
 function cancelFetch(): void {
   if (!currentLoad) return;
   stopFetch();
+  pendingVisits.clear();
   error = "History loading cancelled. Retry to load your visits.";
   void reconcileVisits();
 }
 
 function stopFetch(): void {
-  requestId++;
-  currentLoad?.abort();
+  if (currentLoad) {
+    requestId++;
+    currentLoad.abort();
+  }
   currentLoad = undefined;
   removedDuringLoad.clear();
   isLoading = false;
@@ -121,6 +133,9 @@ function stopSync(): void {
 
 function onVisited(item: chrome.history.HistoryItem): void {
   if (!item.url) return;
+  // Without a complete baseline, a single URL would produce partial counts.
+  // A later full Retry will pick up events ignored after failure/cancellation.
+  if (!currentLoad && !hasSnapshot) return;
   currentSync?.invalidated.add(item.url);
   pendingVisits.set(item.url, item);
   void reconcileVisits();
@@ -129,7 +144,7 @@ function onVisited(item: chrome.history.HistoryItem): void {
 async function reconcileVisits(): Promise<void> {
   // Serialize batches with the full load to keep the same bounded worker pool.
   // Repeated events for a URL coalesce while another batch/load is in flight.
-  if (!subscribers || currentLoad || currentSync || !pendingVisits.size) return;
+  if (!subscribers || !hasSnapshot || currentLoad || currentSync || !pendingVisits.size) return;
   const items = [...pendingVisits.values()];
   pendingVisits.clear();
   const sync = { controller: new AbortController(), invalidated: new Set<string>() };
@@ -139,13 +154,15 @@ async function reconcileVisits(): Promise<void> {
     if (currentSync !== sync) return;
     const urls = new Set(items.map((item) => item.url!).filter((url) => !sync.invalidated.has(url)));
     if (!urls.size) return;
-    rawHistory = [
-      ...rawHistory.filter((visit) => !urls.has(visit.url)),
-      ...visits.filter((visit) => urls.has(visit.url)),
-    ].sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
-  } catch (e) {
+    rawHistory = mergeHistoryVisits(rawHistory, visits, urls);
+    for (const url of urls) failedSyncUrls.delete(url);
+    updateSyncError();
+  } catch {
     if (currentSync === sync) {
-      error = e instanceof Error ? e.message : "Failed to synchronize history";
+      for (const item of items) {
+        if (!sync.invalidated.has(item.url!)) failedSyncUrls.add(item.url!);
+      }
+      updateSyncError();
     }
   } finally {
     if (currentSync === sync) {
@@ -155,23 +172,37 @@ async function reconcileVisits(): Promise<void> {
   }
 }
 
+function updateSyncError(): void {
+  syncError = failedSyncUrls.size
+    ? "Some recent visits could not be refreshed. Showing previously loaded history."
+    : null;
+}
+
 function onVisitRemoved(removed: chrome.history.RemovedResult): void {
   if (removed.allHistory) {
     stopFetch();
     stopSync();
     rawHistory = [];
     selectedMoments = [];
+    // Chrome has supplied an authoritative empty snapshot. Earlier load/sync
+    // failures no longer apply, and future visits can be reconciled from empty.
+    hasSnapshot = true;
     error = null;
+    failedSyncUrls.clear();
+    updateSyncError();
     return;
   }
-  const urls = new Set(removed.urls);
+  const urls = new Set(removed.urls ?? []);
+  if (!urls.size) return;
   for (const url of urls) {
     // A full snapshot or incremental request may already contain this URL.
     // Suppress its old results even if Chrome delivers them after this event.
     if (currentLoad) removedDuringLoad.add(url);
     currentSync?.invalidated.add(url);
     pendingVisits.delete(url);
+    failedSyncUrls.delete(url);
   }
+  updateSyncError();
   rawHistory = rawHistory.filter((visit) => !urls.has(visit.url));
 }
 
@@ -187,6 +218,7 @@ function connect(): () => void {
       };
     }
     // Register listeners before searching, so initial-load mutations are seen.
+    // Without the API, fetch surfaces the existing unavailable-API error.
     void fetch();
   }
   let disconnected = false;
@@ -194,10 +226,13 @@ function connect(): () => void {
     if (disconnected) return;
     disconnected = true;
     if (--subscribers === 0) {
+      // No live consumer remains. A later first subscriber starts a fresh load;
+      // disconnecting one of several consumers must not interrupt their load.
       removeListeners?.();
       removeListeners = undefined;
       stopFetch();
       stopSync();
+      hasSnapshot = false;
     }
   };
 }
@@ -205,6 +240,7 @@ function connect(): () => void {
 async function removeUrl(url: string): Promise<void> {
   try {
     await deleteUrl(url);
+    // Chrome also emits onVisitRemoved; applying the same removal is idempotent.
     onVisitRemoved({ allHistory: false, urls: [url] });
   } catch (e) {
     error = e instanceof Error ? e.message : "Failed to delete URL";
@@ -259,6 +295,9 @@ export const historyStore = {
   },
   get error() {
     return error;
+  },
+  get syncError() {
+    return syncError;
   },
   get progress() {
     return progress;

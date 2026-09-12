@@ -6,9 +6,27 @@ import { Features } from "lightningcss";
 export default defineConfig({
   plugins: [svelte()],
   test: {
-    environment: "node",
     clearMocks: true,
     unstubGlobals: true,
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          environment: "node",
+          exclude: ["**/node_modules/**", "**/*-client.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        resolve: { conditions: ["browser"] },
+        test: {
+          name: "client",
+          environment: "jsdom",
+          include: ["src/**/*-client.test.ts"],
+        },
+      },
+    ],
   },
   css: {
     lightningcss: {
