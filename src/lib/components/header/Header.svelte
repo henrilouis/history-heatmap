@@ -4,7 +4,7 @@
   import { historyStore } from "../../stores/history.svelte";
 </script>
 
-<header>
+<header class="history-header">
   <h1>History heatmap</h1>
   <Search setSearch={historyStore.setSearch} />
   <div class="header-end">
@@ -24,9 +24,6 @@
     padding: 1rem;
     grid-template-columns: 1fr auto;
     transition: box-shadow 0.3s;
-    @container scroll-container scroll-state(scrollable: top) {
-      box-shadow: var(--shadow-1);
-    }
   }
   h1 {
     margin: 0;

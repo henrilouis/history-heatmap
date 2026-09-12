@@ -232,6 +232,19 @@ button {
   }
 }
 
+/* These Chrome features are not yet understood by svelte-check's embedded CSS
+   validator. Keep them here, with component-specific selectors; Vite processes
+   this stylesheet with Lightning CSS during the production build. */
+input.history-search {
+  corner-shape: var(--el-corner-shape);
+}
+
+@container scroll-container scroll-state(scrollable: top) {
+  header.history-header {
+    box-shadow: var(--shadow-1);
+  }
+}
+
 input[type="checkbox"] {
   width: 1rem;
   height: 1rem;

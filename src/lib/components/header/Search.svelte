@@ -9,14 +9,19 @@
   };
 </script>
 
-<input type="search" placeholder="Search..." {oninput} name="Search history" />
+<input
+  class="history-search"
+  type="search"
+  placeholder="Search..."
+  {oninput}
+  name="Search history"
+/>
 
 <style>
   input[type="search"] {
     background-color: var(--field-bg-default);
     border: var(--el-border-width) solid var(--el-border-color-default);
     border-radius: var(--el-border-radius);
-    corner-shape: var(--el-corner-shape);
     padding: var(--el-padding);
     padding-inline-end: 0;
     max-width: 32rem;
