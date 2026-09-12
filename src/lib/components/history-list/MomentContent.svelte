@@ -5,14 +5,14 @@
     deleteHistoryUrl,
   }: {
     date: string;
-    items: chrome.history.HistoryItem[];
+    items: HistoryVisit[];
     deleteHistoryUrl: (url: string) => void;
   } = $props();
 
   import { formatMomentKey } from "../../utils/general";
   import { blur } from "svelte/transition";
 
-  import { getFaviconURL } from "../../utils/chrome-api";
+  import { getFaviconURL, type HistoryVisit } from "../../utils/chrome-api";
 
   function getHostname(url: string | undefined): string {
     if (!url) return "";
@@ -25,15 +25,15 @@
 </script>
 
 <header>
-  <h3>{formatMomentKey(date, items[0]?.lastVisitTime)}</h3>
+  <h3>{formatMomentKey(date, items[0]?.visitTime)}</h3>
 </header>
 <ol>
-  {#each items as item, index (item.id)}
+  {#each items as item (item.visitId)}
     {@const hostname = getHostname(item.url)}
     <li out:blur={{ duration: 150 }}>
       <time
-        >{item.lastVisitTime
-          ? new Date(item.lastVisitTime).toLocaleTimeString([], {
+        >{item.visitTime !== undefined
+          ? new Date(item.visitTime).toLocaleTimeString([], {
               hour: "numeric",
               minute: "numeric",
               hour12: false,
@@ -46,14 +46,14 @@
         style="width: 16px"
       />
       <div>
-        <a href={item.url}>{item.title}</a>
+        <a href={item.url}>{item.title || item.url}</a>
         <span class="text-secondary">{hostname}</span>
       </div>
       <button
         class="quiet"
-        onclick={() => {
-          item.url ? deleteHistoryUrl(item.url) : null;
-        }}>Delete</button
+        title="Delete every visit to this URL, including visits on other days"
+        aria-label={`Delete all visits to ${item.url}, including visits on other days`}
+        onclick={() => deleteHistoryUrl(item.url)}>Delete all visits</button
       >
     </li>
   {/each}

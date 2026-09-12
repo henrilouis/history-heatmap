@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "benchmark:history": "node scripts/benchmark-history.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.app.json --diagnostic-sources js,svelte && tsc -p tsconfig.node.json"
   },
   "devDependencies": {
