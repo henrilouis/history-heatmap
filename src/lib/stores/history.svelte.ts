@@ -147,22 +147,23 @@ async function reconcileVisits(): Promise<void> {
   if (!subscribers || !hasSnapshot || currentLoad || currentSync || !pendingVisits.size) return;
   const items = [...pendingVisits.values()];
   pendingVisits.clear();
+  await refreshVisits(items);
+}
+
+async function refreshVisits(items: chrome.history.HistoryItem[]): Promise<void> {
   const sync = { controller: new AbortController(), invalidated: new Set<string>() };
+  const validUrls = () => items.map((item) => item.url!).filter((url) => !sync.invalidated.has(url));
   currentSync = sync;
   try {
     const visits = await getHistoryForUrls(items, { signal: sync.controller.signal });
     if (currentSync !== sync) return;
-    const urls = new Set(items.map((item) => item.url!).filter((url) => !sync.invalidated.has(url)));
+    const urls = new Set(validUrls());
     if (!urls.size) return;
     rawHistory = mergeHistoryVisits(rawHistory, visits, urls);
-    for (const url of urls) failedSyncUrls.delete(url);
-    updateSyncError();
+    updateFailedSyncUrls(urls, false);
   } catch {
     if (currentSync === sync) {
-      for (const item of items) {
-        if (!sync.invalidated.has(item.url!)) failedSyncUrls.add(item.url!);
-      }
-      updateSyncError();
+      updateFailedSyncUrls(validUrls(), true);
     }
   } finally {
     if (currentSync === sync) {
@@ -170,6 +171,14 @@ async function reconcileVisits(): Promise<void> {
       void reconcileVisits();
     }
   }
+}
+
+function updateFailedSyncUrls(urls: Iterable<string>, failed: boolean): void {
+  for (const url of urls) {
+    if (failed) failedSyncUrls.add(url);
+    else failedSyncUrls.delete(url);
+  }
+  updateSyncError();
 }
 
 function updateSyncError(): void {

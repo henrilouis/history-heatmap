@@ -108,18 +108,22 @@ function launch() {
         });
         await send("Runtime.enable", {}, sessionId);
         await send("Runtime.runIfWaitingForDebugger", {}, sessionId);
-        for (let ready = 0; ready < 100; ready++) {
-          if (await evaluate(sessionId,
-            'typeof chrome !== "undefined" && !!chrome.history && !!globalThis.api')) {
-            return sessionId;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-        throw new Error("Benchmark extension APIs did not initialize");
+        await waitForExtensionApis(sessionId);
+        return sessionId;
       }
       await new Promise((resolve) => setTimeout(resolve, 50));
     }
     throw new Error("Benchmark extension did not start");
+  }
+  async function waitForExtensionApis(sessionId) {
+    for (let ready = 0; ready < 100; ready++) {
+      if (await evaluate(sessionId,
+        'typeof chrome !== "undefined" && !!chrome.history && !!globalThis.api')) {
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error("Benchmark extension APIs did not initialize");
   }
   async function evaluate(session, expression) {
     const result = await send("Runtime.evaluate", {
