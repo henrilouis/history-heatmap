@@ -76,6 +76,15 @@ async function loadVisits(
   let lastProgress = performance.now();
   onProgress?.({ completed, total: history.length });
 
+  function reportCompletedUrl(): void {
+    completed++;
+    const now = performance.now();
+    if (completed === history.length || now - lastProgress >= 100) {
+      onProgress?.({ completed, total: history.length });
+      lastProgress = now;
+    }
+  }
+
   async function worker(): Promise<void> {
     while (!failed && nextIndex < history.length) {
       signal?.throwIfAborted();
@@ -102,12 +111,7 @@ async function loadVisits(
             title: item.title,
           });
         }
-        completed++;
-        const now = performance.now();
-        if (completed === history.length || now - lastProgress >= 100) {
-          onProgress?.({ completed, total: history.length });
-          lastProgress = now;
-        }
+        reportCompletedUrl();
       } catch (error) {
         // A persistent failure still rejects the load: incomplete counts would
         // misrepresent browsing activity. Already-issued Chrome calls may finish.

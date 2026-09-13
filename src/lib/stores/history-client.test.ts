@@ -50,6 +50,19 @@ beforeEach(async () => {
 
 afterEach(() => disconnect?.());
 
+function expectSearchViews({ visitIds, olderDayCount, newerHourCount }: {
+  visitIds: string[];
+  olderDayCount: number;
+  newerHourCount: number;
+}): void {
+  expect(store.filtered.map((visit) => visit.visitId)).toEqual(visitIds);
+  expect(store.byDay["2026-09-10"]?.length ?? 0).toBe(olderDayCount);
+  expect(store.byDay["2026-09-12"]?.length ?? 0).toBe(newerHourCount);
+  expect(store.byDayAndHour["2026-09-12"]?.["09"]?.length ?? 0).toBe(newerHourCount);
+  expect(store.byDayWithEmpty["2026-09-10"]).toHaveLength(olderDayCount);
+  expect(store.byDayAndHourWithEmpty["2026-09-12"]?.["09"]).toHaveLength(newerHourCount);
+}
+
 describe("reactive views after search changes", () => {
   it.each([
     { name: "matching only the middle day", query: "public", total: 1, sensitiveCount: 0, publicCount: 1 },
@@ -95,11 +108,7 @@ describe("reactive views after history events", () => {
     },
   ])("re-evaluates every visit's title match for an active '$query' search", async ({ query, initial, updated }) => {
     store.setSearch(query);
-    expect(store.filtered.map((visit) => visit.visitId)).toEqual(initial.visitIds);
-    expect(store.byDay["2026-09-10"]?.length ?? 0).toBe(initial.olderDayCount);
-    expect(store.byDayAndHour["2026-09-12"]?.["09"]?.length ?? 0).toBe(initial.newerHourCount);
-    expect(store.byDayWithEmpty["2026-09-10"]).toHaveLength(initial.olderDayCount);
-    expect(store.byDayAndHourWithEmpty["2026-09-12"]?.["09"]).toHaveLength(initial.newerHourCount);
+    expectSearchViews(initial);
     const dayKeys = Object.keys(store.byDayWithEmpty).sort();
     const hourDayKeys = Object.keys(store.byDayAndHourWithEmpty).sort();
     visitsByUrl.set(sensitiveUrl, [
@@ -110,12 +119,7 @@ describe("reactive views after history events", () => {
     visited({ id: "sensitive", url: sensitiveUrl, title: "Renamed page" });
 
     await vi.waitFor(() => expect(store.raw).toHaveLength(4));
-    expect(store.filtered.map((visit) => visit.visitId)).toEqual(updated.visitIds);
-    expect(store.byDay["2026-09-10"]?.length ?? 0).toBe(updated.olderDayCount);
-    expect(store.byDay["2026-09-12"]?.length ?? 0).toBe(updated.newerHourCount);
-    expect(store.byDayAndHour["2026-09-12"]?.["09"]?.length ?? 0).toBe(updated.newerHourCount);
-    expect(store.byDayWithEmpty["2026-09-10"]).toHaveLength(updated.olderDayCount);
-    expect(store.byDayAndHourWithEmpty["2026-09-12"]?.["09"]).toHaveLength(updated.newerHourCount);
+    expectSearchViews(updated);
     expect(Object.keys(store.byDayWithEmpty).sort()).toEqual(dayKeys);
     expect(Object.keys(store.byDayAndHourWithEmpty).sort()).toEqual(hourDayKeys);
   });
