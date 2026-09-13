@@ -41,14 +41,42 @@ by `svelte-check`'s peer dependency range.
 `simple-git-hooks`. The hook runs the project-local [Fallow](https://fallow.tools/)
 to check for dead code, complexity, duplication, and styling issues using
 `.fallowrc.json`. Newly introduced findings compared with `HEAD` block the commit;
-inherited findings do not. Fallow analyzes the working tree, including unstaged
-changes, so stage or set aside related edits before committing.
+inherited findings do not.
 
-Run the same audit manually:
+The local hook deliberately analyzes the working tree rather than taking a
+snapshot of the Git index or stashing edits. With partial staging or
+`git commit <path>`, unrelated unstaged code can block the commit, and unstaged
+fixes can hide issues still present in the staged version. Set aside unrelated
+edits before committing when you need the audit to match the commit. CI runs
+the full-project check on the checked-out commit independently of the local hook.
+
+Run the incremental audit manually (`fallow audit --base HEAD`, including
+unstaged changes):
 
 ```sh
 npm run fallow
 ```
+
+Run a full-project scan, including inherited findings:
+
+```sh
+npm run fallow:all
+```
+
+This runs `fallow --fail-on-issues`, making the full scan a blocking check in the
+CI static-check job on every pull request and push to `main`.
+
+The configuration lists `svelte.config.js` as an entry point because the Svelte
+Vite plugin and `svelte-check` load it implicitly. Svelte stays in
+`devDependencies`: the extension ships Vite's compiled/bundled output and never
+resolves packages from `node_modules` at runtime. The `svelte` dependency exception
+in Fallow reflects that packaging model. Duplication checks require three
+occurrences to focus on repeated copy-paste; lower `duplicates.minOccurrences`
+to 2 to include duplicate pairs.
+
+Fallow is exact-pinned for reproducible local and CI checks. Dependabot checks
+weekly for Fallow updates and opens PRs to update the pin and lockfile; review
+new findings before merging those upgrades.
 
 Run `npm run prepare` to reinstall the hook after changing its configuration.
 
@@ -99,7 +127,7 @@ push to `main`, using UTC, America/Los_Angeles, Asia/Tokyo, and America/Sao_Paul
 catch differences between local-time and UTC grouping, date labels, and calendar
 rendering. Sao Paulo also exercises historical midnight DST transitions in date
 ranges. The UTC job also runs `npm run build`. A separate CI job runs
-`npm run check` in parallel with the timezone matrix.
+`npm run check` and `npm run fallow:all` in parallel with the timezone matrix.
 
 The Los Angeles job additionally checks spring-forward normalization and both
 occurrences of the repeated fall-back hour. These two tests are skipped in other
