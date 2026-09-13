@@ -66,16 +66,22 @@ URL-wide deletion, failed-deletion preservation, and load retries.
 Tests also cover progress, cancellation, stale fetches, compact visit records,
 and case-insensitive matching of all visits sharing URL metadata.
 Live-history tests cover external removals, clear-all, new visits, event/load races,
-and listener cleanup. Client tests import the store normally and exercise Svelte's
+mixed-URL batches where one URL is deleted or revisited, and listener cleanup.
+Client tests import the store normally and exercise Svelte's
 reactive runtime to verify that previously evaluated search and calendar views
-update. Run those tests alone with `npm test -- --project client`.
+update, including all earlier visits when a URL's title changes and stable calendar
+bounds as the search changes. Mounted App tests click the real deletion, Cancel,
+Retry, Refresh history, selection, and day/hour mode controls and assert the
+resulting list, calendar, progress, and error states. They mock Chrome APIs and
+browser-only boundaries; a small Web Animations stub completes jsdom transitions
+without wall-clock delays. Run client tests alone with `npm test -- --project client`.
 
 Grouping tests construct fixed local dates and require no timezone setup for a
 normal run. GitHub Actions runs `npm ci` and `npm test` on every pull request and
 push to `main`, using UTC, America/Los_Angeles, Asia/Tokyo, and America/Sao_Paulo to
 catch differences between local-time and UTC grouping, date labels, and calendar
 rendering. Sao Paulo also exercises historical midnight DST transitions in date
-ranges. The UTC job also runs `npm run build`.
+ranges. The UTC job also runs `npm run check` and `npm run build`.
 
 The Los Angeles job additionally checks spring-forward normalization and both
 occurrences of the repeated fall-back hour. These two tests are skipped in other
