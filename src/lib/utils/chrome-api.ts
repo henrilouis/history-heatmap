@@ -1,7 +1,10 @@
 import { eachLocalDate, getDateKey } from "./date";
 
 // Keep only fields consumed by the UI; URL/title strings are shared per URL.
-export type HistoryVisit = Pick<chrome.history.VisitItem, "visitId" | "visitTime"> & {
+export type HistoryVisit = Pick<
+  chrome.history.VisitItem,
+  "visitId" | "visitTime"
+> & {
   url: string;
   title?: string;
 };
@@ -41,9 +44,11 @@ function getVisits(url: string): Promise<chrome.history.VisitItem[]> {
     }
     chrome.history.getVisits({ url }, (results) => {
       if (chrome.runtime.lastError) {
-        reject(new Error(
-          `Failed to retrieve history visits: ${chrome.runtime.lastError.message}`,
-        ));
+        reject(
+          new Error(
+            `Failed to retrieve history visits: ${chrome.runtime.lastError.message}`,
+          ),
+        );
       } else {
         resolve(results);
       }
@@ -161,13 +166,22 @@ function withCancellation(
     signal.addEventListener("abort", abort, { once: true });
     if (signal.aborted) abort();
     load.then(
-      (visits) => { signal.removeEventListener("abort", abort); resolve(visits); },
-      (error) => { signal.removeEventListener("abort", abort); reject(error); },
+      (visits) => {
+        signal.removeEventListener("abort", abort);
+        resolve(visits);
+      },
+      (error) => {
+        signal.removeEventListener("abort", abort);
+        reject(error);
+      },
     );
   });
 }
 
-export function filterHistory(history: HistoryVisit[], query: string): HistoryVisit[] {
+export function filterHistory(
+  history: HistoryVisit[],
+  query: string,
+): HistoryVisit[] {
   if (!query) return history;
   const normalized = query.toLowerCase();
   const matchesByUrl = new Map<string, boolean>();
@@ -175,7 +189,8 @@ export function filterHistory(history: HistoryVisit[], query: string): HistoryVi
     let matches = matchesByUrl.get(visit.url);
     if (matches === undefined) {
       // Every visit to a URL shares its latest title and URL metadata.
-      matches = !!visit.title?.toLowerCase().includes(normalized) ||
+      matches =
+        !!visit.title?.toLowerCase().includes(normalized) ||
         visit.url.toLowerCase().includes(normalized);
       matchesByUrl.set(visit.url, matches);
     }
@@ -199,9 +214,7 @@ export type HistoryByDayAndHour = {
 };
 
 // Pure grouping function - works on already-fetched data
-export function groupHistoryByDay(
-  history: HistoryVisit[],
-): HistoryByDay {
+export function groupHistoryByDay(history: HistoryVisit[]): HistoryByDay {
   const grouped: HistoryByDay = {};
 
   for (const item of history) {

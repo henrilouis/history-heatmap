@@ -9,10 +9,13 @@ describe("visit filtering with shared URL metadata", () => {
   const untitled = historyVisit("untitled", new Date(2026, 8, 11));
   const visits = [late, untitled, early];
 
-  it.each(["CAT PICTURES", "cats"])("retains every matching visit for %s in input order", (query) => {
-    expect(filterHistory(visits, query)).toEqual([late, early]);
-    expect(visits).toEqual([late, untitled, early]);
-  });
+  it.each(["CAT PICTURES", "cats"])(
+    "retains every matching visit for %s in input order",
+    (query) => {
+      expect(filterHistory(visits, query)).toEqual([late, early]);
+      expect(visits).toEqual([late, untitled, early]);
+    },
+  );
 
   it("matches URLs when titles are missing and resets correctly as the query changes", () => {
     expect(filterHistory(visits, "untitled")).toEqual([untitled]);

@@ -13,7 +13,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "benchmark:history": "node scripts/benchmark-history.mjs",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json --diagnostic-sources js,svelte && tsc -p tsconfig.node.json"
+    "check": "npm run check:types && npm run check:svelte",
+    "check:types": "tsgo -p tsconfig.app.json && tsgo -p tsconfig.node.json",
+    "check:svelte": "svelte-check --tsconfig ./tsconfig.app.json --diagnostic-sources js,svelte",
+    "lint": "oxlint --max-warnings 0 .",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check ."
   },
   "simple-git-hooks": {
     "pre-commit": "npm run fallow -- --quiet --gate-marker pre-commit"
@@ -23,9 +29,12 @@
     "@tsconfig/svelte": "^5.0.8",
     "@types/chrome": "^0.2.9",
     "@types/node": "^24.13.4",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "fallow": "3.25.0",
     "jsdom": "^30.0.1",
     "lightningcss": "^1.33.0",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
     "simple-git-hooks": "^2.14.0",
     "svelte": "^5.57.0",
     "svelte-check": "^4.7.6",

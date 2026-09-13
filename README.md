@@ -32,8 +32,33 @@ updates wait for a successful Retry so they cannot create a partial heatmap.
 
 Use Node.js 24 (also used in CI) and install dependencies with `npm ci`.
 `@types/node` intentionally follows major 24 to match that runtime. The toolchain
-uses Vitest 5 and TypeScript 6; TypeScript 6 is the newest major currently supported
-by `svelte-check`'s peer dependency range.
+uses Vitest 5, Oxlint, Oxfmt, and the TypeScript 7 native preview (`tsgo`). The
+native preview is exact-pinned so installs use the same compiler version.
+TypeScript 6 is also installed for `svelte-check`, whose peer dependency range
+currently supports TypeScript 5 and 6 and whose Svelte diagnostics require the
+JavaScript compiler API.
+
+### Linting, formatting, and type checking
+
+```sh
+npm run lint          # Oxlint correctness rules; warnings fail the check
+npm run lint:fix      # Apply automatic lint fixes
+npm run format        # Format the project with Oxfmt
+npm run format:check  # Check formatting without writing files
+npm run check         # Run tsgo and Svelte diagnostics
+```
+
+Oxlint is configured in `.oxlintrc.json` and checks JavaScript, TypeScript, and
+Svelte script blocks. Oxfmt is configured in `.oxfmtrc.json`, including Svelte
+formatting, with two-space indentation, double quotes, semicolons, and an
+80-column print width. Generated output, Fallow's cache, and the npm lockfile
+are excluded from formatting. Install the recommended Oxc VS Code extension
+for editor integration.
+
+`npm run check:types` runs `tsgo` against both the app and Vite configuration.
+`npm run check:svelte` runs `svelte-check` for component-aware diagnostics;
+`tsgo` does not replace Svelte template checking. CI runs type checks, lint,
+format verification, and the full Fallow audit in its static-check job.
 
 ### Pre-commit checks
 
@@ -127,7 +152,8 @@ push to `main`, using UTC, America/Los_Angeles, Asia/Tokyo, and America/Sao_Paul
 catch differences between local-time and UTC grouping, date labels, and calendar
 rendering. Sao Paulo also exercises historical midnight DST transitions in date
 ranges. The UTC job also runs `npm run build`. A separate CI job runs
-`npm run check` and `npm run fallow:all` in parallel with the timezone matrix.
+`npm run check`, `npm run lint`, `npm run format:check`, and `npm run fallow:all`
+in parallel with the timezone matrix.
 
 The Los Angeles job additionally checks spring-forward normalization and both
 occurrences of the repeated fall-back hour. These two tests are skipped in other

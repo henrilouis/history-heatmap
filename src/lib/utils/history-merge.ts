@@ -19,9 +19,12 @@ export function mergeHistoryVisits(
       newIndex++;
       continue;
     }
-    if (newIndex === updates.length ||
+    if (
+      newIndex === updates.length ||
       (oldIndex < history.length &&
-        (history[oldIndex].visitTime ?? 0) >= (updates[newIndex].visitTime ?? 0))) {
+        (history[oldIndex].visitTime ?? 0) >=
+          (updates[newIndex].visitTime ?? 0))
+    ) {
       merged.push(history[oldIndex++]);
     } else {
       merged.push(updates[newIndex++]);

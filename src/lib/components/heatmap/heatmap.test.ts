@@ -25,7 +25,10 @@ describe("calendar date rendering", () => {
       weekday: "short",
     });
 
-    expect(rowsWithVisit, "the visit should appear in exactly one calendar row").toHaveLength(1);
+    expect(
+      rowsWithVisit,
+      "the visit should appear in exactly one calendar row",
+    ).toHaveLength(1);
     expect(headerTexts(rowsWithVisit[0])).toContain(saturday);
   });
 
@@ -33,16 +36,23 @@ describe("calendar date rendering", () => {
     const { body } = render(Days, {
       props: { ...selection, data: { "2027-03-01": [historyVisit("visit")] } },
     });
-    const month = new Date(2027, 2, 1).toLocaleString("default", { month: "short" });
+    const month = new Date(2027, 2, 1).toLocaleString("default", {
+      month: "short",
+    });
 
     expect(headerTexts(body)).toContain(month);
   });
 
   it("uses the local day number and month in hour-view headers", () => {
     const { body } = render(Hours, {
-      props: { ...selection, data: { "2027-03-01": { "09": [historyVisit("visit")] } } },
+      props: {
+        ...selection,
+        data: { "2027-03-01": { "09": [historyVisit("visit")] } },
+      },
     });
-    const month = new Date(2027, 2, 1).toLocaleDateString(undefined, { month: "short" });
+    const month = new Date(2027, 2, 1).toLocaleDateString(undefined, {
+      month: "short",
+    });
 
     expect(headerTexts(body)).toContain("1");
     expect(headerTexts(body)).toContain(month);

@@ -34,10 +34,12 @@ let removedDuringLoad = new Set<string>();
 let subscribers = 0;
 let removeListeners: (() => void) | undefined;
 const pendingVisits = new Map<string, chrome.history.HistoryItem>();
-let currentSync: {
-  controller: AbortController;
-  invalidated: Set<string>;
-} | undefined;
+let currentSync:
+  | {
+      controller: AbortController;
+      invalidated: Set<string>;
+    }
+  | undefined;
 
 // ============================================
 // Derived State
@@ -48,15 +50,15 @@ const filtered = $derived(filterHistory(rawHistory, searchQuery));
 const byDay = $derived<HistoryByDay>(groupHistoryByDay(filtered));
 
 const byDayWithEmpty = $derived<HistoryByDay>(
-  fillEmptyDays({ ...byDay }, rawHistory)
+  fillEmptyDays({ ...byDay }, rawHistory),
 );
 
 const byDayAndHour = $derived<HistoryByDayAndHour>(
-  groupHistoryByDayAndHour(filtered)
+  groupHistoryByDayAndHour(filtered),
 );
 
 const byDayAndHourWithEmpty = $derived<HistoryByDayAndHour>(
-  fillEmptyHours({ ...byDayAndHour }, rawHistory)
+  fillEmptyHours({ ...byDayAndHour }, rawHistory),
 );
 
 // ============================================
@@ -81,7 +83,9 @@ async function fetch(): Promise<void> {
   try {
     const visits = await getHistory("", {
       signal: controller.signal,
-      onProgress: (value) => { if (id === requestId) progress = value; },
+      onProgress: (value) => {
+        if (id === requestId) progress = value;
+      },
     });
     if (id === requestId) {
       rawHistory = removedDuringLoad.size
@@ -144,18 +148,33 @@ function onVisited(item: chrome.history.HistoryItem): void {
 async function reconcileVisits(): Promise<void> {
   // Serialize batches with the full load to keep the same bounded worker pool.
   // Repeated events for a URL coalesce while another batch/load is in flight.
-  if (!subscribers || !hasSnapshot || currentLoad || currentSync || !pendingVisits.size) return;
+  if (
+    !subscribers ||
+    !hasSnapshot ||
+    currentLoad ||
+    currentSync ||
+    !pendingVisits.size
+  )
+    return;
   const items = [...pendingVisits.values()];
   pendingVisits.clear();
   await refreshVisits(items);
 }
 
-async function refreshVisits(items: chrome.history.HistoryItem[]): Promise<void> {
-  const sync = { controller: new AbortController(), invalidated: new Set<string>() };
-  const validUrls = () => items.map((item) => item.url!).filter((url) => !sync.invalidated.has(url));
+async function refreshVisits(
+  items: chrome.history.HistoryItem[],
+): Promise<void> {
+  const sync = {
+    controller: new AbortController(),
+    invalidated: new Set<string>(),
+  };
+  const validUrls = () =>
+    items.map((item) => item.url!).filter((url) => !sync.invalidated.has(url));
   currentSync = sync;
   try {
-    const visits = await getHistoryForUrls(items, { signal: sync.controller.signal });
+    const visits = await getHistoryForUrls(items, {
+      signal: sync.controller.signal,
+    });
     if (currentSync !== sync) return;
     const urls = new Set(validUrls());
     if (!urls.size) return;

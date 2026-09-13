@@ -24,15 +24,24 @@ describe("individual visit rendering", () => {
         deleteHistoryUrl: () => {},
       },
     });
-    const times = [...body.matchAll(/<time\b[^>]*>([\s\S]*?)<\/time>/g)]
-      .map(([, time]) => time.replace(/<!--[\s\S]*?-->/g, "").trim());
+    const times = [...body.matchAll(/<time\b[^>]*>([\s\S]*?)<\/time>/g)].map(
+      ([, time]) => time.replace(/<!--[\s\S]*?-->/g, "").trim(),
+    );
 
-    expect(times).toEqual([lateTime, earlyTime].map((date) =>
-      date.toLocaleTimeString([], { hour: "numeric", minute: "numeric", hour12: false }),
-    ));
+    expect(times).toEqual(
+      [lateTime, earlyTime].map((date) =>
+        date.toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "numeric",
+          hour12: false,
+        }),
+      ),
+    );
     expect(body).toContain("Delete all visits");
     expect(body).toContain("including visits on other days");
-    expect(body).toContain('aria-label="Delete all visits to https://example.com/, including visits on other days"');
+    expect(body).toContain(
+      'aria-label="Delete all visits to https://example.com/, including visits on other days"',
+    );
   });
 
   it("renders an epoch timestamp and falls back to the URL when a title is missing", () => {
@@ -41,7 +50,9 @@ describe("individual visit rendering", () => {
       props: { date: "1970-01-01", items: [visit], deleteHistoryUrl: () => {} },
     });
     const time = new Date(0).toLocaleTimeString([], {
-      hour: "numeric", minute: "numeric", hour12: false,
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
     });
 
     expect(body).toContain(time);

@@ -10,19 +10,22 @@ describe("local calendar date keys", () => {
     { key: "2026-03-08", year: 2026, month: 2, day: 8, weekday: 0 },
     { key: "2026-11-01", year: 2026, month: 10, day: 1, weekday: 0 },
     { key: "2027-01-01", year: 2027, month: 0, day: 1, weekday: 5 },
-  ])("preserves $key at local midnight", ({ key, year, month, day, weekday }) => {
-    const date = parseDateKey(key);
+  ])(
+    "preserves $key at local midnight",
+    ({ key, year, month, day, weekday }) => {
+      const date = parseDateKey(key);
 
-    expect([
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      date.getDay(),
-      date.getHours(),
-      date.getMinutes(),
-    ]).toEqual([year, month, day, weekday, 0, 0]);
-    expect(getDateKey(new Date(year, month, day, 23, 59))).toBe(key);
-  });
+      expect([
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        date.getDay(),
+        date.getHours(),
+        date.getMinutes(),
+      ]).toEqual([year, month, day, weekday, 0, 0]);
+      expect(getDateKey(new Date(year, month, day, 23, 59))).toBe(key);
+    },
+  );
 });
 
 describe("moment labels", () => {
@@ -32,13 +35,18 @@ describe("moment labels", () => {
     { key: "2024-02-29", date: new Date(2024, 1, 29, 15) },
     { key: "2026-03-08", date: new Date(2026, 2, 8, 15) },
     { key: "2026-11-01", date: new Date(2026, 10, 1, 15) },
-  ])("labels $key consistently with and without a timestamp", ({ key, date }) => {
-    // Use an explicit local afternoon as the independent expected calendar date.
-    const label = date.toLocaleDateString(undefined, dateTimeFormatOptions);
+  ])(
+    "labels $key consistently with and without a timestamp",
+    ({ key, date }) => {
+      // Use an explicit local afternoon as the independent expected calendar date.
+      const label = date.toLocaleDateString(undefined, dateTimeFormatOptions);
 
-    expect(formatMomentKey(key)).toBe(label);
-    expect(formatMomentKey(key, date.getTime())).toBe(label);
-    expect(formatMomentKey(`${key}T15`)).toBe(`${label} at 15:00`);
-    expect(formatMomentKey(`${key}T15`, date.getTime())).toBe(`${label} at 15:00`);
-  });
+      expect(formatMomentKey(key)).toBe(label);
+      expect(formatMomentKey(key, date.getTime())).toBe(label);
+      expect(formatMomentKey(`${key}T15`)).toBe(`${label} at 15:00`);
+      expect(formatMomentKey(`${key}T15`, date.getTime())).toBe(
+        `${label} at 15:00`,
+      );
+    },
+  );
 });
