@@ -4,6 +4,8 @@
   "version": "1.1.2",
   "type": "module",
   "scripts": {
+    "prepare": "simple-git-hooks",
+    "fallow": "fallow audit --base HEAD",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
@@ -12,13 +14,18 @@
     "benchmark:history": "node scripts/benchmark-history.mjs",
     "check": "svelte-check --tsconfig ./tsconfig.app.json --diagnostic-sources js,svelte && tsc -p tsconfig.node.json"
   },
+  "simple-git-hooks": {
+    "pre-commit": "npm run fallow -- --quiet --gate-marker pre-commit"
+  },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tsconfig/svelte": "^5.0.8",
     "@types/chrome": "^0.2.9",
     "@types/node": "^24.13.4",
+    "fallow": "3.25.0",
     "jsdom": "^30.0.1",
     "lightningcss": "^1.33.0",
+    "simple-git-hooks": "^2.14.0",
     "svelte": "^5.57.0",
     "svelte-check": "^4.7.6",
     "typescript": "~6.0.3",

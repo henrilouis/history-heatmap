@@ -35,6 +35,23 @@ Use Node.js 24 (also used in CI) and install dependencies with `npm ci`.
 uses Vitest 5 and TypeScript 6; TypeScript 6 is the newest major currently supported
 by `svelte-check`'s peer dependency range.
 
+### Pre-commit checks
+
+`npm ci` (or `npm install`) installs the Git pre-commit hook through
+`simple-git-hooks`. The hook runs the project-local [Fallow](https://fallow.tools/)
+to check for dead code, complexity, duplication, and styling issues using
+`.fallowrc.json`. Newly introduced findings compared with `HEAD` block the commit;
+inherited findings do not. Fallow analyzes the working tree, including unstaged
+changes, so stage or set aside related edits before committing.
+
+Run the same audit manually:
+
+```sh
+npm run fallow
+```
+
+Run `npm run prepare` to reinstall the hook after changing its configuration.
+
 ### Unit tests
 
 Run the Vitest suite once (exits with a nonzero status on failure):
