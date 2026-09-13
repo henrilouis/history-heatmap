@@ -9,6 +9,19 @@ permissions:
   contents: read
 
 jobs:
+  check:
+    name: Static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
   test:
     name: Unit tests (${{ matrix.timezone }})
     runs-on: ubuntu-latest
