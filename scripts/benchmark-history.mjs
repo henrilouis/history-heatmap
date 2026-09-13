@@ -8,7 +8,8 @@ import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { build } from "vite";
 
-const executable = process.env.CHROME_PATH ??
+const executable =
+  process.env.CHROME_PATH ??
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const urlCount = Number(process.env.BENCHMARK_URLS ?? 100_000);
 const visitsPerUrl = Number(process.env.BENCHMARK_VISITS_PER_URL ?? 5);
@@ -37,34 +38,45 @@ await build({
     },
   },
 });
-await writeFile(join(extension, "manifest.json"), JSON.stringify({
-  manifest_version: 3,
-  name: "Synthetic history benchmark",
-  version: "1.0",
-  permissions: ["history"],
-  background: { service_worker: "worker.js", type: "module" },
-}));
-await writeFile(join(extension, "worker.js"),
-  'import * as api from "./history.js"; globalThis.api = api;');
+await writeFile(
+  join(extension, "manifest.json"),
+  JSON.stringify({
+    manifest_version: 3,
+    name: "Synthetic history benchmark",
+    version: "1.0",
+    permissions: ["history"],
+    background: { service_worker: "worker.js", type: "module" },
+  }),
+);
+await writeFile(
+  join(extension, "worker.js"),
+  'import * as api from "./history.js"; globalThis.api = api;',
+);
 
 function launch() {
-  const child = spawn(executable, [
-    "--headless=new",
-    `--user-data-dir=${profile}`,
-    "--no-first-run",
-    "--no-default-browser-check",
-    "--disable-background-networking",
-    "--disable-sync",
-    "--remote-debugging-pipe",
-    "--enable-unsafe-extension-debugging",
-    "about:blank",
-  ], { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] });
+  const child = spawn(
+    executable,
+    [
+      "--headless=new",
+      `--user-data-dir=${profile}`,
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--disable-background-networking",
+      "--disable-sync",
+      "--remote-debugging-pipe",
+      "--enable-unsafe-extension-debugging",
+      "about:blank",
+    ],
+    { stdio: ["ignore", "ignore", "pipe", "pipe", "pipe"] },
+  );
   const exited = once(child, "exit");
   const pending = new Map();
   let id = 0;
   let buffer = "";
   let stderr = "";
-  child.stderr.on("data", (chunk) => { stderr += chunk; });
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
   child.stdio[4].on("data", (chunk) => {
     buffer += chunk.toString();
     let separator;
@@ -75,7 +87,8 @@ function launch() {
       if (!request) continue;
       pending.delete(message.id);
       clearTimeout(request.timeout);
-      if (message.error) request.reject(new Error(JSON.stringify(message.error)));
+      if (message.error)
+        request.reject(new Error(JSON.stringify(message.error)));
       else request.resolve(message.result);
     }
   });
@@ -94,17 +107,22 @@ function launch() {
         reject(new Error(`Timed out: ${method}`));
       }, 600_000);
       pending.set(requestId, { resolve, reject, timeout });
-      child.stdio[3].write(JSON.stringify({ id: requestId, method, params, sessionId }) + "\0");
+      child.stdio[3].write(
+        JSON.stringify({ id: requestId, method, params, sessionId }) + "\0",
+      );
     });
   }
   async function attach() {
     await send("Extensions.loadUnpacked", { path: extension });
     for (let attempt = 0; attempt < 100; attempt++) {
       const { targetInfos } = await send("Target.getTargets");
-      const worker = targetInfos.find((target) => target.url.endsWith("/worker.js"));
+      const worker = targetInfos.find((target) =>
+        target.url.endsWith("/worker.js"),
+      );
       if (worker) {
         const { sessionId } = await send("Target.attachToTarget", {
-          targetId: worker.targetId, flatten: true,
+          targetId: worker.targetId,
+          flatten: true,
         });
         await send("Runtime.enable", {}, sessionId);
         await send("Runtime.runIfWaitingForDebugger", {}, sessionId);
@@ -117,8 +135,12 @@ function launch() {
   }
   async function waitForExtensionApis(sessionId) {
     for (let ready = 0; ready < 100; ready++) {
-      if (await evaluate(sessionId,
-        'typeof chrome !== "undefined" && !!chrome.history && !!globalThis.api')) {
+      if (
+        await evaluate(
+          sessionId,
+          'typeof chrome !== "undefined" && !!chrome.history && !!globalThis.api',
+        )
+      ) {
         return;
       }
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -126,10 +148,17 @@ function launch() {
     throw new Error("Benchmark extension APIs did not initialize");
   }
   async function evaluate(session, expression) {
-    const result = await send("Runtime.evaluate", {
-      expression, awaitPromise: true, returnByValue: true,
-    }, session);
-    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+    const result = await send(
+      "Runtime.evaluate",
+      {
+        expression,
+        awaitPromise: true,
+        returnByValue: true,
+      },
+      session,
+    );
+    if (result.exceptionDetails)
+      throw new Error(JSON.stringify(result.exceptionDetails));
     return result.result.value;
   }
   async function close() {
@@ -144,8 +173,10 @@ function launch() {
 let browser = launch();
 try {
   const session = await browser.attach();
-  await browser.evaluate(session,
-    'chrome.history.addUrl({url: "https://benchmark.invalid/bootstrap"})');
+  await browser.evaluate(
+    session,
+    'chrome.history.addUrl({url: "https://benchmark.invalid/bootstrap"})',
+  );
 } finally {
   await browser.close();
 }
@@ -162,13 +193,19 @@ const now = Date.now() - 60_000;
 const day = 86_400_000;
 let visitId = 0;
 for (let urlId = 1; urlId <= urlCount; urlId++) {
-  const times = Array.from({ length: visitsPerUrl }, (_, visit) =>
-    now - ((urlId * 7919 + visit * 17 * day) % (89 * day)),
+  const times = Array.from(
+    { length: visitsPerUrl },
+    (_, visit) => now - ((urlId * 7919 + visit * 17 * day) % (89 * day)),
   );
-  const chromeTime = (timestamp) => BigInt(timestamp + 11_644_473_600_000) * 1000n;
-  insertUrl.run(urlId, `https://site-${urlId % 1000}.example/page/${urlId}`,
-    `Example page ${urlId} — synthetic browsing history`, visitsPerUrl,
-    chromeTime(Math.max(...times)));
+  const chromeTime = (timestamp) =>
+    BigInt(timestamp + 11_644_473_600_000) * 1000n;
+  insertUrl.run(
+    urlId,
+    `https://site-${urlId % 1000}.example/page/${urlId}`,
+    `Example page ${urlId} — synthetic browsing history`,
+    visitsPerUrl,
+    chromeTime(Math.max(...times)),
+  );
   for (const time of times) insertVisit.run(++visitId, urlId, chromeTime(time));
 }
 db.exec("COMMIT;");
@@ -178,27 +215,39 @@ browser = launch();
 try {
   const version = await browser.send("Browser.getVersion");
   const session = await browser.attach();
-  console.log(JSON.stringify({
-    browser: version.product, node: process.version,
-    cpu: cpus()[0].model, platform: platform(), arch: arch(),
-    urlCount, visitsPerUrl, directory,
-  }));
+  console.log(
+    JSON.stringify({
+      browser: version.product,
+      node: process.version,
+      cpu: cpus()[0].model,
+      platform: platform(),
+      arch: arch(),
+      urlCount,
+      visitsPerUrl,
+      directory,
+    }),
+  );
   for (let run = 1; run <= runs; run++) {
     await browser.evaluate(session, "globalThis.visits = undefined");
     await browser.send("HeapProfiler.collectGarbage", {}, session);
     const before = await browser.send("Runtime.getHeapUsage", {}, session);
-    const load = await browser.evaluate(session, `(async () => {
+    const load = await browser.evaluate(
+      session,
+      `(async () => {
       const start = performance.now();
       globalThis.visits = await api.getHistory();
       return { loadMs: performance.now() - start, visits: visits.length,
         urls: new Set(visits.map(visit => visit.url)).size };
-    })()`);
+    })()`,
+    );
     if (load.visits !== urlCount * visitsPerUrl || load.urls !== urlCount) {
       throw new Error(`Unexpected history count: ${JSON.stringify(load)}`);
     }
     await browser.send("HeapProfiler.collectGarbage", {}, session);
     const after = await browser.send("Runtime.getHeapUsage", {}, session);
-    const processing = await browser.evaluate(session, `(() => {
+    const processing = await browser.evaluate(
+      session,
+      `(() => {
       const start = performance.now();
       api.fillEmptyDays(api.groupHistoryByDay(visits), visits);
       api.fillEmptyHours(api.groupHistoryByDayAndHour(visits), visits);
@@ -210,10 +259,16 @@ try {
           visit.url?.toLowerCase().includes("site-12.example"));
       }
       return { groupMs, filterMs: (performance.now() - filterStart) / 10 };
-    })()`);
-    console.log(JSON.stringify({ run, ...load, ...processing,
-      retainedHeapMiB: (after.usedSize - before.usedSize) / 1024 / 1024,
-    }));
+    })()`,
+    );
+    console.log(
+      JSON.stringify({
+        run,
+        ...load,
+        ...processing,
+        retainedHeapMiB: (after.usedSize - before.usedSize) / 1024 / 1024,
+      }),
+    );
   }
 } finally {
   await browser.close();

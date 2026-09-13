@@ -13,15 +13,16 @@ import { chromeVisit } from "./history-fixtures";
 type SearchCallback = (results?: chrome.history.HistoryItem[]) => void;
 type VisitsCallback = (results?: chrome.history.VisitItem[]) => void;
 
-const search = vi.fn<
-  (query: chrome.history.HistoryQuery, callback: SearchCallback) => void
->();
-const getVisits = vi.fn<
-  (details: chrome.history.UrlDetails, callback: VisitsCallback) => void
->();
-const deleteHistoryUrl = vi.fn<
-  (details: chrome.history.UrlDetails, callback: () => void) => void
->();
+const search =
+  vi.fn<
+    (query: chrome.history.HistoryQuery, callback: SearchCallback) => void
+  >();
+const getVisits =
+  vi.fn<
+    (details: chrome.history.UrlDetails, callback: VisitsCallback) => void
+  >();
+const deleteHistoryUrl =
+  vi.fn<(details: chrome.history.UrlDetails, callback: () => void) => void>();
 let runtime: { lastError?: chrome.runtime.LastError };
 
 function completeCallback(
@@ -72,7 +73,9 @@ describe("getHistory", () => {
   const older = chromeVisit("older", new Date(2026, 8, 10, 18), { id: "1" });
   const early = chromeVisit("early", new Date(2026, 8, 12, 9, 5), { id: "1" });
   const late = chromeVisit("late", new Date(2026, 8, 12, 9, 45), { id: "1" });
-  const nextHour = chromeVisit("next-hour", new Date(2026, 8, 12, 14), { id: "1" });
+  const nextHour = chromeVisit("next-hour", new Date(2026, 8, 12, 14), {
+    id: "1",
+  });
   const visits = [early, older, nextHour, late];
   const expected = [nextHour, late, early, older].map((visit) => ({
     visitId: visit.visitId,
@@ -119,8 +122,12 @@ describe("getHistory", () => {
     });
     // The unfiltered calendar range must include earlier visits to this same URL.
     expect(Object.keys(fillEmptyDays({}, history)).sort()).toEqual([
-      "2026-09-07", "2026-09-08", "2026-09-09",
-      "2026-09-10", "2026-09-11", "2026-09-12",
+      "2026-09-07",
+      "2026-09-08",
+      "2026-09-09",
+      "2026-09-10",
+      "2026-09-11",
+      "2026-09-12",
     ]);
   });
 
@@ -128,19 +135,28 @@ describe("getHistory", () => {
     const initial = getHistory();
     completeSearch(records);
     const before = groupHistoryByDayAndHour(await initial);
-    const revisit = chromeVisit("revisit", new Date(2026, 8, 13, 8), { id: "1" });
+    const revisit = chromeVisit("revisit", new Date(2026, 8, 13, 8), {
+      id: "1",
+    });
     getVisits.mockImplementation((_details, callback) => {
       completeCallback(() => callback([...visits, revisit]));
     });
 
     const refreshed = getHistory();
-    completeSearch([{ ...records[0], lastVisitTime: revisit.visitTime, visitCount: 26 }]);
+    completeSearch([
+      { ...records[0], lastVisitTime: revisit.visitTime, visitCount: 26 },
+    ]);
     const after = groupHistoryByDayAndHour(await refreshed);
 
     expect(after["2026-09-10"]).toEqual(before["2026-09-10"]);
     expect(after["2026-09-12"]).toEqual(before["2026-09-12"]);
     expect(after["2026-09-13"]?.["08"]).toEqual([
-      { visitId: "revisit", visitTime: revisit.visitTime, url: "https://example.com/", title: "Example" },
+      {
+        visitId: "revisit",
+        visitTime: revisit.visitTime,
+        url: "https://example.com/",
+        title: "Example",
+      },
     ]);
   });
 
@@ -156,9 +172,14 @@ describe("getHistory", () => {
 
   it("skips search records without URLs and supports missing titles and latest timestamps", async () => {
     const result = getHistory();
-    completeSearch([{ id: "missing-url" }, { id: "1", url: "https://example.com/" }]);
+    completeSearch([
+      { id: "missing-url" },
+      { id: "1", url: "https://example.com/" },
+    ]);
 
-    await expect(result).resolves.toEqual(expected.map((visit) => ({ ...visit, title: undefined })));
+    await expect(result).resolves.toEqual(
+      expected.map((visit) => ({ ...visit, title: undefined })),
+    );
     expect(getVisits).toHaveBeenCalledTimes(1);
   });
 
@@ -196,7 +217,9 @@ describe("getHistory", () => {
 
   it("retries a transient visit API failure once without repeating the search", async () => {
     getVisits.mockImplementationOnce((_details, callback) => {
-      completeCallback(() => callback(undefined), { message: "Visit service unavailable" });
+      completeCallback(() => callback(undefined), {
+        message: "Visit service unavailable",
+      });
     });
     const result = getHistory();
     completeSearch(records);
@@ -205,21 +228,28 @@ describe("getHistory", () => {
     expect(search).toHaveBeenCalledTimes(1);
     expect(getVisits).toHaveBeenCalledTimes(2);
     expect(getVisits.mock.calls.map(([details]) => details.url)).toEqual([
-      "https://example.com/", "https://example.com/",
+      "https://example.com/",
+      "https://example.com/",
     ]);
   });
 
   it("rejects persistent visit API failures and allows a later load to succeed", async () => {
     getVisits.mockImplementation((_details, callback) => {
-      completeCallback(() => callback(undefined), { message: "Visit service unavailable" });
+      completeCallback(() => callback(undefined), {
+        message: "Visit service unavailable",
+      });
     });
     const failed = getHistory();
     completeSearch(records);
 
-    await expect(failed).rejects.toThrow("Failed to retrieve history visits: Visit service unavailable");
+    await expect(failed).rejects.toThrow(
+      "Failed to retrieve history visits: Visit service unavailable",
+    );
     expect(getVisits).toHaveBeenCalledTimes(2);
 
-    getVisits.mockImplementation((_details, callback) => completeCallback(() => callback(visits)));
+    getVisits.mockImplementation((_details, callback) =>
+      completeCallback(() => callback(visits)),
+    );
     const retried = getHistory();
     completeSearch(records);
     await expect(retried).resolves.toEqual(expected);
@@ -273,9 +303,13 @@ describe("visit request scheduling", () => {
       const callback = pending.get(url)!;
       pending.delete(url);
       const index = records.findIndex((record) => record.url === url);
-      const visit = chromeVisit(`visit-${index}`, new Date(2026, 8, 12, index), {
-        id: records[index].id,
-      });
+      const visit = chromeVisit(
+        `visit-${index}`,
+        new Date(2026, 8, 12, index),
+        {
+          id: records[index].id,
+        },
+      );
       completeCallback(() => callback([visit]));
       await Promise.resolve();
     }
@@ -289,12 +323,16 @@ describe("visit request scheduling", () => {
     expect(visits.map((visit) => visit.visitId)).toEqual(
       records.map((_, i) => `visit-${i}`).reverse(),
     );
-    expect(visits.map((visit) => visit.url)).toEqual(records.map((record) => record.url).reverse());
+    expect(visits.map((visit) => visit.url)).toEqual(
+      records.map((record) => record.url).reverse(),
+    );
   });
 
   it("rejects partial loads and stops scheduling new requests after a failure", async () => {
     const pending: VisitsCallback[] = [];
-    getVisits.mockImplementation((_details, callback) => pending.push(callback));
+    getVisits.mockImplementation((_details, callback) =>
+      pending.push(callback),
+    );
     const result = getHistory();
     const rejected = expect(result).rejects.toThrow("Visit request failed");
     completeSearch(records);
@@ -302,15 +340,21 @@ describe("visit request scheduling", () => {
     expect(getVisits).toHaveBeenCalledTimes(8);
 
     const successful = pending.shift()!;
-    completeCallback(() => successful([chromeVisit("loaded", new Date(2026, 8, 12))]));
+    completeCallback(() =>
+      successful([chromeVisit("loaded", new Date(2026, 8, 12))]),
+    );
     await Promise.resolve();
     expect(getVisits).toHaveBeenCalledTimes(9);
 
     const failed = pending.shift()!;
-    completeCallback(() => failed(undefined), { message: "Visit request failed" });
+    completeCallback(() => failed(undefined), {
+      message: "Visit request failed",
+    });
     await Promise.resolve();
     const retry = pending.pop()!;
-    completeCallback(() => retry(undefined), { message: "Visit request failed" });
+    completeCallback(() => retry(undefined), {
+      message: "Visit request failed",
+    });
     await rejected;
 
     // Requests already in flight may finish, but cannot start more queued work.
@@ -320,7 +364,9 @@ describe("visit request scheduling", () => {
   });
 
   it("reports progress over requestable URLs and completes at the exact total", async () => {
-    getVisits.mockImplementation((_details, callback) => completeCallback(() => callback([])));
+    getVisits.mockImplementation((_details, callback) =>
+      completeCallback(() => callback([])),
+    );
     const progress = vi.fn();
     const result = getHistory("", { onProgress: progress });
     completeSearch([{ id: "url-less" }, ...records]);
@@ -335,7 +381,9 @@ describe("visit request scheduling", () => {
     const controller = new AbortController();
     controller.abort();
 
-    await expect(getHistory("", { signal: controller.signal })).rejects.toMatchObject({
+    await expect(
+      getHistory("", { signal: controller.signal }),
+    ).rejects.toMatchObject({
       name: "AbortError",
     });
     expect(search).not.toHaveBeenCalled();
@@ -354,10 +402,15 @@ describe("visit request scheduling", () => {
 
   it("cancels in-flight loading without scheduling new URLs or retries", async () => {
     const pending: VisitsCallback[] = [];
-    getVisits.mockImplementation((_details, callback) => pending.push(callback));
+    getVisits.mockImplementation((_details, callback) =>
+      pending.push(callback),
+    );
     const controller = new AbortController();
     const progress = vi.fn();
-    const result = getHistory("", { signal: controller.signal, onProgress: progress });
+    const result = getHistory("", {
+      signal: controller.signal,
+      onProgress: progress,
+    });
     completeSearch(records);
     await Promise.resolve();
     expect(getVisits).toHaveBeenCalledTimes(8);
@@ -365,7 +418,9 @@ describe("visit request scheduling", () => {
     controller.abort();
     await expect(result).rejects.toMatchObject({ name: "AbortError" });
     for (const callback of pending) {
-      completeCallback(() => callback(undefined), { message: "Late API failure" });
+      completeCallback(() => callback(undefined), {
+        message: "Late API failure",
+      });
     }
     await Promise.resolve();
     expect(getVisits).toHaveBeenCalledTimes(8);
@@ -377,23 +432,43 @@ describe("getHistoryForUrls", () => {
   it("expands event metadata into sorted visits without a history search", async () => {
     const older = chromeVisit("older", new Date(2026, 8, 10));
     const newer = chromeVisit("newer", new Date(2026, 8, 12));
-    getVisits.mockImplementation((_details, callback) => completeCallback(() => callback([older, newer])));
-    const item = { id: "url-id", url: "https://example.com/", title: "Updated title" };
+    getVisits.mockImplementation((_details, callback) =>
+      completeCallback(() => callback([older, newer])),
+    );
+    const item = {
+      id: "url-id",
+      url: "https://example.com/",
+      title: "Updated title",
+    };
 
-    await expect(getHistoryForUrls([item])).resolves.toEqual([newer, older].map((visit) => ({
-      visitId: visit.visitId, visitTime: visit.visitTime, url: item.url, title: item.title,
-    })));
+    await expect(getHistoryForUrls([item])).resolves.toEqual(
+      [newer, older].map((visit) => ({
+        visitId: visit.visitId,
+        visitTime: visit.visitTime,
+        url: item.url,
+        title: item.title,
+      })),
+    );
     expect(search).not.toHaveBeenCalled();
-    expect(getVisits).toHaveBeenCalledExactlyOnceWith({ url: item.url }, expect.any(Function));
+    expect(getVisits).toHaveBeenCalledExactlyOnceWith(
+      { url: item.url },
+      expect.any(Function),
+    );
   });
 
   it("bounds event-batch requests and stops queued requests after cancellation", async () => {
     const pending: VisitsCallback[] = [];
-    getVisits.mockImplementation((_details, callback) => pending.push(callback));
+    getVisits.mockImplementation((_details, callback) =>
+      pending.push(callback),
+    );
     const controller = new AbortController();
-    const result = getHistoryForUrls(Array.from({ length: 20 }, (_, i) => ({
-      id: String(i), url: `https://example.com/${i}`,
-    })), { signal: controller.signal });
+    const result = getHistoryForUrls(
+      Array.from({ length: 20 }, (_, i) => ({
+        id: String(i),
+        url: `https://example.com/${i}`,
+      })),
+      { signal: controller.signal },
+    );
     expect(getVisits).toHaveBeenCalledTimes(8);
     controller.abort();
     await expect(result).rejects.toMatchObject({ name: "AbortError" });

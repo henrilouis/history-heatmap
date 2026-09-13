@@ -10,8 +10,9 @@
 
   // Reset visible count when data changes
   $effect(() => {
-    historyStore.byDay;
-    historyStore.search;
+    // Read these reactive values so changes trigger the pagination reset.
+    void historyStore.byDay;
+    void historyStore.search;
     visibleCount = ITEMS_PER_PAGE;
   });
 

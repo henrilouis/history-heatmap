@@ -33,12 +33,12 @@ Recorded on an Apple M3 Pro, macOS arm64, Chrome 152.0.7977.83, Node 24.18.0.
 Concurrency is eight in both versions. Baseline is commit `3923a79`; the updated
 version includes the review changes in this PR.
 
-| Measurement | Baseline, median (range) | Updated, median (range) |
-| --- | --- | --- |
-| Load 100k URLs / 500k visits | 3.92 s (3.82–4.30 s) | 3.77 s (3.68–4.46 s) |
-| Group and fill both views | 2.29 s (2.20–2.69 s) | 1.54 s (1.31–1.57 s) |
-| Filter, mean per run | 468 ms (118–507 ms) | 266 ms (265–272 ms) |
-| Retained visit heap | 77.86 MiB (77.86–77.88 MiB) | 45.63 MiB (45.62–45.65 MiB) |
+| Measurement                  | Baseline, median (range)    | Updated, median (range)     |
+| ---------------------------- | --------------------------- | --------------------------- |
+| Load 100k URLs / 500k visits | 3.92 s (3.82–4.30 s)        | 3.77 s (3.68–4.46 s)        |
+| Group and fill both views    | 2.29 s (2.20–2.69 s)        | 1.54 s (1.31–1.57 s)        |
+| Filter, mean per run         | 468 ms (118–507 ms)         | 266 ms (265–272 ms)         |
+| Retained visit heap          | 77.86 MiB (77.86–77.88 MiB) | 45.63 MiB (45.62–45.65 MiB) |
 
 Projection to four fields reduces retained visit heap by approximately **41%**.
 URL and title strings were already shared references in the baseline; the saving

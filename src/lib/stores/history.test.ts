@@ -1,10 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getHistory, getHistoryForUrls, deleteUrl, type HistoryVisit } from "../utils/chrome-api";
+import {
+  getHistory,
+  getHistoryForUrls,
+  deleteUrl,
+  type HistoryVisit,
+} from "../utils/chrome-api";
 import { historyVisit } from "../utils/history-fixtures";
 let historyStore: typeof import("./history.svelte").historyStore;
 
 vi.mock("../utils/chrome-api", async (importOriginal) => ({
-  ...await importOriginal<typeof import("../utils/chrome-api")>(),
+  ...(await importOriginal<typeof import("../utils/chrome-api")>()),
   getHistory: vi.fn(),
   getHistoryForUrls: vi.fn(),
   deleteUrl: vi.fn(),
@@ -28,7 +33,10 @@ beforeEach(async () => {
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (error: Error) => void;
-  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
   return { promise, resolve, reject };
 }
 
@@ -36,9 +44,12 @@ function deferred<T>() {
 describe("visit-level store actions", () => {
   it("removes every visit to a URL only after deletion succeeds", async () => {
     let finishDeletion!: () => void;
-    vi.mocked(deleteUrl).mockImplementationOnce(() => new Promise<void>((resolve) => {
-      finishDeletion = resolve;
-    }));
+    vi.mocked(deleteUrl).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishDeletion = resolve;
+        }),
+    );
 
     const deletion = historyStore.removeUrl(url);
     expect(deleteUrl).toHaveBeenCalledExactlyOnceWith(url);
@@ -69,7 +80,9 @@ describe("visit-level store actions", () => {
   });
 
   it("exposes a failed visit load and recovers on retry", async () => {
-    vi.mocked(getHistory).mockRejectedValueOnce(new Error("Visit service unavailable"));
+    vi.mocked(getHistory).mockRejectedValueOnce(
+      new Error("Visit service unavailable"),
+    );
 
     await historyStore.fetch();
 
@@ -87,7 +100,9 @@ describe("visit-level store actions", () => {
   it("ignores stale success and progress after a newer load completes", async () => {
     const old = deferred<HistoryVisit[]>();
     const fresh = deferred<HistoryVisit[]>();
-    vi.mocked(getHistory).mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise);
+    vi.mocked(getHistory)
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(fresh.promise);
     const first = historyStore.fetch();
     const oldOptions = vi.mocked(getHistory).mock.lastCall![1]!;
     const second = historyStore.fetch();
@@ -108,10 +123,15 @@ describe("visit-level store actions", () => {
   it("ignores stale errors and finalization while a newer load is pending", async () => {
     const old = deferred<HistoryVisit[]>();
     const fresh = deferred<HistoryVisit[]>();
-    vi.mocked(getHistory).mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise);
+    vi.mocked(getHistory)
+      .mockReturnValueOnce(old.promise)
+      .mockReturnValueOnce(fresh.promise);
     const first = historyStore.fetch();
     const second = historyStore.fetch();
-    vi.mocked(getHistory).mock.lastCall![1]!.onProgress?.({ completed: 2, total: 10 });
+    vi.mocked(getHistory).mock.lastCall![1]!.onProgress?.({
+      completed: 2,
+      total: 10,
+    });
     old.reject(new Error("Stale failure"));
     await first;
 
@@ -143,18 +163,29 @@ describe("visit-level store actions", () => {
 function historyEvent<T>() {
   const listeners = new Set<(value: T) => void>();
   return {
-    addListener: vi.fn((listener: (value: T) => void) => { listeners.add(listener); }),
-    removeListener: vi.fn((listener: (value: T) => void) => { listeners.delete(listener); }),
-    emit: (value: T) => { for (const listener of listeners) listener(value); },
+    addListener: vi.fn((listener: (value: T) => void) => {
+      listeners.add(listener);
+    }),
+    removeListener: vi.fn((listener: (value: T) => void) => {
+      listeners.delete(listener);
+    }),
+    emit: (value: T) => {
+      for (const listener of listeners) listener(value);
+    },
   };
 }
 
 describe("live history synchronization", () => {
   let onVisited: ReturnType<typeof historyEvent<chrome.history.HistoryItem>>;
-  let onVisitRemoved: ReturnType<typeof historyEvent<chrome.history.RemovedResult>>;
+  let onVisitRemoved: ReturnType<
+    typeof historyEvent<chrome.history.RemovedResult>
+  >;
   let disconnect: () => void;
   const item = { id: "repeated", url, title: "Updated title" };
-  const revisit = historyVisit("revisit", new Date(2026, 8, 13, 8), { url, title: item.title });
+  const revisit = historyVisit("revisit", new Date(2026, 8, 13, 8), {
+    url,
+    title: item.title,
+  });
 
   beforeEach(async () => {
     onVisited = historyEvent();
@@ -184,35 +215,52 @@ describe("live history synchronization", () => {
     expect(historyStore.raw).toEqual([other]);
   });
 
-  it.each(["success", "failure"])("clears all history and ignores late snapshot %s", async (outcome) => {
-    const pending = deferred<HistoryVisit[]>();
-    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
-    const fetching = historyStore.fetch();
-    const options = vi.mocked(getHistory).mock.lastCall![1]!;
-    historyStore.toggleMoment("2026-09-12");
-    onVisitRemoved.emit({ allHistory: true });
-    expect(historyStore.raw).toEqual([]);
-    expect(historyStore.selectedMoments).toEqual([]);
-    expect(options.signal?.aborted).toBe(true);
-    options.onProgress?.({ completed: 1, total: 2 });
-    if (outcome === "success") pending.resolve(visits);
-    else pending.reject(new Error("Late failure"));
-    await fetching;
-    expect(historyStore.raw).toEqual([]);
-    expect(historyStore.isLoading).toBe(false);
-    expect(historyStore.progress).toBeNull();
-    expect(historyStore.error).toBeNull();
-  });
+  it.each(["success", "failure"])(
+    "clears all history and ignores late snapshot %s",
+    async (outcome) => {
+      const pending = deferred<HistoryVisit[]>();
+      vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+      const fetching = historyStore.fetch();
+      const options = vi.mocked(getHistory).mock.lastCall![1]!;
+      historyStore.toggleMoment("2026-09-12");
+      onVisitRemoved.emit({ allHistory: true });
+      expect(historyStore.raw).toEqual([]);
+      expect(historyStore.selectedMoments).toEqual([]);
+      expect(options.signal?.aborted).toBe(true);
+      options.onProgress?.({ completed: 1, total: 2 });
+      if (outcome === "success") pending.resolve(visits);
+      else pending.reject(new Error("Late failure"));
+      await fetching;
+      expect(historyStore.raw).toEqual([]);
+      expect(historyStore.isLoading).toBe(false);
+      expect(historyStore.progress).toBeNull();
+      expect(historyStore.error).toBeNull();
+    },
+  );
 
   it("reconciles only visited URLs, preserving earlier visits without duplicates", async () => {
-    const updated = [revisit, { ...newer, title: item.title }, { ...older, title: item.title }];
+    const updated = [
+      revisit,
+      { ...newer, title: item.title },
+      { ...older, title: item.title },
+    ];
     vi.mocked(getHistoryForUrls).mockResolvedValue(updated);
     onVisited.emit(item);
-    await vi.waitFor(() => expect(historyStore.raw).toEqual([updated[0], updated[1], other, updated[2]]));
+    await vi.waitFor(() =>
+      expect(historyStore.raw).toEqual([
+        updated[0],
+        updated[1],
+        other,
+        updated[2],
+      ]),
+    );
     onVisited.emit(item);
     await vi.waitFor(() => expect(getHistoryForUrls).toHaveBeenCalledTimes(2));
     expect(historyStore.raw).toHaveLength(4);
-    expect(getHistoryForUrls).toHaveBeenCalledWith([item], expect.objectContaining({ signal: expect.any(AbortSignal) }));
+    expect(getHistoryForUrls).toHaveBeenCalledWith(
+      [item],
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     expect(getHistory).not.toHaveBeenCalled();
   });
 
@@ -226,14 +274,21 @@ describe("live history synchronization", () => {
     onVisited.emit(item);
     expect(getHistoryForUrls).not.toHaveBeenCalled();
     pending.resolve(visits);
-    await vi.waitFor(() => expect(historyStore.raw).toEqual([revisit, newer, other, older]));
-    expect(getHistoryForUrls).toHaveBeenCalledExactlyOnceWith([item], expect.any(Object));
+    await vi.waitFor(() =>
+      expect(historyStore.raw).toEqual([revisit, newer, other, older]),
+    );
+    expect(getHistoryForUrls).toHaveBeenCalledExactlyOnceWith(
+      [item],
+      expect.any(Object),
+    );
   });
 
   it("ignores an incremental result superseded by another visit to the same URL", async () => {
     const pending = deferred<HistoryVisit[]>();
     const latest = deferred<HistoryVisit[]>();
-    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise).mockReturnValueOnce(latest.promise);
+    vi.mocked(getHistoryForUrls)
+      .mockReturnValueOnce(pending.promise)
+      .mockReturnValueOnce(latest.promise);
     onVisited.emit(item);
     onVisited.emit(item);
     onVisited.emit(item);
@@ -241,7 +296,9 @@ describe("live history synchronization", () => {
     await vi.waitFor(() => expect(getHistoryForUrls).toHaveBeenCalledTimes(2));
     expect(historyStore.raw).toEqual(visits);
     latest.resolve([revisit, newer, older]);
-    await vi.waitFor(() => expect(historyStore.raw).toEqual([revisit, newer, other, older]));
+    await vi.waitFor(() =>
+      expect(historyStore.raw).toEqual([revisit, newer, other, older]),
+    );
   });
 
   it("does not restore a removed URL from a pending incremental read or queued event", async () => {
@@ -260,11 +317,24 @@ describe("live history synchronization", () => {
     const snapshot = deferred<HistoryVisit[]>();
     const batch = deferred<HistoryVisit[]>();
     const otherItem = { id: "other", url: other.url, title: "Other updated" };
-    const otherRevisit = historyVisit("other-revisit", new Date(2026, 8, 13, 7), otherItem);
+    const otherRevisit = historyVisit(
+      "other-revisit",
+      new Date(2026, 8, 13, 7),
+      otherItem,
+    );
     const updatedOther = { ...other, title: otherItem.title };
     // Distinguish every A record from the snapshot, including its earlier visits.
-    const staleA = [revisit, newer, older].map((visit) => ({ ...visit, title: "Superseded batch title" }));
-    const batchVisits = [staleA[0], otherRevisit, staleA[1], updatedOther, staleA[2]];
+    const staleA = [revisit, newer, older].map((visit) => ({
+      ...visit,
+      title: "Superseded batch title",
+    }));
+    const batchVisits = [
+      staleA[0],
+      otherRevisit,
+      staleA[1],
+      updatedOther,
+      staleA[2],
+    ];
     vi.mocked(getHistory).mockReturnValueOnce(snapshot.promise);
     vi.mocked(getHistoryForUrls).mockReturnValueOnce(batch.promise);
 
@@ -274,17 +344,23 @@ describe("live history synchronization", () => {
     onVisited.emit(otherItem);
     snapshot.resolve(visits);
     await fetching;
-    expect(getHistoryForUrls).toHaveBeenCalledExactlyOnceWith([item, otherItem], expect.any(Object));
+    expect(getHistoryForUrls).toHaveBeenCalledExactlyOnceWith(
+      [item, otherItem],
+      expect.any(Object),
+    );
 
     return { batch, batchVisits, otherRevisit, updatedOther };
   }
 
   it("keeps the other URL's batch updates after one URL is deleted", async () => {
-    const { batch, batchVisits, otherRevisit, updatedOther } = await startMixedUrlBatch();
+    const { batch, batchVisits, otherRevisit, updatedOther } =
+      await startMixedUrlBatch();
 
     onVisitRemoved.emit({ allHistory: false, urls: [url] });
     batch.resolve(batchVisits);
-    await vi.waitFor(() => expect(historyStore.raw).toContainEqual(otherRevisit));
+    await vi.waitFor(() =>
+      expect(historyStore.raw).toContainEqual(otherRevisit),
+    );
 
     expect(historyStore.raw).toEqual([otherRevisit, updatedOther]);
     expect(getHistoryForUrls).toHaveBeenCalledTimes(1);
@@ -292,32 +368,52 @@ describe("live history synchronization", () => {
   });
 
   it("keeps the other URL's batch updates while a revisited URL awaits its latest refresh", async () => {
-    const { batch, batchVisits, otherRevisit, updatedOther } = await startMixedUrlBatch();
+    const { batch, batchVisits, otherRevisit, updatedOther } =
+      await startMixedUrlBatch();
     const latest = deferred<HistoryVisit[]>();
     vi.mocked(getHistoryForUrls).mockReturnValueOnce(latest.promise);
 
     onVisited.emit({ ...item, title: "Latest title" });
     batch.resolve(batchVisits);
-    await vi.waitFor(() => expect(historyStore.raw).toContainEqual(otherRevisit));
+    await vi.waitFor(() =>
+      expect(historyStore.raw).toContainEqual(otherRevisit),
+    );
 
     // B lands immediately, but A's superseded response must not land at all:
     // both earlier visits retain their snapshot titles until the latest refresh.
-    expect(historyStore.raw).toEqual([otherRevisit, newer, updatedOther, older]);
+    expect(historyStore.raw).toEqual([
+      otherRevisit,
+      newer,
+      updatedOther,
+      older,
+    ]);
     expect(getHistoryForUrls).toHaveBeenCalledTimes(2);
     expect(getHistoryForUrls).toHaveBeenLastCalledWith(
-      [{ ...item, title: "Latest title" }], expect.any(Object),
+      [{ ...item, title: "Latest title" }],
+      expect.any(Object),
     );
-    const fresh = [revisit, newer, older].map((visit) => ({ ...visit, title: "Latest title" }));
+    const fresh = [revisit, newer, older].map((visit) => ({
+      ...visit,
+      title: "Latest title",
+    }));
     latest.resolve(fresh);
-    await vi.waitFor(() => expect(historyStore.raw).toEqual([
-      fresh[0], otherRevisit, fresh[1], updatedOther, fresh[2],
-    ]));
+    await vi.waitFor(() =>
+      expect(historyStore.raw).toEqual([
+        fresh[0],
+        otherRevisit,
+        fresh[1],
+        updatedOther,
+        fresh[2],
+      ]),
+    );
     expect(historyStore.syncError).toBeNull();
   });
 
   it("accepts a genuinely new visit after deletion without restoring the old visits", async () => {
     const pending = deferred<HistoryVisit[]>();
-    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise).mockResolvedValueOnce([revisit]);
+    vi.mocked(getHistoryForUrls)
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce([revisit]);
     onVisited.emit(item);
     onVisitRemoved.emit({ allHistory: false, urls: [url] });
     onVisited.emit(item);
@@ -327,7 +423,9 @@ describe("live history synchronization", () => {
 
   it("clears in-flight and queued incremental work and can reconcile visits afterward", async () => {
     const pending = deferred<HistoryVisit[]>();
-    vi.mocked(getHistoryForUrls).mockReturnValueOnce(pending.promise).mockResolvedValueOnce([revisit]);
+    vi.mocked(getHistoryForUrls)
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce([revisit]);
     onVisited.emit(item);
     const signal = vi.mocked(getHistoryForUrls).mock.lastCall![1]!.signal!;
     onVisited.emit({ id: "other", url: other.url });
@@ -355,9 +453,13 @@ describe("live history synchronization", () => {
   });
 
   it("surfaces incremental failures and lets Retry recover", async () => {
-    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(new Error("Visit service unavailable"));
+    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(
+      new Error("Visit service unavailable"),
+    );
     onVisited.emit(item);
-    await vi.waitFor(() => expect(historyStore.syncError).toContain("Some recent visits"));
+    await vi.waitFor(() =>
+      expect(historyStore.syncError).toContain("Some recent visits"),
+    );
     expect(historyStore.error).toBeNull();
     expect(historyStore.raw).toEqual(visits);
     vi.mocked(getHistory).mockResolvedValueOnce([revisit, newer, other, older]);
@@ -368,7 +470,9 @@ describe("live history synchronization", () => {
   });
 
   it("clears the sync notice only when failed URLs recover or are removed", async () => {
-    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(new Error("Unavailable"));
+    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(
+      new Error("Unavailable"),
+    );
     onVisited.emit(item);
     await vi.waitFor(() => expect(historyStore.syncError).not.toBeNull());
     const unrelated = deferred<HistoryVisit[]>();
@@ -382,7 +486,9 @@ describe("live history synchronization", () => {
     await vi.waitFor(() => expect(historyStore.syncError).toBeNull());
     expect(historyStore.raw).toEqual([revisit, newer, other, older]);
 
-    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(new Error("Unavailable again"));
+    vi.mocked(getHistoryForUrls).mockRejectedValueOnce(
+      new Error("Unavailable again"),
+    );
     onVisited.emit(item);
     await vi.waitFor(() => expect(historyStore.syncError).not.toBeNull());
     onVisitRemoved.emit({ allHistory: false, urls: [url] });
@@ -402,30 +508,44 @@ describe("live history synchronization", () => {
     expect(historyStore.raw).toEqual([]);
   });
 
-  it.each(["failure", "cancellation"])("does not reconcile queued or later visits after load %s", async (outcome) => {
-    const pending = deferred<HistoryVisit[]>();
-    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
-    const fetching = historyStore.fetch();
-    onVisited.emit(item);
-    if (outcome === "failure") pending.reject(new Error("Load failed"));
-    else {
-      historyStore.cancelFetch();
-      pending.resolve(visits);
-    }
-    await fetching;
-    onVisited.emit(item);
-    expect(getHistoryForUrls).not.toHaveBeenCalled();
-    expect(historyStore.raw).toEqual(outcome === "failure" ? [] : visits);
-    expect(historyStore.error).not.toBeNull();
+  it.each(["failure", "cancellation"])(
+    "does not reconcile queued or later visits after load %s",
+    async (outcome) => {
+      const pending = deferred<HistoryVisit[]>();
+      vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+      const fetching = historyStore.fetch();
+      onVisited.emit(item);
+      if (outcome === "failure") pending.reject(new Error("Load failed"));
+      else {
+        historyStore.cancelFetch();
+        pending.resolve(visits);
+      }
+      await fetching;
+      onVisited.emit(item);
+      expect(getHistoryForUrls).not.toHaveBeenCalled();
+      expect(historyStore.raw).toEqual(outcome === "failure" ? [] : visits);
+      expect(historyStore.error).not.toBeNull();
 
-    vi.mocked(getHistory).mockResolvedValueOnce([revisit, newer, other, older]);
-    await historyStore.fetch();
-    expect(historyStore.raw).toEqual([revisit, newer, other, older]);
-    expect(historyStore.error).toBeNull();
-    vi.mocked(getHistoryForUrls).mockResolvedValueOnce([revisit, newer, older]);
-    onVisited.emit(item);
-    await vi.waitFor(() => expect(getHistoryForUrls).toHaveBeenCalledTimes(1));
-  });
+      vi.mocked(getHistory).mockResolvedValueOnce([
+        revisit,
+        newer,
+        other,
+        older,
+      ]);
+      await historyStore.fetch();
+      expect(historyStore.raw).toEqual([revisit, newer, other, older]);
+      expect(historyStore.error).toBeNull();
+      vi.mocked(getHistoryForUrls).mockResolvedValueOnce([
+        revisit,
+        newer,
+        older,
+      ]);
+      onVisited.emit(item);
+      await vi.waitFor(() =>
+        expect(getHistoryForUrls).toHaveBeenCalledTimes(1),
+      );
+    },
+  );
 
   it("resumes syncing from an authoritative clear-all after a failed load", async () => {
     vi.mocked(getHistory).mockRejectedValueOnce(new Error("Load failed"));
@@ -469,10 +589,14 @@ describe("live history synchronization", () => {
   it("surfaces the normal load error when connecting without the Chrome API", async () => {
     disconnect();
     vi.stubGlobal("chrome", undefined);
-    const actual = await vi.importActual<typeof import("../utils/chrome-api")>("../utils/chrome-api");
+    const actual = await vi.importActual<typeof import("../utils/chrome-api")>(
+      "../utils/chrome-api",
+    );
     vi.mocked(getHistory).mockImplementationOnce(actual.getHistory);
     disconnect = historyStore.connect();
-    await vi.waitFor(() => expect(historyStore.error).toBe("Chrome history API not available"));
+    await vi.waitFor(() =>
+      expect(historyStore.error).toBe("Chrome history API not available"),
+    );
     expect(historyStore.isLoading).toBe(false);
     expect(historyStore.raw).toEqual([]);
   });
@@ -488,8 +612,12 @@ describe("live history synchronization", () => {
     onVisitRemoved.emit({ allHistory: false, urls: [url] });
     expect(historyStore.raw).toEqual([other]);
     disconnect();
-    expect(onVisited.removeListener).toHaveBeenCalledExactlyOnceWith(onVisited.addListener.mock.calls[0][0]);
-    expect(onVisitRemoved.removeListener).toHaveBeenCalledExactlyOnceWith(onVisitRemoved.addListener.mock.calls[0][0]);
+    expect(onVisited.removeListener).toHaveBeenCalledExactlyOnceWith(
+      onVisited.addListener.mock.calls[0][0],
+    );
+    expect(onVisitRemoved.removeListener).toHaveBeenCalledExactlyOnceWith(
+      onVisitRemoved.addListener.mock.calls[0][0],
+    );
     onVisitRemoved.emit({ allHistory: true });
     onVisited.emit(item);
     expect(historyStore.raw).toEqual([other]);

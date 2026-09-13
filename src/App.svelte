@@ -14,13 +14,19 @@
   {#if historyStore.error}
     <div class="error-banner" role="alert">
       <span>{historyStore.error}</span>
-      <button disabled={historyStore.isLoading} onclick={() => historyStore.fetch()}>Retry</button>
+      <button
+        disabled={historyStore.isLoading}
+        onclick={() => historyStore.fetch()}>Retry</button
+      >
     </div>
   {/if}
   {#if historyStore.syncError}
     <div class="loading-status" role="status">
       <span>{historyStore.syncError}</span>
-      <button disabled={historyStore.isLoading} onclick={() => historyStore.fetch()}>Refresh history</button>
+      <button
+        disabled={historyStore.isLoading}
+        onclick={() => historyStore.fetch()}>Refresh history</button
+      >
     </div>
   {/if}
   {#if historyStore.isLoading}

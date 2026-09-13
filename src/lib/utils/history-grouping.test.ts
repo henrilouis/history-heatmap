@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { groupHistoryByDay, groupHistoryByDayAndHour, type HistoryVisit } from "./chrome-api";
+import {
+  groupHistoryByDay,
+  groupHistoryByDayAndHour,
+  type HistoryVisit,
+} from "./chrome-api";
 import { historyVisit } from "./history-fixtures";
 import { getDateKey } from "./date";
 
@@ -10,7 +14,9 @@ it("counts a zero visit timestamp rather than treating it as missing", () => {
   const hour = String(date.getHours()).padStart(2, "0");
 
   expect(groupHistoryByDay([visit])).toEqual({ [day]: [visit] });
-  expect(groupHistoryByDayAndHour([visit])).toEqual({ [day]: { [hour]: [visit] } });
+  expect(groupHistoryByDayAndHour([visit])).toEqual({
+    [day]: { [hour]: [visit] },
+  });
 });
 
 // Numeric Date constructors express local wall-clock times. CI runs these
@@ -142,7 +148,9 @@ describe.each([
 
   it("skips records without timestamps while retaining dated records", () => {
     const datedItem = makeDatedItem();
-    expect(group([historyVisit("undated"), datedItem])).toEqual(expected(datedItem));
+    expect(group([historyVisit("undated"), datedItem])).toEqual(
+      expected(datedItem),
+    );
   });
 
   it("preserves the original records and their input order", () => {
