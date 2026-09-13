@@ -34,7 +34,9 @@ beforeEach(async () => {
   getVisits.mockImplementation(({ url }, callback) => callback(visitsByUrl.get(url) ?? []));
   runtime = { getURL: (path) => `chrome-extension://test${path}` };
   // Mock browser boundaries; mount the actual App, components, store, and loader.
-  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener: vi.fn() })));
+  vi.stubGlobal("matchMedia", vi.fn(() => ({
+    matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn(),
+  })));
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
   // removal exercises Svelte's outro lifecycle without depending on elapsed time.
   Object.defineProperty(Element.prototype, "animate", {
@@ -110,33 +112,41 @@ async function loadHistory() {
   await vi.waitFor(() => expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]));
 }
 
-describe("mounted history interactions", () => {
-  it.each(["success", "failure"])("waits for Delete all visits and renders deletion %s", async (outcome) => {
-    await loadHistory();
-    // The same URL has a button on two different days; click its newest visit.
-    const buttons = target.querySelectorAll<HTMLButtonElement>(
-      `button[aria-label="Delete all visits to ${repeatedUrl}, including visits on other days"]`,
-    );
-    expect(buttons).toHaveLength(2);
-    buttons[0].click();
-    await tick();
-    expect(deleteUrl).toHaveBeenCalledExactlyOnceWith({ url: repeatedUrl }, expect.any(Function));
-    expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
+async function startDeletion() {
+  await loadHistory();
+  // The same URL has a button on two different days; click its newest visit.
+  const buttons = target.querySelectorAll<HTMLButtonElement>(
+    `button[aria-label="Delete all visits to ${repeatedUrl}, including visits on other days"]`,
+  );
+  expect(buttons).toHaveLength(2);
+  buttons[0].click();
+  await tick();
+  expect(deleteUrl).toHaveBeenCalledExactlyOnceWith({ url: repeatedUrl }, expect.any(Function));
+  expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
+  return deleteUrl.mock.lastCall![1];
+}
 
-    const callback = deleteUrl.mock.lastCall![1];
-    if (outcome === "failure") {
-      failCallback(callback, "History deletion failed");
-      await vi.waitFor(() => expect(target.querySelector('[role="alert"]')?.textContent).toContain("History deletion failed"));
-      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
-      expect(button("Toggle moment for 2026-09-10").disabled).toBe(false);
-      expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
-    } else {
-      callback();
-      await vi.waitFor(() => expect(historyLinks()).toEqual([otherUrl]));
-      expect(target.querySelector('[role="alert"]')).toBeNull();
-      expect(target.querySelector('[data-date="2026-09-12"]')).toBeNull();
-      expect(button("Toggle moment for 2026-09-10").disabled).toBe(true);
-    }
+describe("mounted history interactions", () => {
+  it("removes all visits from the list and calendar only after deletion succeeds", async () => {
+    const callback = await startDeletion();
+
+    callback();
+
+    await vi.waitFor(() => expect(historyLinks()).toEqual([otherUrl]));
+    expect(target.querySelector('[role="alert"]')).toBeNull();
+    expect(target.querySelector('[data-date="2026-09-12"]')).toBeNull();
+    expect(button("Toggle moment for 2026-09-10").disabled).toBe(true);
+  });
+
+  it("preserves the list and calendar and shows an error when deletion fails", async () => {
+    const callback = await startDeletion();
+
+    failCallback(callback, "History deletion failed");
+
+    await vi.waitFor(() => expect(target.querySelector('[role="alert"]')?.textContent).toContain("History deletion failed"));
+    expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
+    expect(button("Toggle moment for 2026-09-10").disabled).toBe(false);
+    expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
   });
 
   it("shows progress, cancels loading, ignores late callbacks, and retries from the UI", async () => {

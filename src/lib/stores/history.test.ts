@@ -256,15 +256,17 @@ describe("live history synchronization", () => {
     expect(getHistoryForUrls).toHaveBeenCalledTimes(1);
   });
 
-  it.each(["deletion", "revisit"])("keeps valid updates in a mixed-URL batch after one URL's %s", async (event) => {
+  async function startMixedUrlBatch() {
     const snapshot = deferred<HistoryVisit[]>();
     const batch = deferred<HistoryVisit[]>();
-    const latest = deferred<HistoryVisit[]>();
     const otherItem = { id: "other", url: other.url, title: "Other updated" };
     const otherRevisit = historyVisit("other-revisit", new Date(2026, 8, 13, 7), otherItem);
     const updatedOther = { ...other, title: otherItem.title };
+    // Distinguish every A record from the snapshot, including its earlier visits.
+    const staleA = [revisit, newer, older].map((visit) => ({ ...visit, title: "Superseded batch title" }));
+    const batchVisits = [staleA[0], otherRevisit, staleA[1], updatedOther, staleA[2]];
     vi.mocked(getHistory).mockReturnValueOnce(snapshot.promise);
-    vi.mocked(getHistoryForUrls).mockReturnValueOnce(batch.promise).mockReturnValueOnce(latest.promise);
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(batch.promise);
 
     // Queue both URLs behind a full load so they share one incremental batch.
     const fetching = historyStore.fetch();
@@ -274,27 +276,42 @@ describe("live history synchronization", () => {
     await fetching;
     expect(getHistoryForUrls).toHaveBeenCalledExactlyOnceWith([item, otherItem], expect.any(Object));
 
-    if (event === "deletion") onVisitRemoved.emit({ allHistory: false, urls: [url] });
-    else onVisited.emit({ ...item, title: "Latest title" });
-    batch.resolve([revisit, otherRevisit, newer, updatedOther, older]);
+    return { batch, batchVisits, otherRevisit, updatedOther };
+  }
+
+  it("keeps the other URL's batch updates after one URL is deleted", async () => {
+    const { batch, batchVisits, otherRevisit, updatedOther } = await startMixedUrlBatch();
+
+    onVisitRemoved.emit({ allHistory: false, urls: [url] });
+    batch.resolve(batchVisits);
     await vi.waitFor(() => expect(historyStore.raw).toContainEqual(otherRevisit));
 
-    if (event === "deletion") {
-      expect(historyStore.raw).toEqual([otherRevisit, updatedOther]);
-      expect(getHistoryForUrls).toHaveBeenCalledTimes(1);
-    } else {
-      // B lands immediately, but A's superseded response must not land at all.
-      expect(historyStore.raw).toEqual([otherRevisit, newer, updatedOther, older]);
-      expect(getHistoryForUrls).toHaveBeenCalledTimes(2);
-      expect(getHistoryForUrls).toHaveBeenLastCalledWith(
-        [{ ...item, title: "Latest title" }], expect.any(Object),
-      );
-      const fresh = [revisit, newer, older].map((visit) => ({ ...visit, title: "Latest title" }));
-      latest.resolve(fresh);
-      await vi.waitFor(() => expect(historyStore.raw).toEqual([
-        fresh[0], otherRevisit, fresh[1], updatedOther, fresh[2],
-      ]));
-    }
+    expect(historyStore.raw).toEqual([otherRevisit, updatedOther]);
+    expect(getHistoryForUrls).toHaveBeenCalledTimes(1);
+    expect(historyStore.syncError).toBeNull();
+  });
+
+  it("keeps the other URL's batch updates while a revisited URL awaits its latest refresh", async () => {
+    const { batch, batchVisits, otherRevisit, updatedOther } = await startMixedUrlBatch();
+    const latest = deferred<HistoryVisit[]>();
+    vi.mocked(getHistoryForUrls).mockReturnValueOnce(latest.promise);
+
+    onVisited.emit({ ...item, title: "Latest title" });
+    batch.resolve(batchVisits);
+    await vi.waitFor(() => expect(historyStore.raw).toContainEqual(otherRevisit));
+
+    // B lands immediately, but A's superseded response must not land at all:
+    // both earlier visits retain their snapshot titles until the latest refresh.
+    expect(historyStore.raw).toEqual([otherRevisit, newer, updatedOther, older]);
+    expect(getHistoryForUrls).toHaveBeenCalledTimes(2);
+    expect(getHistoryForUrls).toHaveBeenLastCalledWith(
+      [{ ...item, title: "Latest title" }], expect.any(Object),
+    );
+    const fresh = [revisit, newer, older].map((visit) => ({ ...visit, title: "Latest title" }));
+    latest.resolve(fresh);
+    await vi.waitFor(() => expect(historyStore.raw).toEqual([
+      fresh[0], otherRevisit, fresh[1], updatedOther, fresh[2],
+    ]));
     expect(historyStore.syncError).toBeNull();
   });
 

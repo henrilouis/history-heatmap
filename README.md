@@ -81,7 +81,8 @@ normal run. GitHub Actions runs `npm ci` and `npm test` on every pull request an
 push to `main`, using UTC, America/Los_Angeles, Asia/Tokyo, and America/Sao_Paulo to
 catch differences between local-time and UTC grouping, date labels, and calendar
 rendering. Sao Paulo also exercises historical midnight DST transitions in date
-ranges. The UTC job also runs `npm run check` and `npm run build`.
+ranges. The UTC job also runs `npm run build`. A separate CI job runs
+`npm run check` in parallel with the timezone matrix.
 
 The Los Angeles job additionally checks spring-forward normalization and both
 occurrences of the repeated fall-back hour. These two tests are skipped in other
