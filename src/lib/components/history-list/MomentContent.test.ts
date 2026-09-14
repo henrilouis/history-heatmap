@@ -44,18 +44,25 @@ describe("individual visit rendering", () => {
     );
   });
 
-  it("renders an epoch timestamp and falls back to the URL when a title is missing", () => {
-    const visit = historyVisit("epoch", new Date(0));
-    const { body } = render(MomentContent, {
-      props: { date: "1970-01-01", items: [visit], deleteHistoryUrl: () => {} },
-    });
-    const time = new Date(0).toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "numeric",
-      hour12: false,
-    });
+  it.each([0, 0.9, -0.9])(
+    "renders timestamp %s and falls back to the URL when a title is missing",
+    (timestamp) => {
+      const visit = { ...historyVisit("epoch"), visitTime: timestamp };
+      const { body } = render(MomentContent, {
+        props: {
+          date: "1970-01-01",
+          items: [visit],
+          deleteHistoryUrl: () => {},
+        },
+      });
+      const time = new Date(timestamp).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: false,
+      });
 
-    expect(body).toContain(time);
-    expect(body).toContain(`>${visit.url}</a>`);
-  });
+      expect(body).toContain(time);
+      expect(body).toContain(`>${visit.url}</a>`);
+    },
+  );
 });

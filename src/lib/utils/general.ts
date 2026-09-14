@@ -1,4 +1,4 @@
-import { parseDateKey } from "./date";
+import { toLocalZonedDateTime } from "./date";
 
 export type CalendarMode = "days" | "hours";
 
@@ -15,22 +15,11 @@ export const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
  * Optionally uses a timestamp for more accurate date display.
  */
 export function formatMomentKey(key: string, timestamp?: number): string {
-  const formatDate = (date: Date) =>
-    date.toLocaleDateString(undefined, dateTimeFormatOptions);
-
-  if (timestamp) {
-    const dateStr = formatDate(new Date(timestamp));
-    if (key.includes("T")) {
-      const hour = key.split("T")[1];
-      return `${dateStr} at ${hour}:00`;
-    }
-    return dateStr;
-  }
-
-  // Fallback to parsing the key
-  if (key.includes("T")) {
-    const [dateKey, hour] = key.split("T");
-    return `${formatDate(parseDateKey(dateKey))} at ${hour}:00`;
-  }
-  return formatDate(parseDateKey(key));
+  const [dateKey, hour] = key.split("T");
+  const date =
+    timestamp !== undefined
+      ? toLocalZonedDateTime(timestamp).toPlainDate()
+      : Temporal.PlainDate.from(dateKey);
+  const label = date.toLocaleString(undefined, dateTimeFormatOptions);
+  return hour === undefined ? label : `${label} at ${hour}:00`;
 }
