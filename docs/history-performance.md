@@ -47,6 +47,34 @@ now computes each URL's text match once per query; it still scans all visits to
 preserve chronology. The filter measurements show substantial run-to-run variation
 and should not be read as a guaranteed speedup for every search.
 
+## Temporal migration (#2)
+
+Measured on the same Apple M3 Pro and Chrome 152.0.7977.83, using Node 26.8.2
+for both versions, with three loads of 100,000 URLs / 500,000 visits per version:
+
+| Measurement               | Date baseline, median (range) | Temporal, median (range)    |
+| ------------------------- | ----------------------------- | --------------------------- |
+| Load                      | 3.96 s (3.71–4.09 s)          | 4.01 s (3.55–4.17 s)        |
+| Group and fill both views | 1.06 s (1.04–1.51 s)          | 0.71 s (0.69–1.19 s)        |
+| Filter, mean per run      | 238 ms (231–242 ms)           | 234 ms (232–267 ms)         |
+| Retained visit heap       | 45.63 MiB (45.62–45.65 MiB)   | 45.63 MiB (45.62–45.65 MiB) |
+
+Retained visit heap is unchanged, as expected: this measures the loaded visit
+records before grouping, and the migration does not change their representation.
+
+An initial direct Temporal conversion per visit took 8.21 s median for grouping.
+The final implementation keeps one local-hour key interval per grouping operation
+and reuses it for visits inside that interval. Temporal supplies the local date,
+hour, and timezone-transition bounds. Clipping the interval at offset changes
+handles repeated hours and transitions that split an hour; unsorted input
+recomputes keys whenever it leaves the interval. This takes advantage of the
+normally newest-first history without retaining a per-visit cache.
+
+The measured grouping median is approximately 33% lower than the Date baseline.
+These results describe the synthetic, sorted workload, not a guaranteed speedup
+for every input order or browser version. Loading/filtering are unchanged and
+their timing variation should not be attributed to Temporal.
+
 ## Loading decisions
 
 The full-history search is retained so earlier recorded activity remains available.
@@ -74,7 +102,8 @@ CHROME_PATH="/path/to/chrome" npm run benchmark:history
 
 On macOS, the default executable is
 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`.
-Node 24 and a Chrome version supporting CDP `Extensions.loadUnpacked` are required.
+Use the Node 26 version in `.nvmrc` and Chrome 144 or newer with support for CDP
+`Extensions.loadUnpacked`.
 The script uses a dedicated debugging pipe and a newly created profile for every
 invocation. It never opens the default browser profile. Artifacts remain in the
 printed temporary directory for inspection.

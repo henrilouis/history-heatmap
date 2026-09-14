@@ -1,4 +1,8 @@
-import { eachLocalDate, getDateKey } from "./date";
+import {
+  createLocalTimeKeyer,
+  eachCalendarDate,
+  toLocalZonedDateTime,
+} from "./date";
 
 // Keep only fields consumed by the UI; URL/title strings are shared per URL.
 export type HistoryVisit = Pick<
@@ -198,11 +202,6 @@ export function filterHistory(
   });
 }
 
-// Helper to get hour key
-function getHourKey(date: Date): string {
-  return String(date.getHours()).padStart(2, "0");
-}
-
 export type HistoryByDay = {
   [day: string]: HistoryVisit[];
 };
@@ -216,10 +215,11 @@ export type HistoryByDayAndHour = {
 // Pure grouping function - works on already-fetched data
 export function groupHistoryByDay(history: HistoryVisit[]): HistoryByDay {
   const grouped: HistoryByDay = {};
+  const timeKeys = createLocalTimeKeyer();
 
   for (const item of history) {
     if (item.visitTime === undefined) continue;
-    const dayKey = getDateKey(new Date(item.visitTime));
+    const dayKey = timeKeys(item.visitTime).day;
     (grouped[dayKey] ??= []).push(item);
   }
 
@@ -236,12 +236,11 @@ export function groupHistoryByDayAndHour(
   history: HistoryVisit[],
 ): HistoryByDayAndHour {
   const grouped: HistoryByDayAndHour = {};
+  const timeKeys = createLocalTimeKeyer();
 
   for (const item of history) {
     if (item.visitTime === undefined) continue;
-    const date = new Date(item.visitTime);
-    const dayKey = getDateKey(date);
-    const hourKey = getHourKey(date);
+    const { day: dayKey, hour: hourKey } = timeKeys(item.visitTime);
 
     (grouped[dayKey] ??= {})[hourKey] ??= [];
     grouped[dayKey][hourKey].push(item);
@@ -260,7 +259,7 @@ export function groupHistoryByDayAndHour(
 // Scan bounds without allocating a timestamp array or spreading it into a call.
 function getHistoryDateRange(
   history: HistoryVisit[],
-): { startDate: Date; endDate: Date } | undefined {
+): { startDate: Temporal.PlainDate; endDate: Temporal.PlainDate } | undefined {
   let earliest = Infinity;
   let latest = -Infinity;
 
@@ -272,11 +271,9 @@ function getHistoryDateRange(
 
   if (earliest === Infinity) return;
 
-  const startDate = new Date(earliest);
-  const endDate = new Date(latest);
-  // Compare calendar dates so an earlier time on the final day cannot omit it.
-  startDate.setHours(0, 0, 0, 0);
-  endDate.setHours(0, 0, 0, 0);
+  const timeZone = Temporal.Now.timeZoneId();
+  const startDate = toLocalZonedDateTime(earliest, timeZone).toPlainDate();
+  const endDate = toLocalZonedDateTime(latest, timeZone).toPlainDate();
   return { startDate, endDate };
 }
 
@@ -290,10 +287,10 @@ export function fillEmptyDays(
   const { startDate, endDate } = range;
 
   // The day view is a week grid, so pad its first week back to Monday.
-  startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
+  const monday = startDate.subtract({ days: startDate.dayOfWeek - 1 });
 
-  for (const current of eachLocalDate(startDate, endDate)) {
-    grouped[getDateKey(current)] ??= [];
+  for (const current of eachCalendarDate(monday, endDate)) {
+    grouped[current.toString()] ??= [];
   }
 
   return grouped;
@@ -309,8 +306,8 @@ export function fillEmptyHours(
   const { startDate, endDate } = range;
 
   // The hour view is a flat day list and needs no Monday padding.
-  for (const current of eachLocalDate(startDate, endDate)) {
-    const dayKey = getDateKey(current);
+  for (const current of eachCalendarDate(startDate, endDate)) {
+    const dayKey = current.toString();
     grouped[dayKey] ??= {};
 
     // Fill all 24 hours for each day

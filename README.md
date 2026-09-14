@@ -6,7 +6,14 @@ Find the plugin [in the chrome web store](https://chromewebstore.google.com/deta
 
 ## History data
 
-The heatmap counts individual visits at their recorded local date and hour.
+The extension requires Chrome 144 or newer for native Temporal support.
+As described in Chrome's [minimum-version enforcement documentation](https://developer.chrome.com/docs/extensions/reference/manifest/minimum-chrome-version#existing_installs),
+existing users on older Chrome versions keep their installed extension version
+and stop receiving updates until their browser meets the minimum version.
+
+The heatmap counts individual visits at their local date and hour in the current
+system timezone. Chrome supplies visit timestamps, not the timezone originally
+used when browsing.
 `chrome.history.search()` supplies URLs and their latest titles; the extension
 retrieves each URL's visit records with `chrome.history.getVisits()`, with at most
 eight requests in flight. Repeated visits remain visible in their original cells.
@@ -30,8 +37,18 @@ updates wait for a successful Retry so they cannot create a partial heatmap.
 
 ## Development
 
-Use Node.js 24 (also used in CI) and install dependencies with `npm ci`.
-`@types/node` intentionally follows major 24 to match that runtime. The toolchain
+Use the Node.js 26 version pinned in `.nvmrc` (also used in CI):
+
+```sh
+nvm install
+nvm use
+npm ci
+```
+
+Node 26 provides native Temporal in both Node and jsdom tests.
+The project `.npmrc` enables `engine-strict`, so `npm ci` and `npm install`
+reject unsupported Node versions with `EBADENGINE`. Run `nvm use` before installing.
+`@types/node` intentionally follows major 26 to match that runtime. The toolchain
 uses Vitest 5, Oxlint, Oxfmt, and the TypeScript 7 native preview (`tsgo`). The
 native preview is exact-pinned so installs use the same compiler version.
 TypeScript 6 is also installed for `svelte-check`, whose peer dependency range
@@ -129,6 +146,9 @@ including sorting, missing timestamps, local-midnight boundaries, DST transition
 and input preservation. Regression tests also cover local date parsing, rendered
 calendar rows and headers, fallback selection labels, inclusive filtered date
 ranges, leap days, and range computation with 150,000 history records.
+Temporal regressions cover epoch zero, fractional milliseconds, skipped calendar
+dates, and cached grouping keys at timezone transitions, including Lord Howe's
+half-hour shifts and Monrovia's historical seconds-based offset.
 Visit-level regressions cover repeated visits across days and hours, revisiting a
 URL, bounded request concurrency, out-of-order responses, and retrieval failures.
 List-rendering tests check individual timestamps, and store-action tests verify

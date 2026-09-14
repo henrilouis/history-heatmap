@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+  "minimum_chrome_version": "144",
   "name": "History heatmap",
   "version": "1.1.2",
   "description": "Visualize and manage your browsing history",

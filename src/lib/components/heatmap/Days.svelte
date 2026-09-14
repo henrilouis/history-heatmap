@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { HistoryByDay } from "../../utils/chrome-api";
-  import { parseDateKey } from "../../utils/date";
   import type { Attachment } from "svelte/attachments";
   import "./heatmap.css";
 
@@ -34,8 +33,8 @@
 
     // Organize by weeks (Mon-Sun) - localized
     const dayNames = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(2024, 0, 1 + i); // Jan 1, 2024 is a Monday
-      return date.toLocaleDateString(undefined, { weekday: "short" });
+      const date = new Temporal.PlainDate(2024, 1, 1 + i); // Jan 1, 2024 is a Monday
+      return date.toLocaleString(undefined, { weekday: "short" });
     });
     const weeks: WeekData[] = dayNames.map((dayName) => ({
       dayName,
@@ -44,9 +43,8 @@
 
     // Fill in the days
     sortedDates.forEach((dateKey) => {
-      const date = parseDateKey(dateKey);
-      const dayOfWeek = date.getDay(); // 0 = Sunday
-      const rowIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to Mon-Sun (0-6)
+      const date = Temporal.PlainDate.from(dateKey);
+      const rowIndex = date.dayOfWeek - 1; // Monday-Sunday (0-6)
 
       const count = historyByDay[dateKey].length;
       const level =
@@ -63,9 +61,12 @@
     let weekCount = 0;
 
     weeks[0].days.forEach((day) => {
-      const monthName = parseDateKey(day.date).toLocaleString("default", {
-        month: "short",
-      });
+      const monthName = Temporal.PlainDate.from(day.date).toLocaleString(
+        undefined,
+        {
+          month: "short",
+        },
+      );
       if (monthName !== currentMonth) {
         if (currentMonth) {
           months.push({ name: currentMonth, span: weekCount });

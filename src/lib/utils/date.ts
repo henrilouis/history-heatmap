@@ -1,29 +1,60 @@
-// TODO (#2): migrate local calendar date handling to Temporal.PlainDate.
-
-// Date keys represent local calendar dates, not UTC instants.
-export function getDateKey(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+export function toLocalZonedDateTime(
+  timestamp: number,
+  timeZone = Temporal.Now.timeZoneId(),
+): Temporal.ZonedDateTime {
+  // Chrome timestamps can contain fractional milliseconds. Match Date's
+  // truncation at this boundary; retain the original number for visit sorting.
+  return Temporal.Instant.fromEpochMilliseconds(
+    Math.trunc(timestamp),
+  ).toZonedDateTimeISO(timeZone);
 }
 
-export function parseDateKey(key: string): Date {
-  const [year, month, day] = key.split("-").map(Number);
-  return new Date(year, month - 1, day);
+export function createLocalTimeKeyer(timeZone = Temporal.Now.timeZoneId()) {
+  let cached:
+    | Readonly<{ start: number; end: number; day: string; hour: string }>
+    | undefined;
+
+  // Results are shared on cache hits and replaced, never mutated, on misses.
+  // Callers may retain a result, but must treat it as read-only.
+  return (timestamp: number): Readonly<{ day: string; hour: string }> => {
+    const milliseconds = Math.trunc(timestamp);
+    if (cached && milliseconds >= cached.start && milliseconds < cached.end) {
+      return cached;
+    }
+
+    const zoned = toLocalZonedDateTime(milliseconds, timeZone);
+    const local = zoned.toPlainDateTime();
+    // History is normally newest-first. Reuse keys within this local hour,
+    // avoiding a timezone conversion for every visit. Keep only one interval
+    // per grouping operation; unsorted input simply recomputes on a cache miss.
+    const hourStart =
+      milliseconds -
+      (local.minute * 60_000 + local.second * 1_000 + local.millisecond);
+    // An offset change can split an hour (e.g. Lord Howe's 30-minute DST shift).
+    // Clip both ends to transitions so reuse is safe in either input direction.
+    // Advance 1 ns to include a transition exactly at the visit timestamp.
+    const previous = zoned
+      .add({ nanoseconds: 1 })
+      .getTimeZoneTransition("previous");
+    const next = zoned.getTimeZoneTransition("next");
+    cached = {
+      start: Math.max(hourStart, previous?.epochMilliseconds ?? -Infinity),
+      end: Math.min(hourStart + 3_600_000, next?.epochMilliseconds ?? Infinity),
+      day: local.toPlainDate().toString(),
+      hour: String(local.hour).padStart(2, "0"),
+    };
+    return cached;
+  };
 }
 
-export function* eachLocalDate(start: Date, end: Date): Generator<Date> {
-  // Construct each local midnight afresh: a midnight DST jump must not carry
-  // an hour offset into subsequent days and exclude the final date.
+export function* eachCalendarDate(
+  start: Temporal.PlainDate,
+  end: Temporal.PlainDate,
+): Generator<Temporal.PlainDate> {
   for (
-    let current = new Date(start);
-    current <= end;
-    current = new Date(
-      current.getFullYear(),
-      current.getMonth(),
-      current.getDate() + 1,
-    )
+    let current = start;
+    Temporal.PlainDate.compare(current, end) <= 0;
+    current = current.add({ days: 1 })
   ) {
     yield current;
   }

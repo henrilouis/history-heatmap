@@ -10,6 +10,7 @@
   } = $props();
 
   import { formatMomentKey } from "../../utils/general";
+  import { toLocalZonedDateTime } from "../../utils/date";
   import { blur } from "svelte/transition";
 
   import { getFaviconURL, type HistoryVisit } from "../../utils/chrome-api";
@@ -33,7 +34,7 @@
     <li out:blur={{ duration: 150 }}>
       <time
         >{item.visitTime !== undefined
-          ? new Date(item.visitTime).toLocaleTimeString([], {
+          ? toLocalZonedDateTime(item.visitTime).toLocaleString([], {
               hour: "numeric",
               minute: "numeric",
               hour12: false,
