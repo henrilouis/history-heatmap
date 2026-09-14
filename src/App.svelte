@@ -9,6 +9,12 @@
   onMount(historyStore.connect);
 </script>
 
+<svelte:window
+  onkeydown={(event) => {
+    if (event.key === "Escape") historyStore.clearSelection();
+  }}
+/>
+
 <div class={["wrapper", themeStore.colorScheme]}>
   <Header />
   {#if historyStore.error}

@@ -302,6 +302,37 @@ describe("mounted history interactions", () => {
     expect(target.querySelector('[role="alert"]')).toBeNull();
   });
 
+  it.each([
+    ["Days", "2026-09-12", "2026-09-11"],
+    ["Hours", "2026-09-12 at 09:00", "2026-09-11 at 14:00"],
+  ])("clears all %s selections with Escape", async (mode, first, second) => {
+    await loadHistory();
+    button(mode).click();
+    await tick();
+    button(`Toggle moment for ${first}`).click();
+    button(`Toggle moment for ${second}`).click();
+    await tick();
+    expect(target.querySelectorAll('[data-selected="true"]')).toHaveLength(2);
+    expect(historyLinks()).toEqual([repeatedUrl, otherUrl]);
+
+    const modeButton = button(mode);
+    modeButton.focus();
+    expect(document.activeElement).toBe(modeButton);
+    modeButton.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+    );
+    await tick();
+    expect(target.querySelectorAll('[data-selected="true"]')).toHaveLength(2);
+
+    modeButton.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    await tick();
+    expect(target.querySelector('[data-selected="true"]')).toBeNull();
+    expect(target.textContent).not.toContain("Clear selection");
+    expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
+  });
+
   it("selects day/hour cells and clears selection when switching calendar modes", async () => {
     await loadHistory();
     button("Toggle moment for 2026-09-12").click();
