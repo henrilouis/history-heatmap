@@ -59,6 +59,9 @@ for both versions, with three loads of 100,000 URLs / 500,000 visits per version
 | Filter, mean per run      | 238 ms (231–242 ms)           | 234 ms (232–267 ms)         |
 | Retained visit heap       | 45.63 MiB (45.62–45.65 MiB)   | 45.63 MiB (45.62–45.65 MiB) |
 
+Retained visit heap is unchanged, as expected: this measures the loaded visit
+records before grouping, and the migration does not change their representation.
+
 An initial direct Temporal conversion per visit took 8.21 s median for grouping.
 The final implementation keeps one local-hour key interval per grouping operation
 and reuses it for visits inside that interval. Temporal supplies the local date,

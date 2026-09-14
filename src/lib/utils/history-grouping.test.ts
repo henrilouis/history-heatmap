@@ -9,7 +9,10 @@ import { historyVisit } from "./history-fixtures";
 it("counts a zero visit timestamp rather than treating it as missing", () => {
   const date = new Date(0);
   const visit = historyVisit("epoch", date);
-  const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const dayOfMonth = String(date.getDate()).padStart(2, "0");
+  const day = `${year}-${month}-${dayOfMonth}`;
   const hour = String(date.getHours()).padStart(2, "0");
 
   expect(groupHistoryByDay([visit])).toEqual({ [day]: [visit] });

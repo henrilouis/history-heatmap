@@ -76,6 +76,17 @@ describe("local calendar date keys", () => {
 });
 
 describe("cached local time keys", () => {
+  it("preserves retained keys after cache hits and a change of day", () => {
+    const keyFor = createLocalTimeKeyer("UTC");
+    const retained = keyFor(Date.parse("2026-09-12T23:30:00Z"));
+
+    keyFor(Date.parse("2026-09-12T23:45:00Z"));
+    const nextDay = keyFor(Date.parse("2026-09-13T00:15:00Z"));
+
+    expect(retained).toMatchObject({ day: "2026-09-12", hour: "23" });
+    expect(nextDay).toMatchObject({ day: "2026-09-13", hour: "00" });
+  });
+
   it.each([
     { timeZone: "America/Los_Angeles", boundary: "2026-03-08T10:00:00Z" },
     { timeZone: "America/Los_Angeles", boundary: "2026-11-01T09:00:00Z" },

@@ -11,10 +11,12 @@ export function toLocalZonedDateTime(
 
 export function createLocalTimeKeyer(timeZone = Temporal.Now.timeZoneId()) {
   let cached:
-    | { start: number; end: number; day: string; hour: string }
+    | Readonly<{ start: number; end: number; day: string; hour: string }>
     | undefined;
 
-  return (timestamp: number): { day: string; hour: string } => {
+  // Results are shared on cache hits and replaced, never mutated, on misses.
+  // Callers may retain a result, but must treat it as read-only.
+  return (timestamp: number): Readonly<{ day: string; hour: string }> => {
     const milliseconds = Math.trunc(timestamp);
     if (cached && milliseconds >= cached.start && milliseconds < cached.end) {
       return cached;

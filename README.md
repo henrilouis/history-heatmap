@@ -7,6 +7,10 @@ Find the plugin [in the chrome web store](https://chromewebstore.google.com/deta
 ## History data
 
 The extension requires Chrome 144 or newer for native Temporal support.
+As described in Chrome's [minimum-version enforcement documentation](https://developer.chrome.com/docs/extensions/reference/manifest/minimum-chrome-version#existing_installs),
+existing users on older Chrome versions keep their installed extension version
+and stop receiving updates until their browser meets the minimum version.
+
 The heatmap counts individual visits at their local date and hour in the current
 system timezone. Chrome supplies visit timestamps, not the timezone originally
 used when browsing.
@@ -42,6 +46,8 @@ npm ci
 ```
 
 Node 26 provides native Temporal in both Node and jsdom tests.
+The project `.npmrc` enables `engine-strict`, so `npm ci` and `npm install`
+reject unsupported Node versions with `EBADENGINE`. Run `nvm use` before installing.
 `@types/node` intentionally follows major 26 to match that runtime. The toolchain
 uses Vitest 5, Oxlint, Oxfmt, and the TypeScript 7 native preview (`tsgo`). The
 native preview is exact-pinned so installs use the same compiler version.
