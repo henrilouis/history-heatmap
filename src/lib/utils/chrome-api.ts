@@ -8,10 +8,11 @@ import {
 export type HistoryVisit = Pick<
   chrome.history.VisitItem,
   "visitId" | "visitTime"
-> & {
-  url: string;
-  title?: string;
-};
+> &
+  Partial<Pick<chrome.history.VisitItem, "referringVisitId" | "transition">> & {
+    url: string;
+    title?: string;
+  };
 
 const VISIT_REQUEST_CONCURRENCY = 8;
 
@@ -116,6 +117,8 @@ async function loadVisits(
           visits.push({
             visitId: visit.visitId,
             visitTime: visit.visitTime,
+            referringVisitId: visit.referringVisitId,
+            transition: visit.transition,
             url: item.url,
             title: item.title,
           });

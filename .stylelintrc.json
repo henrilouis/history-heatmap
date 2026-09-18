@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "unit-disallowed-list": ["px"]
+  },
+  "reportDescriptionlessDisables": true,
+  "reportNeedlessDisables": true,
+  "overrides": [
+    {
+      "files": ["**/*.svelte"],
+      "customSyntax": "postcss-html"
+    }
+  ]
+}

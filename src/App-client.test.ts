@@ -168,6 +168,39 @@ async function startDeletion() {
 }
 
 describe("mounted history interactions", () => {
+  it("renders a static, accessible reload trail across unrelated visits", async () => {
+    visitsByUrl.set(repeatedUrl, [
+      chromeVisit("root", new Date(2026, 8, 12, 9)),
+      chromeVisit("refresh", new Date(2026, 8, 12, 9, 5), {
+        referringVisitId: "root",
+        transition: "reload",
+      }),
+    ]);
+    visitsByUrl.set(otherUrl, [
+      chromeVisit("independent", new Date(2026, 8, 12, 9, 2)),
+    ]);
+    completeSearch();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+    );
+
+    const graphs = [...target.querySelectorAll('.visit-graph[role="img"]')];
+    expect(graphs).toHaveLength(3);
+    expect(graphs[0].getAttribute("aria-label")).toContain(
+      "Reload or restored page",
+    );
+    expect(graphs[0].querySelector(".graph-node.reload")).not.toBeNull();
+    expect(graphs[2].getAttribute("aria-label")).toContain("Led to 1 visit");
+    // The connecting track still spans the unrelated middle visit.
+    expect(graphs[1].querySelector("path")).not.toBeNull();
+    expect(target.querySelectorAll(".graph-node")).toHaveLength(3);
+    expect(
+      target.querySelector(
+        ".visit-graph button, .visit-graph [tabindex], .visit-graph[tabindex]",
+      ),
+    ).toBeNull();
+  });
+
   it("removes all visits from the list and calendar only after deletion succeeds", async () => {
     const callback = await startDeletion();
 
@@ -194,10 +227,11 @@ describe("mounted history interactions", () => {
     expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
   });
 
-  it("shows progress, cancels loading, ignores late callbacks, and retries from the UI", async () => {
-    expect(target.querySelector('[role="status"]')?.textContent).toContain(
-      "Searching history",
-    );
+  it("shows header progress, cancels loading, ignores late callbacks, and retries", async () => {
+    expect(
+      target.querySelector('header [role="status"]')?.textContent,
+    ).toContain("Searching history");
+    expect(target.querySelector('header input[type="search"]')).toBeNull();
     const pending: VisitsCallback[] = [];
     getVisits.mockImplementation((_details, callback) => {
       pending.push(callback);
@@ -205,10 +239,11 @@ describe("mounted history interactions", () => {
     completeSearch();
     await vi.waitFor(() => expect(pending).toHaveLength(2));
     await tick();
-    expect(target.querySelector('[role="status"]')?.textContent).toMatch(
+    expect(target.querySelector('header [role="status"]')?.textContent).toMatch(
       /Loading visits: 0 of\s+2 URLs/,
     );
-    const progress = target.querySelector("progress")!;
+    const progress =
+      target.querySelector<HTMLProgressElement>("header progress")!;
     expect(progress.value).toBe(0);
     expect(progress.max).toBe(2);
 
@@ -219,6 +254,7 @@ describe("mounted history interactions", () => {
       ),
     );
     expect(target.querySelector("progress")).toBeNull();
+    expect(target.querySelector('header input[type="search"]')).not.toBeNull();
     for (const callback of pending) callback(visitsByUrl.get(repeatedUrl)!);
     await tick();
     expect(historyLinks()).toEqual([]);
@@ -232,12 +268,14 @@ describe("mounted history interactions", () => {
     button("Retry").click();
     await tick();
     expect(search).toHaveBeenCalledTimes(2);
-    expect(target.querySelector('[role="status"]')?.textContent).toContain(
-      "Searching history",
-    );
+    expect(
+      target.querySelector('header [role="status"]')?.textContent,
+    ).toContain("Searching history");
+    expect(target.querySelector('header input[type="search"]')).toBeNull();
     await loadHistory();
     expect(target.querySelector('[role="alert"]')).toBeNull();
     expect(target.querySelector('[role="status"]')).toBeNull();
+    expect(target.querySelector('header input[type="search"]')).not.toBeNull();
   });
 
   it("renders a failed initial search and recovers through Retry", async () => {
