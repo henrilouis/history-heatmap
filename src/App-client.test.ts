@@ -227,26 +227,55 @@ describe("mounted history interactions", () => {
     expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
   });
 
-  it("completes delayed loading without a progress or cancel banner", async () => {
-    expect(target.querySelector('[role="status"]')).toBeNull();
-    const pending: (() => void)[] = [];
-    getVisits.mockImplementation(({ url }, callback) => {
-      pending.push(() => callback(visitsByUrl.get(url) ?? []));
+  it("shows header progress, cancels loading, ignores late callbacks, and retries", async () => {
+    expect(
+      target.querySelector('header [role="status"]')?.textContent,
+    ).toContain("Searching history");
+    expect(target.querySelector('header input[type="search"]')).toBeNull();
+    const pending: VisitsCallback[] = [];
+    getVisits.mockImplementation((_details, callback) => {
+      pending.push(callback);
     });
     completeSearch();
     await vi.waitFor(() => expect(pending).toHaveLength(2));
     await tick();
-    expect(target.querySelector('[role="status"]')).toBeNull();
-    expect(target.querySelector("progress")).toBeNull();
-    expect(target.textContent).not.toContain("Cancel");
-    expect(historyLinks()).toEqual([]);
-
-    for (const complete of pending) complete();
-    await vi.waitFor(() =>
-      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+    expect(target.querySelector('header [role="status"]')?.textContent).toMatch(
+      /Loading visits: 0 of\s+2 URLs/,
     );
+    const progress =
+      target.querySelector<HTMLProgressElement>("header progress")!;
+    expect(progress.value).toBe(0);
+    expect(progress.max).toBe(2);
+
+    button("Cancel").click();
+    await vi.waitFor(() =>
+      expect(target.querySelector('[role="alert"]')?.textContent).toContain(
+        "cancelled",
+      ),
+    );
+    expect(target.querySelector("progress")).toBeNull();
+    expect(target.querySelector('header input[type="search"]')).not.toBeNull();
+    for (const callback of pending) callback(visitsByUrl.get(repeatedUrl)!);
+    await tick();
+    expect(historyLinks()).toEqual([]);
+    expect(target.querySelector('[role="alert"]')?.textContent).toContain(
+      "cancelled",
+    );
+
+    getVisits.mockImplementation(({ url }, callback) =>
+      callback(visitsByUrl.get(url) ?? []),
+    );
+    button("Retry").click();
+    await tick();
+    expect(search).toHaveBeenCalledTimes(2);
+    expect(
+      target.querySelector('header [role="status"]')?.textContent,
+    ).toContain("Searching history");
+    expect(target.querySelector('header input[type="search"]')).toBeNull();
+    await loadHistory();
     expect(target.querySelector('[role="alert"]')).toBeNull();
     expect(target.querySelector('[role="status"]')).toBeNull();
+    expect(target.querySelector('header input[type="search"]')).not.toBeNull();
   });
 
   it("renders a failed initial search and recovers through Retry", async () => {

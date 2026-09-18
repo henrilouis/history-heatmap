@@ -6,7 +6,26 @@
 
 <header>
   <h1>History heatmap</h1>
-  <Search setSearch={historyStore.setSearch} />
+  {#if historyStore.isLoading}
+    <div class="loading-status" role="status">
+      <span>
+        {#if historyStore.progress}
+          Loading visits: {historyStore.progress.completed.toLocaleString()} of
+          {historyStore.progress.total.toLocaleString()} URLs
+        {:else}
+          Searching history…
+        {/if}
+      </span>
+      <progress
+        aria-label="History URLs loaded"
+        max={historyStore.progress?.total || 1}
+        value={historyStore.progress?.completed}
+      ></progress>
+      <button onclick={historyStore.cancelFetch}>Cancel</button>
+    </div>
+  {:else}
+    <Search setSearch={historyStore.setSearch} />
+  {/if}
   <div class="header-end">
     <ThemeToggle />
   </div>
@@ -37,6 +56,13 @@
   .header-end {
     display: flex;
     justify-content: end;
+  }
+  .loading-status {
+    margin-inline: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
   }
   @media (min-width: 37.5em) {
     h1 {
