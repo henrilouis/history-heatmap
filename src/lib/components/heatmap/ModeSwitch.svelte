@@ -12,12 +12,14 @@
 
 <div class="button-group">
   <button
+    class="quiet"
     class:selected={calendarMode === "days"}
     onclick={() => setCalendarMode("days")}
   >
     Days
   </button>
   <button
+    class="quiet"
     class:selected={calendarMode === "hours"}
     onclick={() => setCalendarMode("hours")}
   >

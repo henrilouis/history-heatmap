@@ -170,7 +170,7 @@ export function describeGraphRow(
     details.push(`Led to ${children} ${children === 1 ? "visit" : "visits"}`);
   if (row.earlier || row.later) {
     details.push(
-      "Dashed markers: connections outside this view or condensed to keep the graph compact",
+      "Tunnel shadows: connections outside this view or condensed to keep the graph compact",
     );
   }
   return details.join(". ");

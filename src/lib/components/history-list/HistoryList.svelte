@@ -1,112 +1,109 @@
 <script lang="ts">
-    import Card from "./Card.svelte";
-    import MomentContent from "./MomentContent.svelte";
-    import { formatMomentKey } from "../../utils/general";
-    import { historyStore } from "../../stores/history.svelte";
+  import Card from "./Card.svelte";
+  import MomentContent from "./MomentContent.svelte";
+  import { formatMomentKey } from "../../utils/general";
+  import { historyStore } from "../../stores/history.svelte";
 
-    const ITEMS_PER_PAGE = 10;
-    let visibleCount = $state(ITEMS_PER_PAGE);
-    let sentinelEl = $state<HTMLDivElement | null>(null);
+  const ITEMS_PER_PAGE = 10;
+  let visibleCount = $state(ITEMS_PER_PAGE);
+  let sentinelEl = $state<HTMLDivElement | null>(null);
 
-    // Reset visible count when data changes
-    $effect(() => {
-        // Read these reactive values so changes trigger the pagination reset.
-        void historyStore.byDay;
-        void historyStore.search;
-        visibleCount = ITEMS_PER_PAGE;
-    });
+  // Reset visible count when data changes
+  $effect(() => {
+    // Read these reactive values so changes trigger the pagination reset.
+    void historyStore.byDay;
+    void historyStore.search;
+    visibleCount = ITEMS_PER_PAGE;
+  });
 
-    $effect(() => {
-        if (!sentinelEl) return;
+  $effect(() => {
+    if (!sentinelEl) return;
 
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting) {
-                    const totalItems = Object.keys(historyStore.byDay).length;
-                    if (visibleCount < totalItems) {
-                        visibleCount = Math.min(
-                            visibleCount + ITEMS_PER_PAGE,
-                            totalItems,
-                        );
-                    }
-                }
-            },
-            { rootMargin: "200px" },
-        );
-
-        observer.observe(sentinelEl);
-        return () => observer.disconnect();
-    });
-
-    const visibleEntries = $derived(
-        Object.entries(historyStore.byDay).slice(0, visibleCount),
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          const totalItems = Object.keys(historyStore.byDay).length;
+          if (visibleCount < totalItems) {
+            visibleCount = Math.min(visibleCount + ITEMS_PER_PAGE, totalItems);
+          }
+        }
+      },
+      { rootMargin: "200px" },
     );
 
-    const hasMore = $derived(
-        visibleCount < Object.keys(historyStore.byDay).length,
-    );
+    observer.observe(sentinelEl);
+    return () => observer.disconnect();
+  });
+
+  const visibleEntries = $derived(
+    Object.entries(historyStore.byDay).slice(0, visibleCount),
+  );
+
+  const hasMore = $derived(
+    visibleCount < Object.keys(historyStore.byDay).length,
+  );
 </script>
 
 <section class="moments">
-    {#if historyStore.selectedMoments.length > 0}
-        {#each historyStore.selectedMoments as momentKey}
-            {@const items = historyStore.getItemsForMoment(momentKey)}
-            {#if items.length > 0}
-                <Card>
-                    <MomentContent
-                        date={momentKey}
-                        {items}
-                        navigation={historyStore.navigation}
-                        deleteHistoryUrl={historyStore.removeUrl}
-                    />
-                </Card>
-            {:else}
-                <Card>
-                    <h3>{formatMomentKey(momentKey)}</h3>
-                    No results for this time
-                </Card>
-            {/if}
-        {/each}
-    {:else if historyStore.isLoading}
-        <Card loading={true} />
-        <Card loading={true} />
-        <Card loading={true} />
-    {:else if historyStore.filtered.length === 0}
+  {#if historyStore.selectedMoments.length > 0}
+    {#each historyStore.selectedMoments as momentKey}
+      {@const items = historyStore.getItemsForMoment(momentKey)}
+      {#if items.length > 0}
         <Card>
-            <h3>No results found</h3>
+          <MomentContent
+            date={momentKey}
+            {items}
+            navigation={historyStore.navigation}
+            deleteHistoryUrl={historyStore.removeUrl}
+          />
         </Card>
-    {:else}
-        {#each visibleEntries as [date, items]}
-            <Card>
-                <MomentContent
-                    {date}
-                    {items}
-                    navigation={historyStore.navigation}
-                    deleteHistoryUrl={historyStore.removeUrl}
-                />
-            </Card>
-        {/each}
+      {:else}
+        <Card>
+          <h3>{formatMomentKey(momentKey)}</h3>
+          No results for this time
+        </Card>
+      {/if}
+    {/each}
+  {:else if historyStore.isLoading}
+    <Card loading={true} />
+    <Card loading={true} />
+    <Card loading={true} />
+  {:else if historyStore.filtered.length === 0}
+    <Card>
+      <h3>No results found</h3>
+    </Card>
+  {:else}
+    {#each visibleEntries as [date, items]}
+      <Card>
+        <MomentContent
+          {date}
+          {items}
+          navigation={historyStore.navigation}
+          deleteHistoryUrl={historyStore.removeUrl}
+        />
+      </Card>
+    {/each}
 
-        {#if hasMore}
-            <div bind:this={sentinelEl} class="load-more-sentinel">
-                <Card loading={true} />
-            </div>
-        {/if}
+    {#if hasMore}
+      <div bind:this={sentinelEl} class="load-more-sentinel">
+        <Card loading={true} />
+      </div>
     {/if}
+  {/if}
 </section>
 
 <style>
-    .moments {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-    .graph-legend {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.375rem;
-        margin: 0;
-        font-size: 0.75rem;
-    }
+  .moments {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .graph-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    margin: 0;
+    font-size: 0.75rem;
+  }
 </style>

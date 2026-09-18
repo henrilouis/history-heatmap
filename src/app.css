@@ -16,8 +16,8 @@
     oklch(from var(--neutral) 70% c h)
   );
   --fg-on-primary: light-dark(
-    oklch(from var(--neutral) 90% c h),
-    oklch(from var(--neutral) 10% c h)
+    oklch(from var(--neutral) 100% c h),
+    oklch(from var(--neutral) 0% c h)
   );
 
   --bg-primary: light-dark(
@@ -42,8 +42,8 @@
     oklch(from var(--neutral) 80% c h / 0.3)
   );
   --el-bg-primary: light-dark(
-    oklch(from var(--color) 50% c h),
-    oklch(from var(--color) 50% c h)
+    oklch(from var(--color) 0% c h),
+    oklch(from var(--color) 100% 0 h)
   );
 
   --el-border-color-default: light-dark(
@@ -145,7 +145,7 @@ body {
   padding: 0;
   background: var(--bg-secondary);
   color: var(--fg-primary);
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 h1,
@@ -212,24 +212,17 @@ button {
     outline-offset: var(--el-focus-outline-offset);
     outline-style: solid;
   }
-  &.selected {
-    background: var(--el-bg-selected);
-    /* outline: var(--el-outline-width-selected) solid
-      var(--el-outline-color-selected); */
-    /* box-shadow: var(--el-box-shadow-selected); */
+  &.selected,
+  &.selected:hover,
+  &.selected.quiet:hover {
+    background: var(--el-bg-primary);
+    color: var(--fg-on-primary);
   }
 }
 
 .button-group {
   display: flex;
-  button:first-child {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-  }
-  button:last-child {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
+  gap: 0.125rem;
 }
 
 input[type="checkbox"] {
