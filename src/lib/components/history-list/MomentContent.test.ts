@@ -37,7 +37,7 @@ describe("individual visit rendering", () => {
         }),
       ),
     );
-    expect(body).toContain("Delete all visits");
+    expect(body).toContain("Delete");
     expect(body).toContain("including visits on other days");
     expect(body).toContain(
       'aria-label="Delete all visits to https://example.com/, including visits on other days"',

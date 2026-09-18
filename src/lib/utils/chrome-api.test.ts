@@ -72,7 +72,11 @@ describe("getHistory", () => {
 
   const older = chromeVisit("older", new Date(2026, 8, 10, 18), { id: "1" });
   const early = chromeVisit("early", new Date(2026, 8, 12, 9, 5), { id: "1" });
-  const late = chromeVisit("late", new Date(2026, 8, 12, 9, 45), { id: "1" });
+  const late = chromeVisit("late", new Date(2026, 8, 12, 9, 45), {
+    id: "1",
+    referringVisitId: "early",
+    transition: "reload",
+  });
   const nextHour = chromeVisit("next-hour", new Date(2026, 8, 12, 14), {
     id: "1",
   });
@@ -80,6 +84,8 @@ describe("getHistory", () => {
   const expected = [nextHour, late, early, older].map((visit) => ({
     visitId: visit.visitId,
     visitTime: visit.visitTime,
+    referringVisitId: visit.referringVisitId,
+    transition: visit.transition,
     url: "https://example.com/",
     title: "Example",
   }));
@@ -154,6 +160,8 @@ describe("getHistory", () => {
       {
         visitId: "revisit",
         visitTime: revisit.visitTime,
+        referringVisitId: revisit.referringVisitId,
+        transition: revisit.transition,
         url: "https://example.com/",
         title: "Example",
       },
@@ -431,7 +439,10 @@ describe("visit request scheduling", () => {
 describe("getHistoryForUrls", () => {
   it("expands event metadata into sorted visits without a history search", async () => {
     const older = chromeVisit("older", new Date(2026, 8, 10));
-    const newer = chromeVisit("newer", new Date(2026, 8, 12));
+    const newer = chromeVisit("newer", new Date(2026, 8, 12), {
+      referringVisitId: "older",
+      transition: "reload",
+    });
     getVisits.mockImplementation((_details, callback) =>
       completeCallback(() => callback([older, newer])),
     );
@@ -445,6 +456,8 @@ describe("getHistoryForUrls", () => {
       [newer, older].map((visit) => ({
         visitId: visit.visitId,
         visitTime: visit.visitTime,
+        referringVisitId: visit.referringVisitId,
+        transition: visit.transition,
         url: item.url,
         title: item.title,
       })),

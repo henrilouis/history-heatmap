@@ -1,93 +1,93 @@
 .heatmap {
-  margin-block: 1rem 2rem;
-  max-width: calc(100vw - 3rem);
-  overflow-y: auto;
-  padding-block-end: 0.125rem;
+    margin-block: 1rem 2rem;
+    max-width: calc(100vw - 3rem);
+    overflow-y: auto;
+    padding-block-end: 0.125rem;
 }
 table {
-  border-collapse: separate;
-  border-spacing: 0;
-  margin: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: auto;
 }
 td {
-  padding: 0.125rem;
+    padding: 0.125rem;
 }
 td button {
-  display: block;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  background-color: var(--el-bg-default);
-  border-radius: var(--el-border-radius);
-  corner-shape: var(--el-corner-shape);
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-  transition-property: scale, box-shadow, border, outline, background-color;
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    background-color: var(--el-bg-default);
+    border-radius: var(--el-border-radius);
+    corner-shape: var(--el-corner-shape);
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    transition-property: scale, box-shadow, border, outline, background-color;
 
-  &[data-level="0"]:not([data-selected="true"]) {
-    background-color: var(--heatmap-color-0);
-    pointer-events: none;
-  }
-  &[data-level="1"] {
-    background-color: var(--heatmap-color-1);
-  }
-  &[data-level="2"] {
-    background-color: var(--heatmap-color-2);
-  }
-  &[data-level="3"] {
-    background-color: var(--heatmap-color-3);
-  }
-  &[data-level="4"] {
-    background-color: var(--heatmap-color-4);
-  }
-  &[data-selected="true"] {
-    outline: var(--el-outline-width-selected) solid
-      var(--el-outline-color-selected);
-    box-shadow: var(--el-box-shadow-selected);
-    outline-offset: var(--el-outline-offset-selected);
-  }
-  &:hover {
-    scale: 1.1;
-  }
-  &:active {
-    scale: 1;
-  }
-  &:focus-visible {
-    outline-color: var(--el-focus-outline-color);
-    outline-width: var(--el-focus-outline-width);
-    outline-offset: var(--el-focus-outline-offset);
-    outline-style: solid;
-  }
+    &[data-level="0"]:not([data-selected="true"]) {
+        background-color: var(--heatmap-color-0);
+        pointer-events: none;
+    }
+    &[data-level="1"] {
+        background-color: var(--heatmap-color-1);
+    }
+    &[data-level="2"] {
+        background-color: var(--heatmap-color-2);
+    }
+    &[data-level="3"] {
+        background-color: var(--heatmap-color-3);
+    }
+    &[data-level="4"] {
+        background-color: var(--heatmap-color-4);
+    }
+    &[data-selected="true"] {
+        outline: var(--el-outline-width-selected) solid
+            var(--el-outline-color-selected);
+        box-shadow: var(--el-box-shadow-selected);
+        outline-offset: var(--el-outline-offset-selected);
+    }
+    &:hover {
+        scale: 1.1;
+    }
+    &:active {
+        scale: 1;
+    }
+    &:focus-visible {
+        outline-color: var(--el-focus-outline-color);
+        outline-width: var(--el-focus-outline-width);
+        outline-offset: var(--el-focus-outline-offset);
+        outline-style: solid;
+    }
 }
 th {
-  font-size: 0.75rem;
-  font-weight: 400;
-  text-align: left;
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-align: left;
 }
 thead th {
-  max-width: 0.75rem;
+    max-width: 0.75rem;
 }
 thead tr.days th {
-  font-size: 0.625rem;
+    font-size: 0.625rem;
 }
 tbody th {
-  font-size: 0.625rem;
-  line-height: 0.75rem;
-  text-align: right;
-  padding: 0 0.25rem 0 0;
+    font-size: 0.625rem;
+    line-height: 0.75rem;
+    text-align: right;
+    padding: 0 0.25rem 0 0;
 }
 
 :popover-open {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  & .count {
-    font-weight: 600;
-    color: var(--fg-primary);
-  }
-  & .moment {
-    color: var(--fg-secondary);
-    font-size: 0.75rem;
-  }
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    & .count {
+        font-weight: 600;
+        color: var(--fg-primary);
+    }
+    & .moment {
+        color: var(--fg-secondary);
+        font-size: 0.75rem;
+    }
 }

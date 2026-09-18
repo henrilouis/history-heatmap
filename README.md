@@ -23,6 +23,22 @@ partial counts. Starting a new load cancels the previous one, and stale results
 cannot replace the newer load. The history list displays each visit separately; **Delete all visits**
 removes every visit to that URL, including visits on other days.
 
+### Navigation trails
+
+A subway-style graph beside each history row connects visits using Chrome's
+recorded `referringVisitId`. Branches show one visit leading to multiple others;
+colors identify browsing trails, not tabs. The list stays newest-first, so newer
+visits branch upward from their older referrers. Hollow dots mark `reload`
+transitions, which Chrome also uses for restored pages and reopened tabs.
+
+The graph is a static visualization within each day/time card.
+Dashed endpoint markers indicate known connections outside the current card or
+search results, or connections condensed to keep the graph compact (at most five
+connection lanes, with solid connections spanning at most 80 rows).
+Unknown referrers remain unconnected. Filtering and deletion never create inferred
+shortcuts through missing visits. Navigation metadata comes from the existing
+visit requests and requires no additional permissions.
+
 Open pages stay synchronized with Chrome history events. External URL removals
 immediately disappear from the store, search results, and calendar views; clearing
 all history also clears the selection. Results from outstanding requests cannot

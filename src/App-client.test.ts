@@ -168,6 +168,39 @@ async function startDeletion() {
 }
 
 describe("mounted history interactions", () => {
+  it("renders a static, accessible reload trail across unrelated visits", async () => {
+    visitsByUrl.set(repeatedUrl, [
+      chromeVisit("root", new Date(2026, 8, 12, 9)),
+      chromeVisit("refresh", new Date(2026, 8, 12, 9, 5), {
+        referringVisitId: "root",
+        transition: "reload",
+      }),
+    ]);
+    visitsByUrl.set(otherUrl, [
+      chromeVisit("independent", new Date(2026, 8, 12, 9, 2)),
+    ]);
+    completeSearch();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+    );
+
+    const graphs = [...target.querySelectorAll('.visit-graph[role="img"]')];
+    expect(graphs).toHaveLength(3);
+    expect(graphs[0].getAttribute("aria-label")).toContain(
+      "Reload or restored page",
+    );
+    expect(graphs[0].querySelector(".graph-node.reload")).not.toBeNull();
+    expect(graphs[2].getAttribute("aria-label")).toContain("Led to 1 visit");
+    // The connecting track still spans the unrelated middle visit.
+    expect(graphs[1].querySelector("path")).not.toBeNull();
+    expect(target.querySelectorAll(".graph-node")).toHaveLength(3);
+    expect(
+      target.querySelector(
+        ".visit-graph button, .visit-graph [tabindex], .visit-graph[tabindex]",
+      ),
+    ).toBeNull();
+  });
+
   it("removes all visits from the list and calendar only after deletion succeeds", async () => {
     const callback = await startDeletion();
 

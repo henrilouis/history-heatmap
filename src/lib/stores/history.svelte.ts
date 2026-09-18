@@ -13,6 +13,7 @@ import {
   type HistoryLoadProgress,
 } from "../utils/chrome-api";
 import { mergeHistoryVisits } from "../utils/history-merge";
+import { indexNavigation } from "../utils/history-graph";
 
 // ============================================
 // Core State
@@ -46,6 +47,7 @@ let currentSync:
 // ============================================
 
 const filtered = $derived(filterHistory(rawHistory, searchQuery));
+const navigation = $derived(indexNavigation(rawHistory));
 
 const byDay = $derived<HistoryByDay>(groupHistoryByDay(filtered));
 
@@ -332,6 +334,9 @@ export const historyStore = {
   },
 
   // Derived state (computed)
+  get navigation() {
+    return navigation;
+  },
   get filtered() {
     return filtered;
   },
