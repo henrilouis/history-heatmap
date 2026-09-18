@@ -16,7 +16,7 @@
   header {
     position: sticky;
     top: 0;
-    background-color: var(--bg-secondary);
+    backdrop-filter: blur(0.75rem);
     display: grid;
     align-items: center;
     justify-content: space-between;
@@ -27,6 +27,7 @@
     @container scroll-container scroll-state(scrollable: top) {
       box-shadow: var(--shadow-1);
     }
+    z-index: 1;
   }
   h1 {
     margin: 0;
@@ -37,7 +38,7 @@
     display: flex;
     justify-content: end;
   }
-  @media (min-width: 600px) {
+  @media (min-width: 37.5em) {
     h1 {
       display: block;
     }
@@ -45,7 +46,7 @@
       grid-template-columns: auto 1fr auto;
     }
   }
-  @media (min-width: 900px) {
+  @media (min-width: 56.25em) {
     header {
       grid-template-columns: 12rem 1fr 12rem;
     }

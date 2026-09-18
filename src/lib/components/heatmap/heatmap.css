@@ -23,6 +23,8 @@ td button {
   cursor: pointer;
   transition: all 0.15s ease-in-out;
   transition-property: scale, box-shadow, border, outline, background-color;
+  outline-color: var(--el-outline-color-selected);
+  outline-width: var(--el-outline-width-selected);
 
   &[data-level="0"]:not([data-selected="true"]) {
     background-color: var(--heatmap-color-0);
@@ -41,8 +43,7 @@ td button {
     background-color: var(--heatmap-color-4);
   }
   &[data-selected="true"] {
-    outline: var(--el-outline-width-selected) solid
-      var(--el-outline-color-selected);
+    outline-style: solid;
     box-shadow: var(--el-box-shadow-selected);
     outline-offset: var(--el-outline-offset-selected);
   }

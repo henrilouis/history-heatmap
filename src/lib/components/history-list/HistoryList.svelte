@@ -53,6 +53,7 @@
           <MomentContent
             date={momentKey}
             {items}
+            navigation={historyStore.navigation}
             deleteHistoryUrl={historyStore.removeUrl}
           />
         </Card>
@@ -77,6 +78,7 @@
         <MomentContent
           {date}
           {items}
+          navigation={historyStore.navigation}
           deleteHistoryUrl={historyStore.removeUrl}
         />
       </Card>

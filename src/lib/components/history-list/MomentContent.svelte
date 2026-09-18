@@ -2,10 +2,12 @@
   let {
     date,
     items,
+    navigation,
     deleteHistoryUrl,
   }: {
     date: string;
     items: HistoryVisit[];
+    navigation?: NavigationIndex;
     deleteHistoryUrl: (url: string) => void;
   } = $props();
 
@@ -14,6 +16,15 @@
   import { blur } from "svelte/transition";
 
   import { getFaviconURL, type HistoryVisit } from "../../utils/chrome-api";
+  import {
+    indexNavigation,
+    layoutNavigation,
+    type NavigationIndex,
+  } from "../../utils/history-graph";
+  import VisitGraph from "./VisitGraph.svelte";
+
+  const index = $derived(navigation ?? indexNavigation(items));
+  const graph = $derived(layoutNavigation(items, index));
 
   function getHostname(url: string | undefined): string {
     if (!url) return "";
@@ -28,8 +39,9 @@
 <header>
   <h3>{formatMomentKey(date, items[0]?.visitTime)}</h3>
 </header>
-<ol>
-  {#each items as item (item.visitId)}
+<ol style={`--graph-width: ${graph.widthRem}rem`}>
+  {#each graph.rows as row (row.visit.visitId)}
+    {@const item = row.visit}
     {@const hostname = getHostname(item.url)}
     <li out:blur={{ duration: 150 }}>
       <time
@@ -41,26 +53,33 @@
             })
           : ""}</time
       >
+      <VisitGraph {row} widthRem={graph.widthRem} {index} />
       <img
         src={item.url ? getFaviconURL(item.url) : ""}
         alt={hostname ? `Favicon for ${hostname}` : ""}
-        style="width: 16px"
+        width="16"
+        height="16"
       />
-      <div>
+      <div class="visit-details">
         <a href={item.url}>{item.title || item.url}</a>
         <span class="text-secondary">{hostname}</span>
       </div>
       <button
-        class="quiet"
+        class="quiet delete-visit"
         title="Delete every visit to this URL, including visits on other days"
         aria-label={`Delete all visits to ${item.url}, including visits on other days`}
-        onclick={() => deleteHistoryUrl(item.url)}>Delete all visits</button
+        onclick={() => deleteHistoryUrl(item.url)}>Delete</button
       >
     </li>
   {/each}
 </ol>
 
 <style>
+  a {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   ol {
     list-style: none;
     padding: 0;
@@ -69,12 +88,22 @@
   li {
     font-size: 0.75rem;
     display: grid;
-    grid-template-columns: 4rem 16px 1fr auto;
+    grid-template-columns: 4rem var(--graph-width) 1rem minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.5rem;
-    padding-block: 0.25rem;
     &:not(:last-child) {
-      border-bottom: var(--el-border-width) solid var(--el-border-color-default);
+      box-shadow: inset 0 -0.0625rem var(--el-border-color-default);
     }
+  }
+  img {
+    width: 1rem;
+    height: 1rem;
+  }
+  .visit-details {
+    min-width: 0;
+    padding-block: 0.375rem;
+    overflow-wrap: anywhere;
+    display: grid;
+    grid-template-columns: 1fr auto;
   }
 </style>

@@ -168,6 +168,39 @@ async function startDeletion() {
 }
 
 describe("mounted history interactions", () => {
+  it("renders a static, accessible reload trail across unrelated visits", async () => {
+    visitsByUrl.set(repeatedUrl, [
+      chromeVisit("root", new Date(2026, 8, 12, 9)),
+      chromeVisit("refresh", new Date(2026, 8, 12, 9, 5), {
+        referringVisitId: "root",
+        transition: "reload",
+      }),
+    ]);
+    visitsByUrl.set(otherUrl, [
+      chromeVisit("independent", new Date(2026, 8, 12, 9, 2)),
+    ]);
+    completeSearch();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+    );
+
+    const graphs = [...target.querySelectorAll('.visit-graph[role="img"]')];
+    expect(graphs).toHaveLength(3);
+    expect(graphs[0].getAttribute("aria-label")).toContain(
+      "Reload or restored page",
+    );
+    expect(graphs[0].querySelector(".graph-node.reload")).not.toBeNull();
+    expect(graphs[2].getAttribute("aria-label")).toContain("Led to 1 visit");
+    // The connecting track still spans the unrelated middle visit.
+    expect(graphs[1].querySelector("path")).not.toBeNull();
+    expect(target.querySelectorAll(".graph-node")).toHaveLength(3);
+    expect(
+      target.querySelector(
+        ".visit-graph button, .visit-graph [tabindex], .visit-graph[tabindex]",
+      ),
+    ).toBeNull();
+  });
+
   it("removes all visits from the list and calendar only after deletion succeeds", async () => {
     const callback = await startDeletion();
 
@@ -194,48 +227,24 @@ describe("mounted history interactions", () => {
     expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
   });
 
-  it("shows progress, cancels loading, ignores late callbacks, and retries from the UI", async () => {
-    expect(target.querySelector('[role="status"]')?.textContent).toContain(
-      "Searching history",
-    );
-    const pending: VisitsCallback[] = [];
-    getVisits.mockImplementation((_details, callback) => {
-      pending.push(callback);
+  it("completes delayed loading without a progress or cancel banner", async () => {
+    expect(target.querySelector('[role="status"]')).toBeNull();
+    const pending: (() => void)[] = [];
+    getVisits.mockImplementation(({ url }, callback) => {
+      pending.push(() => callback(visitsByUrl.get(url) ?? []));
     });
     completeSearch();
     await vi.waitFor(() => expect(pending).toHaveLength(2));
     await tick();
-    expect(target.querySelector('[role="status"]')?.textContent).toMatch(
-      /Loading visits: 0 of\s+2 URLs/,
-    );
-    const progress = target.querySelector("progress")!;
-    expect(progress.value).toBe(0);
-    expect(progress.max).toBe(2);
-
-    button("Cancel").click();
-    await vi.waitFor(() =>
-      expect(target.querySelector('[role="alert"]')?.textContent).toContain(
-        "cancelled",
-      ),
-    );
+    expect(target.querySelector('[role="status"]')).toBeNull();
     expect(target.querySelector("progress")).toBeNull();
-    for (const callback of pending) callback(visitsByUrl.get(repeatedUrl)!);
-    await tick();
+    expect(target.textContent).not.toContain("Cancel");
     expect(historyLinks()).toEqual([]);
-    expect(target.querySelector('[role="alert"]')?.textContent).toContain(
-      "cancelled",
-    );
 
-    getVisits.mockImplementation(({ url }, callback) =>
-      callback(visitsByUrl.get(url) ?? []),
+    for (const complete of pending) complete();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
     );
-    button("Retry").click();
-    await tick();
-    expect(search).toHaveBeenCalledTimes(2);
-    expect(target.querySelector('[role="status"]')?.textContent).toContain(
-      "Searching history",
-    );
-    await loadHistory();
     expect(target.querySelector('[role="alert"]')).toBeNull();
     expect(target.querySelector('[role="status"]')).toBeNull();
   });

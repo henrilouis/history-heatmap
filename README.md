@@ -23,6 +23,24 @@ partial counts. Starting a new load cancels the previous one, and stale results
 cannot replace the newer load. The history list displays each visit separately; **Delete all visits**
 removes every visit to that URL, including visits on other days.
 
+### Navigation trails
+
+A subway-style graph beside each history row connects visits using Chrome's
+recorded `referringVisitId`. Branches show one visit leading to multiple others;
+colors identify browsing trails, not tabs. The list stays newest-first, so newer
+visits branch upward from their older referrers. Hollow dots mark `reload`
+transitions, which Chrome also uses for restored pages and reopened tabs.
+
+The graph is a static visualization within each day/time card.
+Lines entering a dark tunnel shadow indicate known connections outside the current
+card or search results, or connections condensed to keep the graph compact (at
+most five connection lanes, with solid connections spanning at most 80 rows).
+Unknown referrers remain unconnected. Filtering and deletion never create inferred
+shortcuts through missing visits. Navigation metadata comes from the existing
+visit requests and requires no additional permissions.
+Each graph row has a concise accessible label for its own navigation relationships.
+Graph widths are defined in rem so lanes and nodes scale with the root font size.
+
 Open pages stay synchronized with Chrome history events. External URL removals
 immediately disappear from the store, search results, and calendar views; clearing
 all history also clears the selection. Results from outstanding requests cannot
@@ -58,7 +76,7 @@ JavaScript compiler API.
 ### Linting, formatting, and type checking
 
 ```sh
-npm run lint          # Oxlint correctness rules; warnings fail the check
+npm run lint          # Oxlint and Stylelint rules; warnings fail the check
 npm run lint:fix      # Apply automatic lint fixes
 npm run format        # Format the project with Oxfmt
 npm run format:check  # Check formatting without writing files
@@ -71,6 +89,25 @@ formatting, with two-space indentation, double quotes, semicolons, and an
 80-column print width. Generated output, Fallow's cache, and the npm lockfile
 are excluded from formatting. Install the recommended Oxc VS Code extension
 for editor integration.
+
+Stylelint is configured in `.stylelintrc.json` and checks CSS files and Svelte
+`<style>` blocks through `npm run lint:styles` (also included in `npm run lint`
+and CI). Prefer `rem` for sizing and spacing and `em` for font-relative sizes
+and media queries. The `unit-disallowed-list` rule rejects `px`; other appropriate
+units such as `%`, viewport units, and unitless values remain allowed. When pixels
+are necessary, use a narrowly scoped disable with an explanation:
+
+```css
+/* stylelint-disable-next-line unit-disallowed-list -- Keep this hairline exactly one CSS pixel. */
+border-width: 1px;
+```
+
+Disable comments must include a reason; unused disables fail linting. Inline styles
+and JavaScript strings are outside Stylelint's coverage, but should follow the same
+convention except where an API requires pixels (such as IntersectionObserver's
+`rootMargin`).
+Fallow excludes `postcss-html` from unused-dependency checks because Stylelint
+loads it by name from the JSON configuration.
 
 `npm run check:types` runs `tsgo` against both the app and Vite configuration.
 `npm run check:svelte` runs `svelte-check` for component-aware diagnostics;

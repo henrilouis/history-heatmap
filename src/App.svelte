@@ -35,24 +35,7 @@
       >
     </div>
   {/if}
-  {#if historyStore.isLoading}
-    <div class="loading-status" role="status">
-      <span>
-        {#if historyStore.progress}
-          Loading visits: {historyStore.progress.completed.toLocaleString()} of
-          {historyStore.progress.total.toLocaleString()} URLs
-        {:else}
-          Searching history…
-        {/if}
-      </span>
-      <progress
-        aria-label="History URLs loaded"
-        max={historyStore.progress?.total || 1}
-        value={historyStore.progress?.completed}
-      ></progress>
-      <button onclick={historyStore.cancelFetch}>Cancel</button>
-    </div>
-  {/if}
+
   <main>
     <Heatmap />
     <HistoryList />
