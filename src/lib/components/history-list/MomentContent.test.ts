@@ -37,7 +37,10 @@ describe("individual visit rendering", () => {
         }),
       ),
     );
-    expect(body).toContain("Delete");
+    const buttonTexts = [
+      ...body.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g),
+    ].map(([, text]) => text.replace(/<!--[\s\S]*?-->/g, "").trim());
+    expect(buttonTexts).toEqual(["Delete", "Delete"]);
     expect(body).toContain("including visits on other days");
     expect(body).toContain(
       'aria-label="Delete all visits to https://example.com/, including visits on other days"',

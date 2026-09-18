@@ -43,6 +43,14 @@
 </div>
 
 <style>
+  .loading-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+
   .wrapper {
     color: var(--fg-primary);
     background-color: var(--bg-secondary);

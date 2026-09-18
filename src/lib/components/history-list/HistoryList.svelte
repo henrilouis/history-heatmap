@@ -98,12 +98,4 @@
     flex-direction: column;
     gap: 1rem;
   }
-  .graph-legend {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.375rem;
-    margin: 0;
-    font-size: 0.75rem;
-  }
 </style>

@@ -39,7 +39,7 @@
 <header>
   <h3>{formatMomentKey(date, items[0]?.visitTime)}</h3>
 </header>
-<ol style={`--graph-width: ${graph.width / 16}rem`}>
+<ol style={`--graph-width: ${graph.widthRem}rem`}>
   {#each graph.rows as row (row.visit.visitId)}
     {@const item = row.visit}
     {@const hostname = getHostname(item.url)}
@@ -53,7 +53,7 @@
             })
           : ""}</time
       >
-      <VisitGraph {row} width={graph.width} {index} />
+      <VisitGraph {row} widthRem={graph.widthRem} {index} />
       <img
         src={item.url ? getFaviconURL(item.url) : ""}
         alt={hostname ? `Favicon for ${hostname}` : ""}

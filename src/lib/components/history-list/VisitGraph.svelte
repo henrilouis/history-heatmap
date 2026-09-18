@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-    GRAPH_LANE_WIDTH,
+    GRAPH_LANE_WIDTH_REM,
     describeGraphRow,
     trailHue,
     type GraphRow,
@@ -10,15 +10,16 @@
 
   let {
     row,
-    width,
+    widthRem,
     index,
   }: {
     row: GraphRow;
-    width: number;
+    widthRem: number;
     index: NavigationIndex;
   } = $props();
 
-  const x = (lane: number) => (lane + 1) * GRAPH_LANE_WIDTH;
+  // SVG coordinates share the layout's rem-based horizontal scale.
+  const x = (lane: number) => (lane + 1) * GRAPH_LANE_WIDTH_REM;
   const description = $derived(describeGraphRow(row, index));
 
   function path(segment: GraphSegment): string {
@@ -32,7 +33,7 @@
 <span class="visit-graph" role="img" aria-label={description}>
   <svg
     class="tracks"
-    viewBox={`0 0 ${width} 40`}
+    viewBox={`0 0 ${widthRem} 40`}
     preserveAspectRatio="none"
     aria-hidden="true"
   >
@@ -47,7 +48,7 @@
     <svg
       class="tracks continuations"
       class:earlier={row.earlier}
-      viewBox={`0 0 ${width} 40`}
+      viewBox={`0 0 ${widthRem} 40`}
       preserveAspectRatio="none"
       aria-hidden="true"
     >
@@ -67,14 +68,14 @@
     {#if row.later}
       <span
         class="tunnel-shadow"
-        style={`left: ${(x(row.lane) / width) * 100}%`}
+        style={`left: ${(x(row.lane) / widthRem) * 100}%`}
         aria-hidden="true"
       ></span>
     {/if}
     {#if row.earlier}
       <span
         class="tunnel-shadow earlier"
-        style={`left: ${(x(row.lane) / width) * 100}%`}
+        style={`left: ${(x(row.lane) / widthRem) * 100}%`}
         aria-hidden="true"
       ></span>
     {/if}
@@ -82,7 +83,7 @@
   <span
     class="graph-node"
     class:reload={row.visit.transition === "reload"}
-    style={`left: ${(x(row.lane) / width) * 100}%; --trail-hue: ${trailHue(row.trail)}`}
+    style={`left: ${(x(row.lane) / widthRem) * 100}%; --trail-hue: ${trailHue(row.trail)}`}
     aria-hidden="true"
   ></span>
 </span>

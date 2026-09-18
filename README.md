@@ -38,6 +38,8 @@ most five connection lanes, with solid connections spanning at most 80 rows).
 Unknown referrers remain unconnected. Filtering and deletion never create inferred
 shortcuts through missing visits. Navigation metadata comes from the existing
 visit requests and requires no additional permissions.
+Each graph row has a concise accessible label for its own navigation relationships.
+Graph widths are defined in rem so lanes and nodes scale with the root font size.
 
 Open pages stay synchronized with Chrome history events. External URL removals
 immediately disappear from the store, search results, and calendar views; clearing

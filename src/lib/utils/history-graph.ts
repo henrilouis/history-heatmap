@@ -69,7 +69,7 @@ export type GraphRow = {
 // the graph indefinitely or drawing overlapping, ambiguous lines.
 const CONNECTION_LANES = 5;
 const MAX_EDGE_ROWS = 80;
-export const GRAPH_LANE_WIDTH = 14;
+export const GRAPH_LANE_WIDTH_REM = 0.875;
 
 type OpenLane = { target: number; trail: string } | undefined;
 
@@ -137,7 +137,7 @@ export function layoutNavigation(
     }
   }
 
-  return { rows, width: (laneCount + 1) * GRAPH_LANE_WIDTH };
+  return { rows, widthRem: (laneCount + 1) * GRAPH_LANE_WIDTH_REM };
 }
 
 export function trailHue(trail: string): number {
@@ -168,10 +168,7 @@ export function describeGraphRow(
   const children = index.children.get(visit.visitId)?.length ?? 0;
   if (children)
     details.push(`Led to ${children} ${children === 1 ? "visit" : "visits"}`);
-  if (row.earlier || row.later) {
-    details.push(
-      "Tunnel shadows: connections outside this view or condensed to keep the graph compact",
-    );
-  }
+  if (row.earlier) details.push("Earlier continuation");
+  if (row.later) details.push("Later continuation");
   return details.join(". ");
 }

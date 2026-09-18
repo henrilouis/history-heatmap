@@ -102,6 +102,9 @@ describe("navigation graph", () => {
     expect(describeGraphRow(newer, index)).toContain(
       "From: https://example.com/old-day",
     );
+    expect(describeGraphRow(newer, index)).toContain("Earlier continuation");
+    expect(describeGraphRow(older, index)).toContain("Later continuation");
+    expect(describeGraphRow(newer, index)).not.toContain("Tunnel shadows");
   });
 
   it("leaves absent, self-referencing, and future referrers unconnected", () => {
@@ -123,9 +126,9 @@ describe("navigation graph", () => {
     );
     const roots = Array.from({ length: 12 }, (_, i) => visit(`root-${i}`));
     const items = [...children, ...roots];
-    const { rows, width } = layoutNavigation(items, indexNavigation(items));
+    const { rows, widthRem } = layoutNavigation(items, indexNavigation(items));
 
-    expect(width).toBeLessThanOrEqual(98);
+    expect(widthRem).toBeLessThanOrEqual(6.125);
     expect(rows.slice(0, 12).filter((row) => row.earlier)).toHaveLength(7);
     expect(rows.slice(12).filter((row) => row.later)).toHaveLength(7);
     for (const row of rows) {
