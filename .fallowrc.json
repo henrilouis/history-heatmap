@@ -5,7 +5,7 @@
     "src/main.{ts,tsx,js,jsx}",
     "svelte.config.js"
   ],
-  "ignoreDependencies": ["svelte", "postcss-html"],
+  "ignoreDependencies": ["svelte", "postcss-html", "typescript-native"],
   "duplicates": {
     "minOccurrences": 3
   },
