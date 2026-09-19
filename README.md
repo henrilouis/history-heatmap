@@ -6,6 +6,10 @@ interactive calendar heatmap.
 [Install from the Chrome Web Store](https://chromewebstore.google.com/detail/history-heatmap/laddklgjajohacmmgojapiealpgfbfod).
 Requires Chrome 144 or newer for native Temporal support.
 
+Existing users on older Chrome versions keep their installed extension version
+but stop receiving updates until Chrome meets the minimum version. See
+[Chrome's minimum-version enforcement](https://developer.chrome.com/docs/extensions/reference/manifest/minimum-chrome-version#existing_installs).
+
 ## How history is displayed
 
 - Each visit appears separately in the list and heatmap, including repeated visits
@@ -28,6 +32,9 @@ results, or connections condensed to keep the graph compact. Unknown referrers
 remain unconnected. The graph includes accessible labels and requires no
 additional permissions.
 
+See [history behavior](docs/history.md) for loading guarantees, synchronization,
+and navigation graph limits.
+
 ## Development
 
 Use Node.js 26, as pinned in `.nvmrc`:
@@ -36,6 +43,11 @@ Use Node.js 26, as pinned in `.nvmrc`:
 nvm install
 nvm use
 npm ci
+```
+
+Start the development server after setup:
+
+```sh
 npm run dev
 ```
 

@@ -14,6 +14,10 @@ for the app and Vite configurations, avoiding the shared `tsc` binary name with
 TypeScript 6. The `typescript` dependency remains on version 6 because
 `svelte-check` requires its JavaScript compiler API and supports TypeScript 5 and 6.
 
+The explicit compiler path assumes the documented npm `node_modules` layout.
+Install modes without that path, such as Yarn Plug'n'Play, need a different
+launcher; use `npm ci` for the supported setup.
+
 `npm run check:svelte` checks component scripts and templates. Its embedded CSS
 diagnostics are disabled because that validator does not yet support
 `corner-shape` and `scroll-state()` container queries. Stylelint checks CSS, and
