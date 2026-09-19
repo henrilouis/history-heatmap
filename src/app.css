@@ -240,8 +240,16 @@ a {
   text-decoration: none;
   font-weight: 600;
   word-break: break-word;
+  border-radius: var(--el-border-radius);
+  corner-shape: var(--el-corner-shape);
   &:hover {
     text-decoration: underline;
+  }
+  &:focus-visible {
+    outline-color: var(--el-focus-outline-color);
+    outline-width: var(--el-focus-outline-width);
+    outline-offset: var(--el-focus-outline-offset);
+    outline-style: solid;
   }
 }
 

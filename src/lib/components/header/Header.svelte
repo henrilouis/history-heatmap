@@ -10,7 +10,8 @@
     <div class="loading-status" role="status">
       <span>
         {#if historyStore.progress}
-          Loading visits: {historyStore.progress.completed.toLocaleString()} of
+          Loading visits: {historyStore.progress.completed.toLocaleString()}
+          of
           {historyStore.progress.total.toLocaleString()} URLs
         {:else}
           Searching history…
@@ -40,7 +41,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     grid-template-columns: 1fr auto;
     transition: box-shadow 0.3s;
     @container scroll-container scroll-state(scrollable: top) {
@@ -50,7 +51,7 @@
   }
   h1 {
     margin: 0;
-    font-size: 1.375rem;
+    font-size: 1.25rem;
     display: none;
   }
   .header-end {

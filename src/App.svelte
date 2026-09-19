@@ -67,7 +67,7 @@
   }
 
   main {
-    padding: 0.5rem 1rem 1rem 1rem;
+    padding: 1rem;
     margin-inline: auto;
     max-width: 60rem;
   }
