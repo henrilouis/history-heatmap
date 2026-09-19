@@ -240,7 +240,7 @@ describe("mounted history interactions", () => {
     await vi.waitFor(() => expect(pending).toHaveLength(2));
     await tick();
     expect(target.querySelector('header [role="status"]')?.textContent).toMatch(
-      /Loading visits: 0 of\s+2 URLs/,
+      /Loading visits: 0\s+of\s+2 URLs/,
     );
     const progress =
       target.querySelector<HTMLProgressElement>("header progress")!;
