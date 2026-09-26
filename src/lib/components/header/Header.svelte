@@ -35,14 +35,17 @@
 <style>
   header {
     position: sticky;
-    top: 0;
+    top: 0.5rem;
     backdrop-filter: blur(0.75rem);
     display: grid;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     padding: 0.5rem 1rem;
+    margin: 0.5rem;
     grid-template-columns: 1fr auto;
+    border-radius: var(--cn-border-radius);
+    corner-shape: var(--cn-corner-shape);
     transition: box-shadow 0.3s;
     @container scroll-container scroll-state(scrollable: top) {
       box-shadow: var(--shadow-1);
