@@ -44,8 +44,8 @@
         padding: 0.5rem 1rem;
         margin: 0.5rem;
         grid-template-columns: 1fr auto;
-        border-radius: var(--el-border-radius);
-        corner-shape: var(--el-corner-shape);
+        border-radius: var(--cn-border-radius);
+        corner-shape: var(--cn-corner-shape);
         transition: box-shadow 0.3s;
         @container scroll-container scroll-state(scrollable: top) {
             box-shadow: var(--shadow-1);
