@@ -41,7 +41,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem;
     margin: 0.5rem;
     grid-template-columns: 1fr auto;
     border-radius: var(--cn-border-radius);
