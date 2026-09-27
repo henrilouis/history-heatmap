@@ -34,7 +34,7 @@
     "@tsconfig/svelte": "^5.0.8",
     "@types/chrome": "^0.2.9",
     "@types/node": "^26.5.1",
-    "fallow": "3.26.0",
+    "fallow": "3.28.0",
     "jsdom": "^30.0.1",
     "lightningcss": "^1.33.0",
     "oxfmt": "^0.67.0",
