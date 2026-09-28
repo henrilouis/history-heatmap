@@ -117,17 +117,17 @@
           <Bounds domain={target} {motion}>
             {#snippet children({ xScale, yScale })}
               {#each nodes.filter(isVisible) as node (node.data.id)}
-                {@const x = xScale(node.x0) + INSET}
-                {@const y = yScale(node.y0) + INSET}
-                {@const width = Math.max(
-                  0,
-                  xScale(node.x1) - xScale(node.x0) - 2 * INSET,
-                )}
-                {@const height = Math.max(
-                  0,
-                  yScale(node.y1) - yScale(node.y0) - 2 * INSET,
-                )}
-                {@const style = `left: ${x}px; top: ${y}px; width: ${width}px; height: ${height}px`}
+                {@const x0 = xScale(node.x0)}
+                {@const y0 = yScale(node.y0)}
+                {@const outerWidth = xScale(node.x1) - x0}
+                {@const outerHeight = yScale(node.y1) - y0}
+                <!-- Thin tiles get a smaller gap, so they keep half their size
+                     and stay inside their own rectangle instead of vanishing. -->
+                {@const insetX = Math.min(INSET, outerWidth / 4)}
+                {@const insetY = Math.min(INSET, outerHeight / 4)}
+                {@const width = outerWidth - 2 * insetX}
+                {@const height = outerHeight - 2 * insetY}
+                {@const style = `left: ${x0 + insetX}px; top: ${y0 + insetY}px; width: ${width}px; height: ${height}px`}
                 {#snippet label()}
                   {@const favicon = faviconFor(node)}
                   <span class="label">
@@ -140,12 +140,15 @@
                     <span class="count">{formatVisits(node.value ?? 0)}</span>
                   </span>
                 {/snippet}
-                <!-- Siblings along the zoom path are only there to animate out. -->
+                <!-- Siblings along the zoom path are only there to animate out.
+                     Sub-pixel tiles can't be seen or clicked, so skip them too. -->
                 <div
                   class="tile-wrapper"
                   {style}
                   style:--tile-hue={hueOf(node)}
-                  inert={node.parent?.data.id !== zoomed.data.id}
+                  inert={node.parent?.data.id !== zoomed.data.id ||
+                    width < 1 ||
+                    height < 1}
                   transition:fade={{ duration: fadeDuration }}
                 >
                   {#if node.children}
@@ -242,7 +245,9 @@
     display: flex;
     width: 100%;
     height: 100%;
-    padding: 0.5rem;
+    /* Shrinks with thin tiles, which would otherwise grow to fit the padding
+       and spill out of their wrapper. */
+    padding: min(0.5rem, 25cqmin);
     overflow: hidden;
     color: var(--fg-primary);
     font: inherit;

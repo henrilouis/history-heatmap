@@ -481,6 +481,65 @@ describe("mounted history interactions", () => {
     );
   }, 30_000);
 
+  // With 1,000 visits beside a handful, the small site is a strip only a few
+  // pixels wide. A fixed gap used to shrink it to nothing while its button
+  // stayed focusable.
+  it.each([
+    { smallVisits: 4, focusable: true },
+    { smallVisits: 1, focusable: false },
+  ])(
+    "keeps a thin $smallVisits-visit tile inside its rectangle, focusable: $focusable",
+    async ({ smallVisits, focusable }) => {
+      const smallUrl = "https://small.example/";
+      const day = new Date(2026, 8, 12).getTime();
+      const visits = (id: string, count: number) =>
+        Array.from({ length: count }, (_, i) =>
+          chromeVisit(`${id}-${i}`, new Date(day + i * 20_000)),
+        );
+      visitsByUrl.set(repeatedUrl, visits("big", 1000));
+      visitsByUrl.delete(otherUrl);
+      visitsByUrl.set(smallUrl, visits("small", smallVisits));
+      search.mock.lastCall![1]([
+        records[0],
+        { id: "small", url: smallUrl, title: "Small" },
+      ]);
+      await vi.waitFor(() => expect(historyLinks()).toContain(repeatedUrl));
+
+      // Give the chart a real size; jsdom reports 0 for every element.
+      const size = (value: number) => ({ configurable: true, value });
+      Object.defineProperty(HTMLElement.prototype, "clientWidth", size(1000));
+      Object.defineProperty(HTMLElement.prototype, "clientHeight", size(512));
+      try {
+        await import("./lib/components/stats/Stats.svelte");
+        button("Stats").click();
+        await vi.waitFor(() =>
+          expect(target.textContent).toMatch(/visits across\s+2\s+websites/),
+        );
+        const wrapper = await vi.waitFor(() => {
+          const tile = target.querySelector<HTMLElement>(
+            '.tile[title^="small.example"]',
+          );
+          expect(tile).not.toBeNull();
+          return tile!.parentElement!;
+        });
+        const left = parseFloat(wrapper.style.left);
+        const width = parseFloat(wrapper.style.width);
+        expect(width).toBeGreaterThan(0);
+        expect(left).toBeGreaterThanOrEqual(0);
+        expect(left + width).toBeLessThanOrEqual(1000);
+        expect(wrapper.inert).toBe(!focusable);
+        expect(
+          target.querySelector<HTMLElement>('.tile[title^="example.com"]')!
+            .parentElement!.inert,
+        ).toBe(false);
+      } finally {
+        Reflect.deleteProperty(HTMLElement.prototype, "clientWidth");
+        Reflect.deleteProperty(HTMLElement.prototype, "clientHeight");
+      }
+    },
+    30_000,
+  );
+
   it("renders only the visits near the viewport of a very busy day", async () => {
     const day = new Date(2026, 8, 12).getTime();
     visitsByUrl.set(
