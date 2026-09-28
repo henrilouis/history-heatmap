@@ -3,6 +3,7 @@ import { historyVisit } from "./history-fixtures";
 import {
   chunkHistoryRows,
   flattenHistoryGroups,
+  type HistoryChunk,
   type HistoryGroup,
 } from "./history-rows";
 
@@ -37,24 +38,124 @@ describe("history list rows", () => {
 
   it("groups rendered rows into card fragments keyed by their card", () => {
     const rows = flattenHistoryGroups(groups);
-    expect(chunkHistoryRows(rows, groups, [1, 2, 3, 4, 5, 6])).toEqual([
-      { key: "2026-09-12", group: 0, indexes: [1, 2] },
-      { key: "2026-09-11", group: 1, indexes: [4] },
-      { key: "2026-09-10", group: 2, indexes: [6] },
+    expect(
+      chunkHistoryRows(rows, groups, [1, 2, 3, 4, 5, 6]).map(summary),
+    ).toEqual([
+      { key: "2026-09-12", indexes: [1, 2] },
+      { key: "2026-09-11", indexes: [4] },
+      { key: "2026-09-10", indexes: [6] },
     ]);
   });
 
-  it("gives a detached row of the same card its own fragment", () => {
+  describe("with a focused row kept mounted in a busy card", () => {
     const busy: HistoryGroup[] = [
       {
         key: "2026-09-12",
-        items: Array.from({ length: 10 }, (_, i) => historyVisit(`${i}`)),
+        items: Array.from({ length: 100 }, (_, i) => historyVisit(`${i}`)),
       },
     ];
     const rows = flattenHistoryGroups(busy);
-    expect(chunkHistoryRows(rows, busy, [2, 6, 7, 8])).toEqual([
-      { key: "2026-09-12", group: 0, indexes: [2] },
-      { key: "2026-09-12:1", group: 0, indexes: [6, 7, 8] },
-    ]);
+    const focused = rows[50].key;
+    const range = (from: number, to: number) =>
+      Array.from({ length: to - from + 1 }, (_, i) => from + i);
+    const scroll = (steps: number[][]) =>
+      steps.reduce<HistoryChunk[][]>((renders, indexes) => {
+        const previous = renders.at(-1);
+        return [
+          ...renders,
+          chunkHistoryRows(rows, busy, indexes, previous, focused),
+        ];
+      }, []);
+    const keyOf = (chunks: HistoryChunk[], index: number) =>
+      chunks.find((chunk) => chunk.indexes.includes(index))?.key;
+
+    it("keeps the focused row's fragment key when scrolling up splits it", () => {
+      const renders = scroll([
+        range(40, 60),
+        range(30, 50),
+        [...range(20, 40), 50],
+      ]);
+      expect(renders.at(-1)!.map(summary)).toEqual([
+        { key: "2026-09-12:1", indexes: range(20, 40) },
+        { key: "2026-09-12", indexes: [50] },
+      ]);
+      expect(new Set(renders.map((chunks) => keyOf(chunks, 50)))).toEqual(
+        new Set(["2026-09-12"]),
+      );
+    });
+
+    it("keeps it when jumping away without overlap and rejoining", () => {
+      const renders = scroll([
+        range(40, 60),
+        [...range(0, 20), 50],
+        range(40, 60),
+      ]);
+      expect(renders.map((chunks) => keyOf(chunks, 50))).toEqual([
+        "2026-09-12",
+        "2026-09-12",
+        "2026-09-12",
+      ]);
+      expect(renders.at(-1)!.map(summary)).toEqual([
+        { key: "2026-09-12", indexes: range(40, 60) },
+      ]);
+    });
+
+    it("keeps the visible fragment's key when focus moves into it", () => {
+      const detached = scroll([range(40, 60), [...range(0, 20), 50]]).at(-1)!;
+      const visibleKey = keyOf(detached, 10);
+      // Focus moved to row 10; the old focused row drops out of the range.
+      const next = chunkHistoryRows(
+        rows,
+        busy,
+        range(0, 22),
+        detached,
+        rows[10].key,
+      );
+      expect(next.map(summary)).toEqual([
+        { key: visibleKey, indexes: range(0, 22) },
+      ]);
+    });
+
+    it("gives unrelated fragments keys the previous render did not use", () => {
+      // Visible rows below the focused row, then a jump above it.
+      const below = scroll([range(40, 60), [50, ...range(60, 80)]]).at(-1)!;
+      const above = chunkHistoryRows(
+        rows,
+        busy,
+        [...range(0, 20), 50],
+        below,
+        focused,
+      );
+      expect(keyOf(above, 50)).toBe(keyOf(below, 50));
+      expect(below.map((chunk) => chunk.key)).not.toContain(keyOf(above, 10));
+    });
+
+    it("matches fragments by row rather than index when rows shift", () => {
+      const before = chunkHistoryRows(
+        rows,
+        busy,
+        [...range(0, 20), 50],
+        [],
+        focused,
+      );
+      // Deleting visit 0 shifts every later row up by one index.
+      const fewer: HistoryGroup[] = [
+        { key: busy[0].key, items: busy[0].items.slice(1) },
+      ];
+      const shifted = flattenHistoryGroups(fewer);
+      const after = chunkHistoryRows(
+        shifted,
+        fewer,
+        [...range(0, 20), 49],
+        before,
+        focused,
+      );
+      expect(keyOf(after, 49)).toBe(keyOf(before, 50));
+      expect(keyOf(after, 10)).toBe(keyOf(before, 10));
+    });
   });
 });
+
+function summary({ key, indexes }: HistoryChunk) {
+  return { key, indexes };
+}

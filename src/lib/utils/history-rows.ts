@@ -35,21 +35,59 @@ export type HistoryChunk = {
   key: string;
   group: number;
   indexes: number[];
+  /** Row keys, to match fragments across renders when row indexes shift. */
+  rowKeys: Set<string>;
 };
 
 /**
  * Split rendered row indexes into runs of adjacent rows from the same card,
- * so each run can be drawn as a card fragment. Gaps are not drawn. A card
- * normally yields one fragment, keyed by its group so it survives scrolling;
- * a detached row, such as a focused row kept mounted off screen, gets its own.
+ * so each run can be drawn as a card fragment. Gaps are not drawn.
+ *
+ * A fragment's key decides which element its rows are rendered in, so rows
+ * moving to a fragment with another key are recreated. Each fragment keeps
+ * the key of a `previous` fragment it shares rows with. When a card splits
+ * (rows scroll away from a focused row kept mounted) or rejoins, the fragment
+ * holding `focusedKey` claims its previous key first, so the focused element
+ * survives. Fragments sharing no rows with the previous render get new keys.
  */
 export function chunkHistoryRows(
   rows: HistoryRow[],
   groups: HistoryGroup[],
   indexes: number[],
+  previous: HistoryChunk[] = [],
+  focusedKey?: string,
 ): HistoryChunk[] {
+  const chunks = splitRuns(rows, indexes);
+  const claimed = new Set<string>();
+  const inherit = (chunk: HistoryChunk, candidates: HistoryChunk[]) => {
+    const match = candidates.find(
+      (old) => !claimed.has(old.key) && overlaps(chunk.rowKeys, old.rowKeys),
+    );
+    if (!match) return;
+    chunk.key = match.key;
+    claimed.add(match.key);
+  };
+
+  const hasFocus = (chunk: HistoryChunk) =>
+    focusedKey !== undefined && chunk.rowKeys.has(focusedKey);
+  const focusedChunk = chunks.find(hasFocus);
+  if (focusedChunk) inherit(focusedChunk, previous.filter(hasFocus));
+  for (const chunk of chunks) if (!chunk.key) inherit(chunk, previous);
+  // Fragments sharing no rows get keys unused by the previous render too.
+  // Reusing one would reuse an unrelated element, possibly in another order,
+  // and Svelte could move the focused fragment's element to reorder them;
+  // moving an element blurs it.
+  const taken = new Set([...claimed, ...previous.map((old) => old.key)]);
+  for (const chunk of chunks) {
+    if (chunk.key) continue;
+    chunk.key = freshKey(groups[chunk.group].key, taken);
+    taken.add(chunk.key);
+  }
+  return chunks;
+}
+
+function splitRuns(rows: HistoryRow[], indexes: number[]): HistoryChunk[] {
   const chunks: HistoryChunk[] = [];
-  const perGroup = new Map<number, number>();
   let previous = -2;
   for (const index of indexes) {
     const row = rows[index];
@@ -57,17 +95,28 @@ export function chunkHistoryRows(
     const current = chunks.at(-1);
     if (current?.group === row.group && index === previous + 1) {
       current.indexes.push(index);
+      current.rowKeys.add(row.key);
     } else {
-      const count = perGroup.get(row.group) ?? 0;
-      perGroup.set(row.group, count + 1);
-      const key = groups[row.group].key;
       chunks.push({
-        key: count ? `${key}:${count}` : key,
+        key: "",
         group: row.group,
         indexes: [index],
+        rowKeys: new Set([row.key]),
       });
     }
     previous = index;
   }
   return chunks;
+}
+
+function overlaps(a: Set<string>, b: Set<string>): boolean {
+  for (const key of a) if (b.has(key)) return true;
+  return false;
+}
+
+function freshKey(base: string, taken: Set<string>): string {
+  if (!taken.has(base)) return base;
+  let count = 1;
+  while (taken.has(`${base}:${count}`)) count++;
+  return `${base}:${count}`;
 }

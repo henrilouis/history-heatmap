@@ -12,6 +12,7 @@
   import {
     chunkHistoryRows,
     flattenHistoryGroups,
+    type HistoryChunk,
     type HistoryGroup,
     type HistoryRow,
   } from "../../utils/history-rows";
@@ -120,7 +121,19 @@
   const items = $derived(
     new Map($virtualizer.getVirtualItems().map((item) => [item.index, item])),
   );
-  const chunks = $derived(chunkHistoryRows(rows, groups, [...items.keys()]));
+  // Fragments are matched to the previous render's so rendered rows, above
+  // all the focused one, keep their elements while the range moves.
+  let previousChunks: HistoryChunk[] = [];
+  const chunks = $derived.by(() => {
+    previousChunks = chunkHistoryRows(
+      rows,
+      groups,
+      [...items.keys()],
+      previousChunks,
+      focused?.key,
+    );
+    return previousChunks;
+  });
 
   function trackFocus(event: FocusEvent) {
     const row = (event.target as Element).closest<HTMLElement>("[data-index]");
@@ -155,6 +168,7 @@
   });
 
   function nearestVisit(rows: HistoryRow[], from: number): number | undefined {
+    if (rows.length === 0) return;
     for (let i = Math.min(from, rows.length - 1); i < rows.length; i++)
       if (rows[i].type === "visit") return i;
     for (let i = Math.min(from, rows.length) - 1; i >= 0; i--)

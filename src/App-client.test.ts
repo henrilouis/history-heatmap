@@ -482,4 +482,81 @@ describe("mounted history interactions", () => {
       expect(document.activeElement).toBe(deleteButton(otherUrl)),
     );
   });
+
+  it("handles deleting the final result from a focused row", async () => {
+    visitsByUrl.delete(otherUrl);
+    completeSearch();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, repeatedUrl]),
+    );
+    const deleteButton = target.querySelector<HTMLButtonElement>(
+      `button[aria-label="Delete all visits to ${repeatedUrl}, including visits on other days"]`,
+    )!;
+    deleteButton.focus();
+    deleteButton.click();
+    // Focus recovery runs in an effect; Vitest fails the run on any error it
+    // throws once the list is empty.
+    deleteUrl.mock.lastCall![1]();
+
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No results found"),
+    );
+    await tick();
+  });
+
+  it("keeps a focused row's element while scrolling away and back", async () => {
+    const day = new Date(2026, 8, 12).getTime();
+    visitsByUrl.set(
+      repeatedUrl,
+      Array.from({ length: 3000 }, (_, i) =>
+        chromeVisit(`busy-${i}`, new Date(day + i * 20_000)),
+      ),
+    );
+    visitsByUrl.delete(otherUrl);
+    completeSearch();
+    const row = (position: number) =>
+      target.querySelector<HTMLElement>(
+        `.moments li[aria-posinset="${position}"]`,
+      );
+    const rendered = () => target.querySelectorAll(".moments li").length;
+    const scroller = target.querySelector<HTMLElement>(".wrapper")!;
+    const scrollTo = async (top: number, visible: number) => {
+      Object.defineProperty(scroller, "scrollTop", {
+        configurable: true,
+        value: top,
+      });
+      scroller.dispatchEvent(new Event("scroll"));
+      await vi.waitFor(() => expect(row(visible)).not.toBeNull());
+    };
+
+    await vi.waitFor(() => expect(row(1)).not.toBeNull());
+    // Rows measure 48px in this test.
+    await scrollTo(1500 * 48, 1500);
+    const focusTarget = row(1500)!.querySelector("button")!;
+    focusTarget.focus();
+    expect(document.activeElement).toBe(focusTarget);
+
+    // Scroll upward past the focused row: it detaches into its own fragment.
+    await scrollTo(1480 * 48, 1480);
+    await scrollTo(1440 * 48, 1440);
+    await scrollTo(0, 1);
+    expect(row(1500)?.contains(focusTarget)).toBe(true);
+    expect(document.activeElement).toBe(focusTarget);
+    expect(rendered()).toBeLessThan(60);
+
+    // Scroll back so the focused row rejoins the visible fragment.
+    await scrollTo(1440 * 48, 1440);
+    await scrollTo(1490 * 48, 1490);
+    expect(row(1500)?.contains(focusTarget)).toBe(true);
+    expect(document.activeElement).toBe(focusTarget);
+    expect(rendered()).toBeLessThan(60);
+
+    // Rows below the focused row, then a jump above it, swap the order of
+    // the visible and focused fragments; the focused one must not be moved.
+    await scrollTo(1560 * 48, 1560);
+    await scrollTo(1600 * 48, 1600);
+    await scrollTo(0, 1);
+    expect(row(1500)?.contains(focusTarget)).toBe(true);
+    expect(document.activeElement).toBe(focusTarget);
+  });
 });
