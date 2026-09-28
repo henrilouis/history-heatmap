@@ -140,15 +140,6 @@ export function layoutNavigation(
   return { rows, widthRem: (laneCount + 1) * GRAPH_LANE_WIDTH_REM };
 }
 
-export function trailHue(trail: string): number {
-  let hash = 0;
-  for (let i = 0; i < trail.length; i++) {
-    hash = (hash * 31 + trail.charCodeAt(i)) | 0;
-  }
-  // Spread neighboring numeric visit IDs around the color wheel.
-  return ((((hash % 360) * 137.508) % 360) + 360) % 360;
-}
-
 export function describeGraphRow(
   row: GraphRow,
   index: NavigationIndex,

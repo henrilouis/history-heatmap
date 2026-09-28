@@ -2,11 +2,11 @@
   import {
     GRAPH_LANE_WIDTH_REM,
     describeGraphRow,
-    trailHue,
     type GraphRow,
     type GraphSegment,
     type NavigationIndex,
   } from "../../utils/history-graph";
+  import { hueFor } from "../../utils/general";
 
   let {
     row,
@@ -38,10 +38,7 @@
     aria-hidden="true"
   >
     {#each row.segments as segment}
-      <path
-        d={path(segment)}
-        style={`--trail-hue: ${trailHue(segment.trail)}`}
-      />
+      <path d={path(segment)} style={`--trail-hue: ${hueFor(segment.trail)}`} />
     {/each}
   </svg>
   {#if row.later || row.earlier}
@@ -54,13 +51,13 @@
     >
       {#if row.later}
         <path
-          style={`--trail-hue: ${trailHue(row.trail)}`}
+          style={`--trail-hue: ${hueFor(row.trail)}`}
           d={`M ${x(row.lane)} 20 V 0`}
         />
       {/if}
       {#if row.earlier}
         <path
-          style={`--trail-hue: ${trailHue(row.trail)}`}
+          style={`--trail-hue: ${hueFor(row.trail)}`}
           d={`M ${x(row.lane)} 20 V 40`}
         />
       {/if}
@@ -83,7 +80,7 @@
   <span
     class="graph-node"
     class:reload={row.visit.transition === "reload"}
-    style={`left: ${(x(row.lane) / widthRem) * 100}%; --trail-hue: ${trailHue(row.trail)}`}
+    style={`left: ${(x(row.lane) / widthRem) * 100}%; --trail-hue: ${hueFor(row.trail)}`}
     aria-hidden="true"
   ></span>
 </span>
