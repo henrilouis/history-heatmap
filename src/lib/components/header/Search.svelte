@@ -17,7 +17,8 @@
     border: var(--el-border-width) solid var(--el-border-color-default);
     border-radius: var(--el-border-radius);
     corner-shape: var(--el-corner-shape);
-    padding: var(--el-padding);
+    padding: calc(var(--el-padding-block) - var(--el-border-width))
+      calc(var(--el-padding-inline) - var(--el-border-width));
     padding-inline-end: 0;
     max-width: 32rem;
     width: 100%;

@@ -68,8 +68,8 @@
   #theme-toggle-button {
     position: relative;
     overflow: hidden;
-    height: 2.25rem;
-    padding: 0.5rem;
+    height: calc(var(--el-line-height) + calc(var(--el-padding-block) * 2));
+    padding: calc(var(--el-padding-block) - 0.0625rem);
     & .icon-wrapper {
       display: flex;
       flex-direction: column;
