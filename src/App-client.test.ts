@@ -32,6 +32,10 @@ const originalAnimate = Object.getOwnPropertyDescriptor(
   Element.prototype,
   "animate",
 );
+const originalOffsetHeight = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  "offsetHeight",
+);
 
 beforeEach(async () => {
   search.mockReset();
@@ -60,6 +64,22 @@ beforeEach(async () => {
       removeEventListener: vi.fn(),
     })),
   );
+  // jsdom has no layout. The virtualized list sizes its viewport from the
+  // scroll container and measures rendered rows through offsetHeight.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.classList.contains("wrapper") ? 800 : 48;
+    },
+  });
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
   // removal exercises Svelte's outro lifecycle without depending on elapsed time.
   Object.defineProperty(Element.prototype, "animate", {
@@ -112,6 +132,12 @@ afterEach(async () => {
   if (originalAnimate)
     Object.defineProperty(Element.prototype, "animate", originalAnimate);
   else Reflect.deleteProperty(Element.prototype, "animate");
+  if (originalOffsetHeight)
+    Object.defineProperty(
+      HTMLElement.prototype,
+      "offsetHeight",
+      originalOffsetHeight,
+    );
 });
 
 function button(name: string): HTMLButtonElement {
@@ -404,5 +430,56 @@ describe("mounted history interactions", () => {
     expect(target.querySelector('[data-selected="true"]')).toBeNull();
     expect(target.textContent).not.toContain("Clear selection");
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
+  });
+
+  it("renders only the visits near the viewport of a very busy day", async () => {
+    const day = new Date(2026, 8, 12).getTime();
+    visitsByUrl.set(
+      repeatedUrl,
+      Array.from({ length: 3000 }, (_, i) =>
+        chromeVisit(`busy-${i}`, new Date(day + i * 20_000)),
+      ),
+    );
+    visitsByUrl.delete(otherUrl);
+    completeSearch();
+
+    const rendered = () =>
+      [...target.querySelectorAll<HTMLElement>(".moments li")].map((li) =>
+        Number(li.getAttribute("aria-posinset")),
+      );
+    await vi.waitFor(() => expect(rendered()).toContain(1));
+    expect(rendered().length).toBeLessThan(50);
+    expect(
+      target.querySelector(".moments li")?.getAttribute("aria-setsize"),
+    ).toBe("3000");
+
+    // Rows measure 48px in this test; jump to the middle of the day.
+    const scroller = target.querySelector<HTMLElement>(".wrapper")!;
+    Object.defineProperty(scroller, "scrollTop", {
+      configurable: true,
+      value: 1500 * 48,
+    });
+    scroller.dispatchEvent(new Event("scroll"));
+    await vi.waitFor(() => expect(rendered()).toContain(1500));
+    expect(rendered()).not.toContain(1);
+    expect(rendered().length).toBeLessThan(50);
+  });
+
+  it("moves focus to the next visit after deleting from a focused row", async () => {
+    await loadHistory();
+    const deleteButton = (url: string) =>
+      [
+        ...target.querySelectorAll<HTMLButtonElement>(
+          `button[aria-label="Delete all visits to ${url}, including visits on other days"]`,
+        ),
+      ][0];
+    deleteButton(repeatedUrl).focus();
+    deleteButton(repeatedUrl).click();
+    deleteUrl.mock.lastCall![1]();
+
+    await vi.waitFor(() => expect(historyLinks()).toEqual([otherUrl]));
+    await vi.waitFor(() =>
+      expect(document.activeElement).toBe(deleteButton(otherUrl)),
+    );
   });
 });
