@@ -4,27 +4,29 @@
   import SelectionInfo from "./SelectionInfo.svelte";
   import ModeSwitch from "./ModeSwitch.svelte";
   import { historyStore } from "../../stores/history.svelte";
-  import type { CalendarMode } from "../../utils/general";
+  import type { ViewMode } from "../../utils/general";
 
-  let calendarMode = $state<CalendarMode>("days");
+  let { viewMode = $bindable("days") }: { viewMode?: ViewMode } = $props();
 
-  function setCalendarMode(mode: CalendarMode) {
-    calendarMode = mode;
+  function setViewMode(mode: ViewMode) {
+    viewMode = mode;
     historyStore.clearSelection();
   }
 </script>
 
 <div class="heatmap-actions">
-  <ModeSwitch {calendarMode} {setCalendarMode} />
-  <SelectionInfo {calendarMode} />
+  <ModeSwitch {viewMode} {setViewMode} />
+  {#if viewMode !== "stats"}
+    <SelectionInfo calendarMode={viewMode} />
+  {/if}
 </div>
-{#if calendarMode === "days"}
+{#if viewMode === "days"}
   <Days
     data={historyStore.byDayWithEmpty}
     selectedMoments={historyStore.selectedMoments}
     onToggleMoment={historyStore.toggleMoment}
   />
-{:else}
+{:else if viewMode === "hours"}
   <Hours
     data={historyStore.byDayAndHourWithEmpty}
     selectedMoments={historyStore.selectedMoments}

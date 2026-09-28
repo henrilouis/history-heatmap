@@ -5,6 +5,11 @@
   import { historyStore } from "./lib/stores/history.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
   import Header from "./lib/components/header/Header.svelte";
+  import type { ViewMode } from "./lib/utils/general";
+
+  let viewMode = $state<ViewMode>("days");
+  // Charting code is only needed once someone opens the stats view.
+  const loadStats = () => import("./lib/components/stats/Stats.svelte");
 
   onMount(historyStore.connect);
 </script>
@@ -37,8 +42,18 @@
   {/if}
 
   <main>
-    <Heatmap />
-    <HistoryList />
+    <Heatmap bind:viewMode />
+    {#if viewMode === "stats"}
+      {#await loadStats() then { default: Stats }}
+        <Stats />
+      {:catch}
+        <div class="error-banner" role="alert">
+          <span>Failed to load stats.</span>
+        </div>
+      {/await}
+    {:else}
+      <HistoryList />
+    {/if}
   </main>
 </div>
 

@@ -60,6 +60,15 @@ beforeEach(async () => {
       removeEventListener: vi.fn(),
     })),
   );
+  // jsdom has no layout; charts measure their container through this API.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
   // removal exercises Svelte's outro lifecycle without depending on elapsed time.
   Object.defineProperty(Element.prototype, "animate", {
@@ -405,4 +414,52 @@ describe("mounted history interactions", () => {
     expect(target.textContent).not.toContain("Clear selection");
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
   });
+
+  it("replaces the history list with a website treemap that zooms into pages", async () => {
+    await loadHistory();
+    button("Toggle moment for 2026-09-12").click();
+    await tick();
+
+    // The stats view loads lazily. Its first transform takes seconds under
+    // Vitest, so warm the module registry rather than stretching waitFor.
+    await import("./lib/components/stats/Stats.svelte");
+    button("Stats").click();
+    await vi.waitFor(() =>
+      expect(target.textContent).toMatch(/3\s+visits across\s+1\s+website/),
+    );
+    expect(historyLinks()).toEqual([]);
+    expect(target.querySelector(".heatmap")).toBeNull();
+    expect(target.textContent).not.toContain("Clear selection");
+    const tiles = () =>
+      [...target.querySelectorAll(".tile-wrapper:not([inert]) .tile")].map(
+        (tile) => tile.getAttribute("title"),
+      );
+    expect(tiles()).toEqual(["example.com: 3 visits (100%)"]);
+
+    button("Zoom into example.com: 3 visits (100%)").click();
+    await vi.waitFor(() =>
+      expect(tiles()).toEqual([
+        `Repeated page: 2 visits (66.7%)\n${repeatedUrl}`,
+        `Other page: 1 visit (33.3%)\n${otherUrl}`,
+      ]),
+    );
+    expect(
+      [...target.querySelectorAll<HTMLAnchorElement>("a.tile")].map(
+        (link) => link.href,
+      ),
+    ).toEqual([repeatedUrl, otherUrl]);
+    expect(target.querySelector('[aria-current="location"]')?.textContent).toBe(
+      "example.com",
+    );
+
+    button("All websites").click();
+    await vi.waitFor(() =>
+      expect(tiles()).toEqual(["example.com: 3 visits (100%)"]),
+    );
+
+    button("Days").click();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+    );
+  }, 30_000);
 });

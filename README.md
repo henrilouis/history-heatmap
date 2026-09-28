@@ -21,6 +21,14 @@ but stop receiving updates until Chrome meets the minimum version. See
   background refresh failures preserve the history already displayed.
 - **Delete all visits** removes every visit to a URL, including visits on other days.
 
+### Stats
+
+The **Stats** view replaces the heatmap and history list with a treemap of visits
+per website across all loaded history, filtered by the current search. Select a
+website to zoom into its pages, and use the breadcrumb to zoom back out. Websites
+group by host, with `www.` merged into the bare domain. Each level shows at most
+40 tiles; beyond that, the smallest websites or pages are combined into one tile.
+
 ### Navigation trails
 
 A subway-style graph connects visits using Chrome's recorded referring visits.
