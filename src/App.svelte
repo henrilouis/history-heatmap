@@ -6,6 +6,8 @@
   import { themeStore } from "./lib/stores/theme.svelte";
   import Header from "./lib/components/header/Header.svelte";
 
+  let scrollElement = $state<HTMLElement>();
+
   onMount(historyStore.connect);
 </script>
 
@@ -15,7 +17,7 @@
   }}
 />
 
-<div class={["wrapper", themeStore.colorScheme]}>
+<div class={["wrapper", themeStore.colorScheme]} bind:this={scrollElement}>
   <Header />
   {#if historyStore.error}
     <div class="error-banner" role="alert">
@@ -38,7 +40,7 @@
 
   <main>
     <Heatmap />
-    <HistoryList />
+    <HistoryList {scrollElement} />
   </main>
 </div>
 
