@@ -13,7 +13,7 @@
 
 <style>
   input[type="search"] {
-    background-color: var(--field-bg-default);
+    background-color: var(--input-bg-default);
     border: var(--el-border-width) solid var(--el-border-color-default);
     border-radius: var(--el-border-radius);
     corner-shape: var(--el-corner-shape);
@@ -27,7 +27,7 @@
     transition: all 0.15s ease-in-out;
     transition-property: border, outline, background-color;
     &:hover {
-      background-color: var(--field-bg-hover);
+      background-color: var(--input-bg-hover);
       border-color: var(--el-border-color-hover);
     }
     &:focus-visible {

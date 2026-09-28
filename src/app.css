@@ -77,16 +77,18 @@
   --el-focus-outline-width: 0.125rem;
   --el-focus-outline-offset: 0.0625rem;
 
-  --el-padding: 0.5rem 0.75rem;
+  --el-padding-block: 0.5rem;
+  --el-padding-inline: 0.75rem;
+  --el-padding: var(--el-padding-block) var(--el-padding-inline);
 
   --el-font-size: 0.8125rem;
   --el-line-height: 1.125rem;
 
-  --field-bg-default: light-dark(
+  --input-bg-default: light-dark(
     oklch(from var(--neutral) 100% c h),
     oklch(from var(--neutral) 30% c h)
   );
-  --field-bg-hover: light-dark(
+  --input-bg-hover: light-dark(
     oklch(from var(--neutral) 100% c h),
     oklch(from var(--neutral) 32% c h)
   );
@@ -191,7 +193,7 @@ ol {
 }
 
 button {
-  background: var(--el-bg-default);
+  background-color: var(--el-bg-default);
   border: none;
   padding: var(--el-padding);
   border-radius: var(--el-border-radius);
@@ -206,8 +208,8 @@ button {
     background: transparent;
   }
 
-  &:hover,
-  &.quiet:hover {
+  &:hover:not(&.selected),
+  &.quiet:hover:not(&.selected) {
     background-color: var(--el-bg-hover);
   }
 
@@ -222,17 +224,23 @@ button {
     scale: 0.95;
   }
 
-  &.selected,
-  &.selected:hover,
-  &.selected.quiet:hover {
-    background: var(--el-bg-primary);
+  &.selected {
+    background-color: var(--el-bg-primary);
     color: var(--fg-on-primary);
   }
 }
 
 .button-group {
+  --button-group-padding: 0.1875rem;
   display: flex;
-  gap: 0.125rem;
+  gap: 0.25rem;
+  background-color: var(--input-bg-default);
+  border-radius: var(--el-border-radius);
+  corner-shape: var(--el-corner-shape);
+  padding: var(--button-group-padding);
+  button {
+    padding-block: calc(var(--el-padding-block) - var(--button-group-padding));
+  }
 }
 
 input[type="checkbox"] {
