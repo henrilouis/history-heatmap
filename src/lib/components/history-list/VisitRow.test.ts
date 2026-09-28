@@ -1,7 +1,9 @@
 import { render } from "svelte/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import MomentContent from "./MomentContent.svelte";
+import VisitRow from "./VisitRow.svelte";
+import type { HistoryVisit } from "../../utils/chrome-api";
 import { historyVisit } from "../../utils/history-fixtures";
+import { indexNavigation, layoutNavigation } from "../../utils/history-graph";
 
 beforeEach(() => {
   vi.stubGlobal("chrome", {
@@ -9,21 +11,28 @@ beforeEach(() => {
   });
 });
 
+function renderRows(items: HistoryVisit[]): string {
+  const index = indexNavigation(items);
+  const { rows, widthRem } = layoutNavigation(items, index);
+  return rows
+    .map(
+      (row) =>
+        render(VisitRow, {
+          props: { row, widthRem, index, deleteHistoryUrl: () => {} },
+        }).body,
+    )
+    .join("");
+}
+
 describe("individual visit rendering", () => {
   it("shows each visit to the same URL with its own timestamp", () => {
     const earlyTime = new Date(2026, 8, 12, 9, 5);
     const lateTime = new Date(2026, 8, 12, 9, 45);
     const metadata = { url: "https://example.com/", title: "Example" };
-    const { body } = render(MomentContent, {
-      props: {
-        date: "2026-09-12T09",
-        items: [
-          historyVisit("late", lateTime, metadata),
-          historyVisit("early", earlyTime, metadata),
-        ],
-        deleteHistoryUrl: () => {},
-      },
-    });
+    const body = renderRows([
+      historyVisit("late", lateTime, metadata),
+      historyVisit("early", earlyTime, metadata),
+    ]);
     const times = [...body.matchAll(/<time\b[^>]*>([\s\S]*?)<\/time>/g)].map(
       ([, time]) => time.replace(/<!--[\s\S]*?-->/g, "").trim(),
     );
@@ -51,13 +60,7 @@ describe("individual visit rendering", () => {
     "renders timestamp %s and falls back to the URL when a title is missing",
     (timestamp) => {
       const visit = { ...historyVisit("epoch"), visitTime: timestamp };
-      const { body } = render(MomentContent, {
-        props: {
-          date: "1970-01-01",
-          items: [visit],
-          deleteHistoryUrl: () => {},
-        },
-      });
+      const body = renderRows([visit]);
       const time = new Date(timestamp).toLocaleTimeString([], {
         hour: "numeric",
         minute: "numeric",

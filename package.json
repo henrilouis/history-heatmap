@@ -30,6 +30,7 @@
     "pre-commit": "npm run fallow -- --quiet --gate-marker pre-commit"
   },
   "dependencies": {
+    "@tanstack/svelte-virtual": "^3.13.39",
     "d3-hierarchy": "^3.1.2",
     "layerchart": "^2.5.0"
   },

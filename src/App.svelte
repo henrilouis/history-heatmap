@@ -11,6 +11,8 @@
   // Charting code is only needed once someone opens the stats view.
   const loadStats = () => import("./lib/components/stats/Stats.svelte");
 
+  let scrollElement = $state<HTMLElement>();
+
   onMount(historyStore.connect);
 </script>
 
@@ -20,7 +22,7 @@
   }}
 />
 
-<div class={["wrapper", themeStore.colorScheme]}>
+<div class={["wrapper", themeStore.colorScheme]} bind:this={scrollElement}>
   <Header />
   {#if historyStore.error}
     <div class="error-banner" role="alert">
@@ -52,7 +54,7 @@
         </div>
       {/await}
     {:else}
-      <HistoryList />
+      <HistoryList {scrollElement} />
     {/if}
   </main>
 </div>
