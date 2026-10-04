@@ -8,7 +8,7 @@
   import type { ViewMode } from "./lib/utils/general";
 
   let viewMode = $state<ViewMode>("days");
-  // Charting code is only needed once someone opens the stats view.
+  // Stats code is only needed once someone opens the stats view.
   const loadStats = () => import("./lib/components/stats/Stats.svelte");
 
   let scrollElement = $state<HTMLElement>();

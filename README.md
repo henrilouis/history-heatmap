@@ -23,11 +23,13 @@ but stop receiving updates until Chrome meets the minimum version. See
 
 ### Stats
 
-The **Stats** view replaces the heatmap and history list with a treemap of visits
-per website across all loaded history, filtered by the current search. Select a
-website to zoom into its pages, and use the breadcrumb to zoom back out. Websites
-group by host, with `www.` merged into the bare domain. Each level shows at most
-40 tiles; beyond that, the smallest websites or pages are combined into one tile.
+The **Stats** view replaces the heatmap and history list with a Wrapped-style
+page of insight cards across all loaded history, filtered by the current search:
+top websites, a browsing personality, weekday and hour rhythm, discovery and
+returning websites, regulars, highlights such as the busiest day, streaks and
+the deepest rabbit hole, and top searches. Websites group by host, with `www.`
+merged into the bare domain. Averages span every day in the loaded history,
+including days without visits.
 
 ### Navigation trails
 

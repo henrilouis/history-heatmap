@@ -14,6 +14,36 @@ export function historyVisit(
   };
 }
 
+/** Time zone for insight tests, which has a daylight saving time switch. */
+export const TEST_TIME_ZONE = "Europe/Amsterdam";
+
+let localVisitId = 0;
+
+/** A visit at a local date and time, like "2026-03-02T10:00". */
+export function localVisit(
+  url: string,
+  local: string,
+  overrides: Partial<HistoryVisit> = {},
+): HistoryVisit {
+  return {
+    visitId: `local-${++localVisitId}`,
+    visitTime:
+      Temporal.PlainDateTime.from(local).toZonedDateTime(TEST_TIME_ZONE)
+        .epochMilliseconds,
+    url,
+    ...overrides,
+  };
+}
+
+/** `count` visits to the same URL at the same local time. */
+export function localVisits(
+  url: string,
+  local: string,
+  count: number,
+): HistoryVisit[] {
+  return Array.from({ length: count }, () => localVisit(url, local));
+}
+
 export function chromeVisit(
   visitId: string,
   date?: Date,
