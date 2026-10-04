@@ -3,6 +3,8 @@ import { weekdayOf, type DayRange, type VisitAggregate } from "./aggregate";
 export type Rhythm = {
   /** Average visits per weekday, Monday first. */
   weekdays: number[];
+  /** Calendar-day counts behind the weekday averages, Monday first. */
+  weekdayDays: number[];
   /** Average visits per local hour, 00 first. */
   hours: number[];
   peakWeekday: number;
@@ -47,6 +49,7 @@ export function buildRhythm({ grid }: VisitAggregate, range: DayRange): Rhythm {
 
   return {
     weekdays,
+    weekdayDays: occurrences,
     hours,
     peakWeekday: indexOfMax(weekdays),
     // A range shorter than a week lacks some weekdays; they are not quiet.

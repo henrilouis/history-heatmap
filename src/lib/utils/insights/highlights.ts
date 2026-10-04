@@ -1,11 +1,6 @@
 import type { HistoryVisit } from "../chrome-api";
 import type { NavigationIndex } from "../history-graph";
-import {
-  fromDayNumber,
-  type DayRange,
-  type UrlStats,
-  type VisitAggregate,
-} from "./aggregate";
+import { fromDayNumber, type UrlStats, type VisitAggregate } from "./aggregate";
 import type { SiteSummary } from "./discovery";
 
 export type TopSite = SiteSummary & { visits: number; share: number };
@@ -20,7 +15,7 @@ export type Run = { length: number; start: number; end: number };
 
 export type Streaks = {
   longest: Run;
-  /** Consecutive days up to the end of the range, or the day before it. */
+  /** Consecutive days up to today, or yesterday if today has no visits. */
   current: number;
   site?: SiteSummary & Run;
 };
@@ -138,13 +133,13 @@ const ascending = (a: number, b: number) => a - b;
 
 export function findStreaks(
   { days, sites }: VisitAggregate,
-  range: DayRange,
+  today: number,
 ): Streaks {
   const active = new Set(days.keys());
 
   // Today may simply not have had a visit yet; that doesn't break a streak.
   let current = 0;
-  let day = active.has(range.end) ? range.end : range.end - 1;
+  let day = active.has(today) ? today : today - 1;
   while (active.has(day--)) current++;
 
   let site: Streaks["site"];

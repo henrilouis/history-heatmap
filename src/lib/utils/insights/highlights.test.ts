@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aggregateVisits, toDayNumber, toDayRange } from "./aggregate";
+import { aggregateVisits, toDayNumber } from "./aggregate";
 import {
   findBusiestDay,
   findLateNight,
@@ -73,11 +73,8 @@ describe("findBusiestDay", () => {
 });
 
 describe("findStreaks", () => {
-  function streaks(visits: HistoryVisit[], allVisits = visits) {
-    return findStreaks(
-      aggregate(visits),
-      toDayRange(allVisits, TEST_TIME_ZONE)!,
-    );
+  function streaks(visits: HistoryVisit[], today: string) {
+    return findStreaks(aggregate(visits), day(today));
   }
 
   it("finds the longest run and the current one up to yesterday", () => {
@@ -88,10 +85,7 @@ describe("findStreaks", () => {
       localVisit("https://a.com/", "2026-03-05T10:00"),
       localVisit("https://b.com/", "2026-03-06T10:00"),
     ];
-    const result = streaks(visits, [
-      ...visits,
-      localVisit("https://other.com/", "2026-03-07T10:00"),
-    ]);
+    const result = streaks(visits, "2026-03-07");
 
     expect(result.longest).toEqual({
       length: 3,
@@ -110,14 +104,27 @@ describe("findStreaks", () => {
 
   it("has no current streak after a missed day", () => {
     const visits = [localVisit("https://a.com/", "2026-03-01T10:00")];
-    const result = streaks(visits, [
-      ...visits,
-      localVisit("https://other.com/", "2026-03-03T10:00"),
-    ]);
+    const result = streaks(visits, "2026-03-03");
 
     expect(result.current).toBe(0);
     expect(result.longest.length).toBe(1);
     expect(result.site).toBe(undefined);
+  });
+
+  it.each([
+    ["2026-03-03", 3],
+    ["2026-03-04", 3],
+    ["2026-03-05", 0],
+    ["2026-10-05", 0],
+  ])("anchors the current streak to %s, giving %i days", (today, current) => {
+    const visits = ["01", "02", "03"].map((date) =>
+      localVisit("https://a.com/", `2026-03-${date}T10:00`),
+    );
+    const result = streaks(visits, today);
+
+    expect(result.current).toBe(current);
+    expect(result.longest.length).toBe(3);
+    expect(result.site?.length).toBe(3);
   });
 });
 

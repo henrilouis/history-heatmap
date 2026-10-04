@@ -1,6 +1,6 @@
 import type { HistoryVisit } from "../chrome-api";
 import type { NavigationIndex } from "../history-graph";
-import { aggregateVisits, toDayRange } from "./aggregate";
+import { aggregateVisits, toDayNumber, toDayRange } from "./aggregate";
 import { buildDiscovery } from "./discovery";
 import {
   findBusiestDay,
@@ -20,6 +20,8 @@ export type InsightOptions = {
   allVisits: HistoryVisit[];
   navigation: NavigationIndex;
   timeZone?: string;
+  /** Current local date for streaks; defaults to today in timeZone. */
+  today?: Temporal.PlainDate;
 };
 
 export type Insights = ReturnType<typeof buildInsights>;
@@ -35,6 +37,7 @@ export function buildInsights(
     allVisits,
     navigation,
     timeZone = Temporal.Now.timeZoneId(),
+    today = Temporal.Now.plainDateISO(timeZone),
   }: InsightOptions,
 ) {
   const aggregate = aggregateVisits(visits, timeZone);
@@ -56,7 +59,7 @@ export function buildInsights(
     discovery: timed && buildDiscovery(aggregate, timed),
     personality: rhythm && buildPersonality(aggregate, rhythm),
     busiestDay: findBusiestDay(visits, aggregate, timeZone),
-    streaks: timed && findStreaks(aggregate, timed),
+    streaks: timed && findStreaks(aggregate, toDayNumber(today)),
     rabbitHole: findRabbitHole(visits, navigation, aggregate),
     lateNight: findLateNight(aggregate),
     mostRevisited: findMostRevisited(aggregate),

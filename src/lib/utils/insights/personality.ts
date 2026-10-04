@@ -47,6 +47,16 @@ function sumHours(
 const range = (from: number, to: number) =>
   Array.from({ length: to - from }, (_, i) => from + i);
 
+function averageForWeekdays(rhythm: Rhythm, from: number, to: number) {
+  let visits = 0;
+  let days = 0;
+  for (let weekday = from; weekday < to; weekday++) {
+    visits += rhythm.weekdays[weekday] * rhythm.weekdayDays[weekday];
+    days += rhythm.weekdayDays[weekday];
+  }
+  return days ? visits / days : undefined;
+}
+
 function timeTrait(grid: number[][], timed: number, rhythm: Rhythm): Trait {
   const night = sumHours(grid, [22, 23, ...range(0, 4)]) / timed;
   if (night >= NIGHT_OWL_SHARE) {
@@ -72,9 +82,14 @@ function timeTrait(grid: number[][], timed: number, rhythm: Rhythm): Trait {
     };
   }
 
-  const weekday = rhythm.weekdays.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
-  const weekend = (rhythm.weekdays[5] + rhythm.weekdays[6]) / 2;
-  if (weekend > 0 && weekend >= weekday * WEEKEND_RATIO) {
+  const weekday = averageForWeekdays(rhythm, 0, 5);
+  const weekend = averageForWeekdays(rhythm, 5, 7);
+  if (
+    weekday !== undefined &&
+    weekend !== undefined &&
+    weekend > 0 &&
+    weekend >= weekday * WEEKEND_RATIO
+  ) {
     const ratio = (weekend / weekday).toLocaleString(undefined, {
       maximumFractionDigits: 2,
     });

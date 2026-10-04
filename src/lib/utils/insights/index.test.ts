@@ -10,15 +10,35 @@ import {
 import { indexNavigation } from "../history-graph";
 import type { HistoryVisit } from "../chrome-api";
 
-function insights(visits: HistoryVisit[], allVisits = visits) {
+function insights(
+  visits: HistoryVisit[],
+  allVisits = visits,
+  today = "2026-03-15",
+) {
   return buildInsights(visits, {
     allVisits,
     navigation: indexNavigation(allVisits),
     timeZone: TEST_TIME_ZONE,
+    today: Temporal.PlainDate.from(today),
   });
 }
 
 describe("buildInsights", () => {
+  it.each([
+    ["2026-03-03", 3],
+    ["2026-03-04", 3],
+    ["2026-10-05", 0],
+  ])("anchors the current streak to %s, giving %i days", (today, current) => {
+    const visits = ["01", "02", "03"].map((date) =>
+      localVisit("https://a.com/", `2026-03-${date}T10:00`),
+    );
+    const result = insights(visits, visits, today);
+
+    expect(result.streaks?.current).toBe(current);
+    expect(result.streaks?.longest.length).toBe(3);
+    expect(result.range?.days).toBe(3);
+  });
+
   it("summarises filtered visits over the unfiltered date range", () => {
     const all = [
       ...localVisits("https://a.com/1", "2026-03-02T10:00", 3),

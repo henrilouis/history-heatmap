@@ -41,9 +41,9 @@ function perSite(counts: number[]): HistoryVisit[] {
   );
 }
 
-function personality(visits: HistoryVisit[]) {
+function personality(visits: HistoryVisit[], range = WEEK) {
   const aggregate = aggregateVisits(visits, TEST_TIME_ZONE);
-  return buildPersonality(aggregate, buildRhythm(aggregate, WEEK));
+  return buildPersonality(aggregate, buildRhythm(aggregate, range));
 }
 
 describe("time of day trait", () => {
@@ -119,6 +119,57 @@ describe("time of day trait", () => {
       reason: "Your browsing is spread across the day, peaking around 20:00.",
     });
   });
+
+  it("compares only calendar days inside a short history", () => {
+    const visits = [
+      ...at("2026-03-06T20:00", 30),
+      ...at("2026-03-07T20:00", 30),
+    ];
+    expect(
+      personality(visits, toDayRange(visits, TEST_TIME_ZONE))?.time.name,
+    ).toBe("All-Day Surfer");
+  });
+
+  it("uses actual day counts for a busier weekend in a short history", () => {
+    const visits = [
+      ...at("2026-03-06T20:00", 30),
+      ...at("2026-03-07T20:00", 40),
+    ];
+    expect(
+      personality(visits, toDayRange(visits, TEST_TIME_ZONE))?.time,
+    ).toEqual({
+      name: "Weekend Warrior",
+      reason:
+        "You browse 1.33× as much on an average weekend day as on a weekday.",
+    });
+  });
+
+  it("weights repeated weekdays and includes empty days within the range", () => {
+    // Monday through the next Monday: six weekdays and two weekend days.
+    const visits = [
+      ...at("2026-03-02T20:00", 30),
+      ...at("2026-03-07T20:00", 24),
+      ...at("2026-03-08T20:00", 24),
+      ...at("2026-03-09T20:00", 30),
+    ];
+    expect(
+      personality(visits, toDayRange(visits, TEST_TIME_ZONE))?.time,
+    ).toEqual({
+      name: "Weekend Warrior",
+      reason:
+        "You browse 2.4× as much on an average weekend day as on a weekday.",
+    });
+  });
+
+  it.each(["2026-03-06", "2026-03-07"])(
+    "does not compare weekdays and weekends with only %s in the range",
+    (date) => {
+      const visits = at(`${date}T20:00`, 60);
+      expect(
+        personality(visits, toDayRange(visits, TEST_TIME_ZONE))?.time.name,
+      ).toBe("All-Day Surfer");
+    },
+  );
 });
 
 describe("browsing style trait", () => {
