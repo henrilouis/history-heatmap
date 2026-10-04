@@ -260,8 +260,9 @@ export function groupHistoryByDayAndHour(
 }
 
 // Scan bounds without allocating a timestamp array or spreading it into a call.
-function getHistoryDateRange(
+export function getHistoryDateRange(
   history: HistoryVisit[],
+  timeZone = Temporal.Now.timeZoneId(),
 ): { startDate: Temporal.PlainDate; endDate: Temporal.PlainDate } | undefined {
   let earliest = Infinity;
   let latest = -Infinity;
@@ -274,7 +275,6 @@ function getHistoryDateRange(
 
   if (earliest === Infinity) return;
 
-  const timeZone = Temporal.Now.timeZoneId();
   const startDate = toLocalZonedDateTime(earliest, timeZone).toPlainDate();
   const endDate = toLocalZonedDateTime(latest, timeZone).toPlainDate();
   return { startDate, endDate };
