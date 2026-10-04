@@ -76,11 +76,8 @@
 
   .eyebrow {
     margin: 0;
-    color: var(--fg-secondary);
-    font-size: var(--el-font-size);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    color: var(--fg-primary);
+    font-size: 1.125rem;
   }
 
   .stat-card :global {
