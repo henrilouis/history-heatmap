@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { aggregateVisits, toDayRange } from "./aggregate";
-import { buildRhythm } from "./rhythm";
+import { buildDailyVisits, buildRhythm } from "./rhythm";
 import { localVisit, localVisits, TEST_TIME_ZONE } from "../history-fixtures";
 import type { HistoryVisit } from "../chrome-api";
 
@@ -48,5 +48,22 @@ describe("buildRhythm", () => {
 
     expect(result.quietestWeekday).toBe(3);
     expect(result.peakWeekday).toBe(2);
+  });
+});
+
+describe("buildDailyVisits", () => {
+  it("counts visits per day over the whole range, oldest first", () => {
+    const filtered = [
+      ...localVisits("https://a.com/", "2026-03-02T10:00", 2),
+      localVisit("https://a.com/", "2026-03-04T23:59"),
+    ];
+    const all = [...filtered, localVisit("https://b.com/", "2026-03-05T00:00")];
+
+    expect(
+      buildDailyVisits(
+        aggregateVisits(filtered, TEST_TIME_ZONE),
+        toDayRange(all, TEST_TIME_ZONE)!,
+      ),
+    ).toEqual([2, 0, 1, 0]);
   });
 });

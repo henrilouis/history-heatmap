@@ -12,7 +12,7 @@ import {
   summarizeTransitions,
 } from "./highlights";
 import { buildPersonality } from "./personality";
-import { buildRhythm } from "./rhythm";
+import { buildDailyVisits, buildRhythm } from "./rhythm";
 import { buildSearches } from "./searches";
 
 export type InsightOptions = {
@@ -50,6 +50,7 @@ export function buildInsights(
       activeDays: aggregate.days.size,
     },
     range: timed,
+    dailyVisits: timed ? buildDailyVisits(aggregate, timed) : [],
     topSites: findTopSites(aggregate),
     rhythm,
     discovery: timed && buildDiscovery(aggregate, timed),

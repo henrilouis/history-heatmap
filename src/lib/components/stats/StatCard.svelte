@@ -52,19 +52,26 @@
       );
     }
 
+    /* Inverted like the selected mode button: black on a light page, white on
+       a dark one. Flipping the colour scheme flips every light-dark() token
+       inside, so text and heatmap levels get their high-contrast variants. */
     &[data-variant="hero"] {
-      --accent: oklch(100% 0 0);
-      --fg-primary: oklch(100% 0 0);
-      --fg-secondary: oklch(100% 0 0 / 0.8);
-      --bar-bg: oklch(100% 0 0 / 0.2);
+      --accent: var(--fg-primary);
 
       color: var(--fg-primary);
-      background: linear-gradient(
-        135deg,
-        oklch(50% 0.2 var(--card-hue)),
-        oklch(42% 0.22 calc(var(--card-hue) + 60))
+      background-color: light-dark(
+        oklch(from var(--neutral) 100% c h),
+        oklch(from var(--neutral) 0% c h)
       );
     }
+  }
+
+  :global(.light) [data-variant="hero"] {
+    color-scheme: only dark;
+  }
+
+  :global(.dark) [data-variant="hero"] {
+    color-scheme: only light;
   }
 
   .eyebrow {

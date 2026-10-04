@@ -41,6 +41,8 @@ describe("buildInsights", () => {
       end: toDayNumber(Temporal.PlainDate.from("2026-03-15")),
       days: 14,
     });
+    expect(result.dailyVisits).toHaveLength(14);
+    expect(result.dailyVisits.slice(0, 3)).toEqual([3, 1, 0]);
     expect(result.rhythm?.weekdays[0]).toBe(1.5);
     expect(result.discovery?.newPagesOnKnownSites).toBe(1);
     expect(result.topSites.map((site) => site.site)).toEqual(["a.com"]);
@@ -52,6 +54,7 @@ describe("buildInsights", () => {
 
     expect(result.totals.visits).toBe(1);
     expect(result.range).toBe(undefined);
+    expect(result.dailyVisits).toEqual([]);
     expect(result.rhythm).toBe(undefined);
     expect(result.discovery).toBe(undefined);
     expect(result.personality).toBe(undefined);

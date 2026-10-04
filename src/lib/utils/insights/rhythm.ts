@@ -54,3 +54,14 @@ export function buildRhythm({ grid }: VisitAggregate, range: DayRange): Rhythm {
     peakHour: indexOfMax(hours),
   };
 }
+
+/** Visits per calendar day in the range, oldest first, including empty days. */
+export function buildDailyVisits(
+  { days }: VisitAggregate,
+  range: DayRange,
+): number[] {
+  return Array.from(
+    { length: range.days },
+    (_, offset) => days.get(range.start + offset) ?? 0,
+  );
+}

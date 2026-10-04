@@ -9,10 +9,20 @@
   const totals = $derived(insights.totals);
   const range = $derived(insights.range);
   const dateOptions: Intl.DateTimeFormatOptions = {
-    month: "long",
+    month: "short",
     day: "numeric",
     year: "numeric",
   };
+
+  // Same levels as the heatmap: 0 for no visits, then quarters of the busiest.
+  const days = $derived.by(() => {
+    const max = Math.max(1, ...insights.dailyVisits);
+    return insights.dailyVisits.map((visits, offset) => ({
+      visits,
+      level: visits && Math.min(4, Math.ceil((visits / max) * 4)),
+      label: `${formatDay((range?.start ?? 0) + offset, dateOptions)}: ${plural(visits, "visit")}`,
+    }));
+  });
 </script>
 
 <StatCard
@@ -27,8 +37,7 @@
   <p class="caption hero-caption">
     to {plural(totals.pages, "page")} on {plural(totals.sites, "website")}
     {#if range}
-      between {formatDay(range.start, dateOptions)} and
-      {formatDay(range.end, dateOptions)}
+      over {plural(range.days, "day")}
     {/if}
   </p>
   <dl class="figures">
@@ -59,6 +68,30 @@
       </div>
     {/if}
   </dl>
+  {#if range && days.length > 1}
+    <figure class="days">
+      <ol
+        style:--days={days.length}
+        role="img"
+        aria-label="Visits per day from {formatDay(
+          range.start,
+          dateOptions,
+        )} to {formatDay(range.end, dateOptions)}"
+      >
+        {#each days as day, index (index)}
+          <li
+            data-level={day.level}
+            title={day.label}
+            style:--delay={index / days.length}
+          ></li>
+        {/each}
+      </ol>
+      <figcaption>
+        <span>{formatDay(range.start, dateOptions)}</span>
+        <span>{formatDay(range.end, dateOptions)}</span>
+      </figcaption>
+    </figure>
+  {/if}
 </StatCard>
 
 <style>
@@ -87,6 +120,61 @@
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
+  }
+
+  .days {
+    margin: 1.5rem 0 0;
+  }
+
+  .days ol {
+    display: grid;
+    grid-template-columns: repeat(var(--days), minmax(0, 1fr));
+    /* Gaps shrink with the cells, so a long history stays a solid strip. */
+    gap: min(0.1875rem, calc(20cqi / var(--days)));
+    height: 3rem;
+  }
+
+  .days li {
+    background-color: var(--heatmap-color-0);
+    border-radius: min(0.25rem, calc(25cqi / var(--days)));
+
+    &[data-level="1"] {
+      background-color: var(--heatmap-color-1);
+    }
+
+    &[data-level="2"] {
+      background-color: var(--heatmap-color-2);
+    }
+
+    &[data-level="3"] {
+      background-color: var(--heatmap-color-3);
+    }
+
+    &[data-level="4"] {
+      background-color: var(--heatmap-color-4);
+    }
+  }
+
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    margin-block-start: 0.375rem;
+    color: var(--fg-secondary);
+    font-size: var(--el-font-size);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .days li {
+      animation: pop 0.3s ease-out both;
+      animation-delay: calc(var(--delay) * 0.8s);
+    }
+  }
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      scale: 1 0.2;
+    }
   }
 
   small {
