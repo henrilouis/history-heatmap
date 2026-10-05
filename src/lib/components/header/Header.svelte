@@ -26,7 +26,11 @@
       <button class="button" onclick={historyStore.cancelFetch}>Cancel</button>
     </div>
   {:else}
-    <Search value={routeStore.search} setSearch={routeStore.setSearch} />
+    <Search
+      value={routeStore.search}
+      navigation={routeStore.navigation}
+      setSearch={routeStore.setSearch}
+    />
   {/if}
   <div class="header-end">
     <ThemeToggle />

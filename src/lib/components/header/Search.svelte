@@ -1,8 +1,13 @@
 <script lang="ts">
   let {
     value,
+    navigation,
     setSearch,
-  }: { value: string; setSearch: (query: string) => void } = $props();
+  }: {
+    value: string;
+    navigation: number;
+    setSearch: (query: string) => void;
+  } = $props();
   let input: HTMLInputElement;
   let timer: ReturnType<typeof setTimeout>;
   const oninput = (e: Event) => {
@@ -12,10 +17,13 @@
     }, 300);
   };
 
-  // Show a search that changed elsewhere (initial URL, back/forward). The
-  // input's own debounced edits arrive here already matching its text, so
+  // Show a search that changed elsewhere (initial URL, back/forward). Rerun on
+  // every navigation too: a draft left over from the previous entry would
+  // otherwise commit into the restored one when both share the same search.
+  // The input's own debounced edits arrive here already matching its text, so
   // they never overwrite what the user is still typing.
   $effect(() => {
+    void navigation;
     if (input.value === value) return;
     clearTimeout(timer);
     input.value = value;

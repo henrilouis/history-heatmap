@@ -6,11 +6,15 @@ import { formatHash, parseHash } from "../utils/route";
 const initial = parseHash(location.hash);
 let view = $state<ViewMode>(initial.view);
 let search = $state(initial.search);
+// Counts history navigations, so views can react to one even when the
+// destination's view and search equal the current ones.
+let navigation = $state(0);
 
 function syncFromLocation(): void {
   const route = parseHash(location.hash);
   view = route.view;
   search = route.search;
+  navigation++;
 }
 
 /**
@@ -47,6 +51,9 @@ export const routeStore = {
   },
   get search() {
     return search;
+  },
+  get navigation() {
+    return navigation;
   },
   connect,
   hrefFor,

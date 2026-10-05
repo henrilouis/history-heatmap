@@ -722,4 +722,25 @@ describe("hash routing", () => {
       expect(historyLinks()).toEqual([repeatedUrl, repeatedUrl]),
     );
   });
+
+  it("drops a pending search edit when navigating back", async () => {
+    await mountApp("#/days?q=repeated");
+    completeSearch();
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, repeatedUrl]),
+    );
+    await switchView("Hours");
+    expect(location.hash).toBe("#/hours?q=repeated");
+
+    // Press Back before the 300 ms search debounce commits the edit. Both
+    // entries share the same search, so only navigation itself can reset it.
+    typeSearch("other");
+    history.back();
+    await vi.waitFor(() => expect(currentView()).toBe("Days"));
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(location.hash).toBe("#/days?q=repeated");
+    expect(searchInput().value).toBe("repeated");
+    expect(historyLinks()).toEqual([repeatedUrl, repeatedUrl]);
+  });
 });
