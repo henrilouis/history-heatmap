@@ -134,24 +134,26 @@
     height: 3rem;
   }
 
+  /* The card is heatmap blue, so the levels become a ramp of the card's
+     white text colour instead of the usual blue shades. */
   .days li {
-    background-color: var(--heatmap-color-0);
+    background-color: oklch(from var(--fg-primary) l c h / 0.15);
     border-radius: min(0.25rem, calc(25cqi / var(--days)));
 
     &[data-level="1"] {
-      background-color: var(--heatmap-color-1);
+      background-color: oklch(from var(--fg-primary) l c h / 0.35);
     }
 
     &[data-level="2"] {
-      background-color: var(--heatmap-color-2);
+      background-color: oklch(from var(--fg-primary) l c h / 0.55);
     }
 
     &[data-level="3"] {
-      background-color: var(--heatmap-color-3);
+      background-color: oklch(from var(--fg-primary) l c h / 0.8);
     }
 
     &[data-level="4"] {
-      background-color: var(--heatmap-color-4);
+      background-color: var(--fg-primary);
     }
   }
 

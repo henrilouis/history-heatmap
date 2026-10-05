@@ -52,26 +52,20 @@
       );
     }
 
-    /* Inverted like the selected mode button: black on a light page, white on
-       a dark one. Flipping the colour scheme flips every light-dark() token
-       inside, so text and heatmap levels get their high-contrast variants. */
+    /* Solid heatmap blue with white text in both themes, slightly deeper on
+       a dark page so it doesn't glare. */
     &[data-variant="hero"] {
+      --fg-primary: oklch(100% 0 0);
+      --fg-secondary: oklch(100% 0 0 / 0.8);
       --accent: var(--fg-primary);
+      --bar-bg: oklch(100% 0 0 / 0.2);
 
       color: var(--fg-primary);
       background-color: light-dark(
-        oklch(from var(--neutral) 100% c h),
-        oklch(from var(--neutral) 0% c h)
+        oklch(50% 0.2 var(--card-hue)),
+        oklch(42% 0.16 var(--card-hue))
       );
     }
-  }
-
-  :global(.light) [data-variant="hero"] {
-    color-scheme: only dark;
-  }
-
-  :global(.dark) [data-variant="hero"] {
-    color-scheme: only light;
   }
 
   .eyebrow {
