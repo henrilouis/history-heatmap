@@ -26,7 +26,7 @@ let runtime: {
 };
 let visited: (item: chrome.history.HistoryItem) => void;
 let target: HTMLDivElement;
-let cleanup: () => Promise<void>;
+let cleanup: (() => Promise<void>) | undefined;
 let tick: typeof import("svelte").tick;
 const originalAnimate = Object.getOwnPropertyDescriptor(
   Element.prototype,
@@ -114,6 +114,18 @@ beforeEach(async () => {
       onVisitRemoved: { addListener: vi.fn(), removeListener: vi.fn() },
     },
   });
+  await mountApp();
+});
+
+/**
+ * Mount a fresh App at a URL hash. jsdom keeps one window per file, so the URL
+ * is reset each time rather than leaking a previous test's route.
+ */
+async function mountApp(hash = "") {
+  await cleanup?.();
+  target?.remove();
+  search.mockClear();
+  history.replaceState(null, "", `${location.pathname}${hash}`);
   vi.resetModules();
   // Import the runtime and App together after reset so effects use one runtime.
   const svelte = await import("svelte");
@@ -122,10 +134,13 @@ beforeEach(async () => {
   target = document.createElement("div");
   document.body.append(target);
   const app = svelte.mount(App, { target });
-  cleanup = () => svelte.unmount(app);
+  cleanup = async () => {
+    await svelte.unmount(app);
+    cleanup = undefined;
+  };
   await tick();
   expect(search).toHaveBeenCalledTimes(1);
-});
+}
 
 afterEach(async () => {
   await cleanup?.();
@@ -155,6 +170,39 @@ function historyLinks(): string[] {
   return [...target.querySelectorAll<HTMLAnchorElement>(".moments a")].map(
     (link) => link.href,
   );
+}
+
+function viewLink(name: string): HTMLAnchorElement {
+  const nav = target.querySelector('nav[aria-label="View"]');
+  const matches = [...(nav?.querySelectorAll("a") ?? [])].filter(
+    (element) => element.textContent?.trim() === name,
+  );
+  expect(matches, `view link named '${name}'`).toHaveLength(1);
+  return matches[0];
+}
+
+function currentView(): string | undefined {
+  return target
+    .querySelector('nav[aria-label="View"] [aria-current="page"]')
+    ?.textContent?.trim();
+}
+
+function searchInput(): HTMLInputElement {
+  return target.querySelector('input[type="search"]')!;
+}
+
+/** Follow a view link the way a user does; jsdom fires hashchange async. */
+async function switchView(name: string) {
+  const link = viewLink(name);
+  const changed =
+    link.href !== location.href &&
+    new Promise((resolve) =>
+      window.addEventListener("hashchange", resolve, { once: true }),
+    );
+  link.click();
+  await changed;
+  await tick();
+  expect(currentView()).toBe(name);
 }
 
 function completeSearch() {
@@ -372,24 +420,23 @@ describe("mounted history interactions", () => {
     ["Hours", "2026-09-12 at 09:00", "2026-09-11 at 14:00"],
   ])("clears all %s selections with Escape", async (mode, first, second) => {
     await loadHistory();
-    button(mode).click();
-    await tick();
+    await switchView(mode);
     button(`Toggle moment for ${first}`).click();
     button(`Toggle moment for ${second}`).click();
     await tick();
     expect(target.querySelectorAll('[data-selected="true"]')).toHaveLength(2);
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl]);
 
-    const modeButton = button(mode);
-    modeButton.focus();
-    expect(document.activeElement).toBe(modeButton);
-    modeButton.dispatchEvent(
+    const modeLink = viewLink(mode);
+    modeLink.focus();
+    expect(document.activeElement).toBe(modeLink);
+    modeLink.dispatchEvent(
       new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
     );
     await tick();
     expect(target.querySelectorAll('[data-selected="true"]')).toHaveLength(2);
 
-    modeButton.dispatchEvent(
+    modeLink.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     );
     await tick();
@@ -413,8 +460,7 @@ describe("mounted history interactions", () => {
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
     button("Toggle moment for 2026-09-12").click();
     await tick();
-    button("Hours").click();
-    await tick();
+    await switchView("Hours");
     expect(target.querySelector('[data-selected="true"]')).toBeNull();
     expect(target.textContent).not.toContain("Clear selection");
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
@@ -426,8 +472,7 @@ describe("mounted history interactions", () => {
     ).toBe("true");
     expect(target.textContent).toMatch(/1\s+hour selected/);
     expect(historyLinks()).toEqual([repeatedUrl]);
-    button("Days").click();
-    await tick();
+    await switchView("Days");
     expect(target.querySelector('[data-selected="true"]')).toBeNull();
     expect(target.textContent).not.toContain("Clear selection");
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
@@ -441,7 +486,7 @@ describe("mounted history interactions", () => {
     // The stats view loads lazily. Its first transform takes seconds under
     // Vitest, so warm the module registry rather than stretching waitFor.
     await import("./lib/components/stats/Stats.svelte");
-    button("Stats").click();
+    await switchView("Stats");
     await vi.waitFor(() =>
       expect(target.querySelector(".stat-card .headline")?.textContent).toMatch(
         /3\s+visits/,
@@ -457,7 +502,7 @@ describe("mounted history interactions", () => {
     expect(target.querySelector(".heatmap")).toBeNull();
     expect(target.textContent).not.toContain("Clear selection");
 
-    button("Days").click();
+    await switchView("Days");
     await vi.waitFor(() =>
       expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
     );
@@ -589,5 +634,92 @@ describe("mounted history interactions", () => {
     await scrollTo(0, 1);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);
+  });
+});
+
+describe("hash routing", () => {
+  const atHash = (hash: string) =>
+    vi.waitFor(() => expect(location.hash).toBe(hash));
+
+  function typeSearch(query: string) {
+    const input = searchInput();
+    input.value = query;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  it("opens the view and search from the URL", async () => {
+    await mountApp("#/hours?q=other");
+    completeSearch();
+    await vi.waitFor(() => expect(historyLinks()).toEqual([otherUrl]));
+
+    expect(currentView()).toBe("Hours");
+    expect(searchInput().value).toBe("other");
+    expect(button("Toggle moment for 2026-09-11 at 14:00")).toBeDefined();
+    // Switching views keeps the search.
+    expect(viewLink("Stats").getAttribute("href")).toBe("#/stats?q=other");
+    expect(viewLink("Days").getAttribute("href")).toBe("#/days?q=other");
+  });
+
+  it("falls back to days for an unknown view", async () => {
+    await mountApp("#/nope");
+    await loadHistory();
+    expect(currentView()).toBe("Days");
+    expect(button("Toggle moment for 2026-09-12")).toBeDefined();
+  });
+
+  it("follows back and forward between views and clears the selection", async () => {
+    await loadHistory();
+    await switchView("Hours");
+    button("Toggle moment for 2026-09-12 at 09:00").click();
+    await tick();
+    expect(historyLinks()).toEqual([repeatedUrl]);
+
+    history.back();
+    await vi.waitFor(() => expect(currentView()).toBe("Days"));
+    expect(target.querySelector('[data-selected="true"]')).toBeNull();
+    expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
+
+    history.forward();
+    await vi.waitFor(() => expect(currentView()).toBe("Hours"));
+    expect(location.hash).toBe("#/hours");
+    expect(target.querySelector('[data-selected="true"]')).toBeNull();
+  });
+
+  it("keeps the search in the URL without adding history entries", async () => {
+    await loadHistory();
+    const entries = history.length;
+
+    typeSearch("other");
+    await atHash("#/days?q=other");
+    await vi.waitFor(() => expect(historyLinks()).toEqual([otherUrl]));
+    typeSearch("other page");
+    await atHash("#/days?q=other+page");
+    expect(history.length).toBe(entries);
+
+    await switchView("Hours");
+    expect(location.hash).toBe("#/hours?q=other+page");
+    expect(searchInput().value).toBe("other page");
+    expect(history.length).toBe(entries + 1);
+
+    // Back skips the typing and returns to the previous view and its search.
+    history.back();
+    await vi.waitFor(() => expect(currentView()).toBe("Days"));
+    expect(location.hash).toBe("#/days?q=other+page");
+    expect(searchInput().value).toBe("other page");
+
+    typeSearch("");
+    await atHash("#/days");
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+    );
+  });
+
+  it("shows a search changed through the URL", async () => {
+    await loadHistory();
+    location.hash = "#/days?q=repeated";
+    await vi.waitFor(() => expect(searchInput().value).toBe("repeated"));
+    await vi.waitFor(() =>
+      expect(historyLinks()).toEqual([repeatedUrl, repeatedUrl]),
+    );
   });
 });

@@ -6,16 +6,11 @@
   import { historyStore } from "../../stores/history.svelte";
   import type { ViewMode } from "../../utils/general";
 
-  let { viewMode = $bindable("days") }: { viewMode?: ViewMode } = $props();
-
-  function setViewMode(mode: ViewMode) {
-    viewMode = mode;
-    historyStore.clearSelection();
-  }
+  let { viewMode }: { viewMode: ViewMode } = $props();
 </script>
 
 <div class="heatmap-actions">
-  <ModeSwitch {viewMode} {setViewMode} />
+  <ModeSwitch {viewMode} />
   {#if viewMode !== "stats"}
     <SelectionInfo calendarMode={viewMode} />
   {/if}

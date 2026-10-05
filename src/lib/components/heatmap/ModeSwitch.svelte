@@ -1,13 +1,8 @@
 <script lang="ts">
+  import { routeStore } from "../../stores/route.svelte";
   import type { ViewMode } from "../../utils/general";
 
-  let {
-    viewMode,
-    setViewMode,
-  }: {
-    viewMode: ViewMode;
-    setViewMode: (mode: ViewMode) => void;
-  } = $props();
+  let { viewMode }: { viewMode: ViewMode } = $props();
 
   const modes: { mode: ViewMode; label: string }[] = [
     { mode: "days", label: "Days" },
@@ -16,15 +11,16 @@
   ];
 </script>
 
-<div class="button-group">
+<!-- Links, so each view has its own URL, history entry, and new-tab support. -->
+<nav class="button-group" aria-label="View">
   {#each modes as { mode, label } (mode)}
-    <button
-      class="quiet"
+    <a
+      class="button quiet"
       class:selected={viewMode === mode}
-      aria-pressed={viewMode === mode}
-      onclick={() => setViewMode(mode)}
+      href={routeStore.hrefFor(mode)}
+      aria-current={viewMode === mode ? "page" : undefined}
     >
       {label}
-    </button>
+    </a>
   {/each}
-</div>
+</nav>
