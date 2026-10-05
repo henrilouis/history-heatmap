@@ -11,7 +11,11 @@
   ];
 </script>
 
-<!-- Links, so each view has its own URL, history entry, and new-tab support. -->
+<!--
+  Links, so each view gets a history entry (back/forward, reload) and new-tab
+  support. Chrome shows chrome://history in the address bar and hides the hash,
+  so these routes are internal to the extension page, not shareable links.
+-->
 <nav class="button-group" aria-label="View">
   {#each modes as { mode, label } (mode)}
     <a
