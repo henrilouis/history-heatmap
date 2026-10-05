@@ -17,7 +17,7 @@
         ? calendarMode.slice(0, -1)
         : calendarMode} selected
     </span>
-    <button onclick={() => historyStore.clearSelection()}
+    <button class="button" onclick={() => historyStore.clearSelection()}
       >Clear selection</button
     >
   </div>

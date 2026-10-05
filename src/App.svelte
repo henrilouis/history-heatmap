@@ -1,19 +1,29 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import Heatmap from "./lib/components/heatmap/Heatmap.svelte";
   import HistoryList from "./lib/components/history-list/HistoryList.svelte";
   import { historyStore } from "./lib/stores/history.svelte";
+  import { routeStore } from "./lib/stores/route.svelte";
   import { themeStore } from "./lib/stores/theme.svelte";
   import Header from "./lib/components/header/Header.svelte";
-  import type { ViewMode } from "./lib/utils/general";
 
-  let viewMode = $state<ViewMode>("days");
   // Stats code is only needed once someone opens the stats view.
   const loadStats = () => import("./lib/components/stats/Stats.svelte");
 
   let scrollElement = $state<HTMLElement>();
 
+  onMount(routeStore.connect);
   onMount(historyStore.connect);
+
+  // The URL owns the search; the history store only filters by it.
+  $effect.pre(() => historyStore.setSearch(routeStore.search));
+
+  // A selection belongs to one view. Clearing it on every view change, rather
+  // than on click, also covers back/forward navigation.
+  $effect.pre(() => {
+    void routeStore.view;
+    untrack(historyStore.clearSelection);
+  });
 </script>
 
 <svelte:window
@@ -28,6 +38,7 @@
     <div class="error-banner" role="alert">
       <span>{historyStore.error}</span>
       <button
+        class="button"
         disabled={historyStore.isLoading}
         onclick={() => historyStore.fetch()}>Retry</button
       >
@@ -37,6 +48,7 @@
     <div class="loading-status" role="status">
       <span>{historyStore.syncError}</span>
       <button
+        class="button"
         disabled={historyStore.isLoading}
         onclick={() => historyStore.fetch()}>Refresh history</button
       >
@@ -44,8 +56,8 @@
   {/if}
 
   <main>
-    <Heatmap bind:viewMode />
-    {#if viewMode === "stats"}
+    <Heatmap viewMode={routeStore.view} />
+    {#if routeStore.view === "stats"}
       {#await loadStats() then { default: Stats }}
         <Stats />
       {:catch}

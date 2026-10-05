@@ -7,7 +7,7 @@
   aria-label={themeStore.colorScheme === "light"
     ? "Switch to dark mode"
     : "Switch to light mode"}
-  class={{ dark: themeStore.colorScheme === "dark" }}
+  class="button {themeStore.colorScheme === 'dark' ? 'dark' : ''}"
   id="theme-toggle-button"
 >
   <div class="icon-wrapper">

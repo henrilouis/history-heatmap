@@ -2,6 +2,7 @@
   import Search from "./Search.svelte";
   import ThemeToggle from "./ThemeToggle.svelte";
   import { historyStore } from "../../stores/history.svelte";
+  import { routeStore } from "../../stores/route.svelte";
 </script>
 
 <header>
@@ -22,10 +23,14 @@
         max={historyStore.progress?.total || 1}
         value={historyStore.progress?.completed}
       ></progress>
-      <button onclick={historyStore.cancelFetch}>Cancel</button>
+      <button class="button" onclick={historyStore.cancelFetch}>Cancel</button>
     </div>
   {:else}
-    <Search setSearch={historyStore.setSearch} />
+    <Search
+      value={routeStore.search}
+      navigation={routeStore.navigation}
+      setSearch={routeStore.setSearch}
+    />
   {/if}
   <div class="header-end">
     <ThemeToggle />

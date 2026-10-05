@@ -204,7 +204,7 @@ ol {
   animation: fade 2s infinite;
 }
 
-button {
+.button {
   background-color: var(--el-bg-default);
   border: none;
   padding: var(--el-padding);
@@ -240,6 +240,14 @@ button {
     background-color: var(--el-bg-primary);
     color: var(--fg-on-primary);
   }
+  a& {
+    font-weight: inherit;
+    word-break: normal;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
 }
 
 .button-group {
@@ -250,7 +258,7 @@ button {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   padding: var(--button-group-padding);
-  button {
+  .button {
     padding-block: calc(var(--el-padding-block) - var(--button-group-padding));
   }
 }

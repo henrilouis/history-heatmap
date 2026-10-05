@@ -12,10 +12,11 @@ table {
 td {
   padding: 0.125rem;
 }
-.heatmap td button {
+.heatmap button {
   display: block;
   width: 1.5rem;
   height: 1.5rem;
+  border: none;
   padding: 0;
   background-color: var(--el-bg-default);
   border-radius: var(--el-border-radius);

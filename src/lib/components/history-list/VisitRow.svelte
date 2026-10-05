@@ -53,7 +53,7 @@
     <span class="text-secondary">{hostname}</span>
   </div>
   <button
-    class="quiet delete-visit"
+    class="button quiet delete-visit"
     title="Delete every visit to this URL, including visits on other days"
     aria-label={`Delete all visits to ${visit.url}, including visits on other days`}
     onclick={() => deleteHistoryUrl(visit.url)}>Delete</button
