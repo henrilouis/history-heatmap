@@ -124,8 +124,11 @@ Merging to `main` publishes automatically when the version is new:
    with the zip and store images attached.
 
 Merges without a version bump do nothing. A failed release creates no tag, so
-re-running the workflow retries it. The store accepts one submission in review
-at a time; a new version merged meanwhile fails to upload until review
+re-running the workflow retries it. Before uploading, the workflow asks the
+store for the item's status; if the version is already in review or published
+(say the GitHub release step failed after a successful submission), it skips
+the store and only finishes the release. The store accepts one submission in
+review at a time; a new version merged meanwhile fails to upload until review
 finishes, then can be re-run from the Actions tab.
 
 ### Store images
@@ -151,5 +154,5 @@ Developer Dashboard.
    (`laddklgjajohacmmgojapiealpgfbfod`), and `CWS_SERVICE_ACCOUNT_KEY` (the
    JSON key).
 
-`node scripts/publish-chrome-web-store.mjs <zip>` can also run locally with the
-same variables, or with `CWS_ACCESS_TOKEN` instead of a key.
+`node scripts/publish-chrome-web-store.mjs <zip> <version>` can also run
+locally with the same variables, or with `CWS_ACCESS_TOKEN` instead of a key.

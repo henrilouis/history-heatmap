@@ -62,14 +62,16 @@ jobs:
       - run: npm run build
       - name: Package extension
         run: cd dist && zip -r -X "../$PACKAGE" .
+      # Skips the store when it already has this version in review or
+      # published, so a re-run after a later failure resumes at the release.
       - name: Upload and submit to the Chrome Web Store
-        run: node scripts/publish-chrome-web-store.mjs "$PACKAGE"
+        run: node scripts/publish-chrome-web-store.mjs "$PACKAGE" "$VERSION"
         env:
           CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
           CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
           CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
-      # Tag only after the store accepted the package, so a failed upload can
-      # simply be re-run.
+      # Tag only after the store accepted the version; the tag marks the
+      # release as done.
       - name: Create GitHub release
         run: |
           gh release create "v$VERSION" "$PACKAGE" docs/store/*.png \
