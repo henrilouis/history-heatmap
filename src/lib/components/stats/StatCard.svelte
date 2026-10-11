@@ -47,7 +47,7 @@
 
     &[data-tinted="true"] {
       background-color: light-dark(
-        oklch(96% 0.03 var(--card-hue)),
+        oklch(90% 0.03 var(--card-hue)),
         oklch(32% 0.04 var(--card-hue))
       );
     }

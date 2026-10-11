@@ -9,8 +9,9 @@
   } = $props();
 </script>
 
-{#if historyStore.selectedMoments.length > 0}
-  <div class="selection-info">
+<!-- Always rendered so its reserved height keeps the list from jumping. -->
+<div class="selection-info">
+  {#if historyStore.selectedMoments.length > 0}
     <span>
       {historyStore.selectedMoments.length}
       {historyStore.selectedMoments.length === 1
@@ -20,13 +21,16 @@
     <button class="button" onclick={() => historyStore.clearSelection()}
       >Clear selection</button
     >
-  </div>
-{/if}
+  {/if}
+</div>
 
 <style>
   .selection-info {
     display: flex;
     align-items: center;
+    justify-content: end;
     gap: 1ch;
+    min-block-size: calc(var(--el-line-height) + var(--el-padding-block) * 2);
+    margin-block-end: 1rem;
   }
 </style>

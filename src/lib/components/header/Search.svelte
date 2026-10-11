@@ -41,17 +41,18 @@
 <style>
   input[type="search"] {
     background-color: var(--input-bg-default);
-    border: var(--el-border-width) solid var(--el-border-color-default);
+    border: none;
+    box-shadow: var(--el-shadow);
     border-radius: var(--el-border-radius);
     corner-shape: var(--el-corner-shape);
     padding: calc(var(--el-padding-block) - var(--el-border-width))
       calc(var(--el-padding-inline) - var(--el-border-width));
     padding-inline-end: 0;
+    flex: 1 1 10rem;
+    min-width: 0;
     max-width: 32rem;
-    width: 100%;
     font-size: var(--el-font-size);
     line-height: var(--el-line-height);
-    margin-inline: auto;
     transition: all 0.15s ease-in-out;
     transition-property: border, outline, background-color;
     &:hover {
