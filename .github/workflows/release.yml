@@ -1,0 +1,80 @@
+name: Release
+
+# Publishes to the Chrome Web Store whenever main carries a manifest version
+# that has no git tag yet. Merges without a version bump do nothing.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    name: Detect new version
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: version
+        run: |
+          version=$(node -p 'require("./public/manifest.json").version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "v$version is already released."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "v$version is new."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    name: Publish v${{ needs.detect.outputs.version }}
+    needs: detect
+    if: needs.detect.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.detect.outputs.version }}
+      PACKAGE: history-heatmap-v${{ needs.detect.outputs.version }}.zip
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check:versions
+      - run: npm run check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Package extension
+        run: cd dist && zip -r -X "../$PACKAGE" .
+      # Skips the store when it already has this version in review or
+      # published, so a re-run after a later failure resumes at the release.
+      - name: Upload and submit to the Chrome Web Store
+        run: node scripts/publish-chrome-web-store.mjs "$PACKAGE" "$VERSION"
+        env:
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_SERVICE_ACCOUNT_KEY: ${{ secrets.CWS_SERVICE_ACCOUNT_KEY }}
+      # Tag only after the store accepted the version; the tag marks the
+      # release as done.
+      - name: Create GitHub release
+        run: |
+          gh release create "v$VERSION" "$PACKAGE" docs/store/*.png \
+            --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

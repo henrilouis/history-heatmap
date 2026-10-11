@@ -79,6 +79,8 @@ npm run dev
 | `npm run format:check`            | Check formatting without changing files.                             |
 | `npm run fallow`                  | Audit new issues relative to `HEAD`.                                 |
 | `npm run fallow:all`              | Audit the entire project for dead code, duplication, and complexity. |
+| `npm run check:versions`          | Check that `package.json` and the manifest share one version.        |
+| `npm run screenshots`             | Regenerate the Chrome Web Store screenshots and promo tile.          |
 
 ### Testing and CI
 
@@ -108,3 +110,49 @@ and pre-commit behavior.
 temporary profile with 100,000 URLs and 500,000 visits.
 
 See [benchmark methodology and results](docs/history-performance.md).
+
+## Releasing
+
+Merging to `main` publishes automatically when the version is new:
+
+1. Bump `version` in both `package.json` and `public/manifest.json` in your PR
+   (CI fails if they differ).
+2. Merge. The [release workflow](.github/workflows/release.yml) sees that no
+   `v<version>` tag exists, runs the checks, builds and zips `dist/`, uploads it
+   with the Chrome Web Store API (V2), and submits it to publish as soon as
+   review approves it. It then tags `v<version>` and creates a GitHub release
+   with the zip and store images attached.
+
+Merges without a version bump do nothing. A failed release creates no tag, so
+re-running the workflow retries it. Before uploading, the workflow asks the
+store for the item's status; if the version is already in review or published
+(say the GitHub release step failed after a successful submission), it skips
+the store and only finishes the release. The store accepts one submission in
+review at a time; a new version merged meanwhile fails to upload until review
+finishes, then can be re-run from the Actions tab.
+
+### Store images
+
+`npm run screenshots` renders the five 1280x800 screenshots and the 440x280
+small promo tile into `docs/store/`. It builds the extension, serves it with
+seeded demo history in place of the Chrome APIs (your own history is never
+read), and captures it with your installed Chrome via Playwright. Output is
+deterministic, so unchanged UI produces identical files. Set `CHROME_PATH` to
+use another Chrome binary.
+
+The Chrome Web Store API cannot update listing images or text, so after
+regenerating, upload `docs/store/` by hand under **Store listing** in the
+Developer Dashboard.
+
+### One-time setup
+
+1. In Google Cloud, enable the **Chrome Web Store API**, create a service
+   account and a JSON key for it.
+2. In the Chrome Web Store Developer Dashboard, add the service account's email
+   on the **Account** page, and note the publisher ID.
+3. Add repository secrets: `CWS_PUBLISHER_ID`, `CWS_EXTENSION_ID`
+   (`laddklgjajohacmmgojapiealpgfbfod`), and `CWS_SERVICE_ACCOUNT_KEY` (the
+   JSON key).
+
+`node scripts/publish-chrome-web-store.mjs <zip> <version>` can also run
+locally with the same variables, or with `CWS_ACCESS_TOKEN` instead of a key.
