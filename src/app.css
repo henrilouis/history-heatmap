@@ -60,10 +60,10 @@
 
   --el-outline-color-selected: light-dark(
     oklch(from var(--color) 80% c h),
-    oklch(from var(--color) 95% c h)
+    oklch(from var(--color) 100% 0.05 h)
   );
   --el-outline-width-selected: 0.125rem;
-  --el-box-shadow-selected: 0 0 0.75rem
+  --el-box-shadow-selected: 0 0 1.25rem
     light-dark(
       oklch(from var(--color) 80% c h / 0.5),
       oklch(from var(--color) 95% c h)
@@ -84,13 +84,15 @@
   --el-font-size: 0.8125rem;
   --el-line-height: 1.125rem;
 
+  --el-shadow: 0 0 0.5rem light-dark(oklch(0% 0 0 / 0.1), oklch(0% 0 0 / 0));
+
   --input-bg-default: light-dark(
     oklch(from var(--neutral) 100% c h),
-    oklch(from var(--neutral) 30% c h)
+    oklch(from var(--neutral) 25% c h)
   );
   --input-bg-hover: light-dark(
     oklch(from var(--neutral) 100% c h),
-    oklch(from var(--neutral) 32% c h)
+    oklch(from var(--neutral) 30% c h)
   );
 
   --heatmap-color-0: light-dark(
@@ -112,6 +114,10 @@
   --heatmap-color-4: light-dark(
     oklch(from var(--heatmap-color) 0% 0.4 h),
     oklch(from var(--heatmap-color) 100% 0.4 h)
+  );
+  --heatmap-color-selected: light-dark(
+    oklch(from var(--color) 100% 0 h),
+    oklch(from var(--color) 100% 0 h)
   );
 
   --cn-border-radius: 2rem;
@@ -193,7 +199,6 @@ ol {
   border-radius: var(--cn-border-radius);
   corner-shape: var(--cn-corner-shape);
   padding: 1.5rem;
-  box-shadow: var(--shadow-1);
 }
 
 .skeleton {
@@ -261,6 +266,7 @@ ol {
   .button {
     padding-block: calc(var(--el-padding-block) - var(--button-group-padding));
   }
+  box-shadow: var(--el-shadow);
 }
 
 input[type="checkbox"] {
