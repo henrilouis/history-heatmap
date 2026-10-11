@@ -49,7 +49,6 @@ td {
     box-shadow: var(--el-box-shadow-selected);
     outline-offset: var(--el-outline-offset-selected);
     z-index: 1;
-    /*background-color: var(--heatmap-color-selected);*/
   }
   &:hover {
     scale: 1.1;

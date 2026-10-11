@@ -115,10 +115,6 @@
     oklch(from var(--heatmap-color) 0% 0.4 h),
     oklch(from var(--heatmap-color) 100% 0.4 h)
   );
-  --heatmap-color-selected: light-dark(
-    oklch(from var(--color) 100% 0 h),
-    oklch(from var(--color) 100% 0 h)
-  );
 
   --cn-border-radius: 2rem;
   --cn-corner-shape: squircle;
