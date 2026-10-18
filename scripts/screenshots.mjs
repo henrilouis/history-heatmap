@@ -24,7 +24,7 @@ const SHOTS = [
   { file: "01-days-light.png", route: "#/days", colorScheme: "light" },
   { file: "02-hours-light.png", route: "#/hours", colorScheme: "light" },
   { file: "03-stats-light.png", route: "#/stats", colorScheme: "light" },
-  { file: "04-days-dark.png", route: "#/days", colorScheme: "dark" },
+  { file: "04-flow-dark.png", route: "#/days?group=flow", colorScheme: "dark" },
   {
     file: "05-stats-dark.png",
     route: "#/stats",
