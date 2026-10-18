@@ -1,4 +1,5 @@
 <script lang="ts">
+  import GroupingSwitch from "./GroupingSwitch.svelte";
   import { historyStore } from "../../stores/history.svelte";
   import type { CalendarMode } from "../../utils/general";
 
@@ -11,26 +12,38 @@
 
 <!-- Always rendered so its reserved height keeps the list from jumping. -->
 <div class="selection-info">
+  <GroupingSwitch />
   {#if historyStore.selectedMoments.length > 0}
-    <span>
-      {historyStore.selectedMoments.length}
-      {historyStore.selectedMoments.length === 1
-        ? calendarMode.slice(0, -1)
-        : calendarMode} selected
-    </span>
-    <button class="button" onclick={() => historyStore.clearSelection()}
-      >Clear selection</button
-    >
+    <div class="selection">
+      <span>
+        {historyStore.selectedMoments.length}
+        {historyStore.selectedMoments.length === 1
+          ? calendarMode.slice(0, -1)
+          : calendarMode} selected
+      </span>
+      <button class="button" onclick={() => historyStore.clearSelection()}
+        >Clear selection</button
+      >
+    </div>
   {/if}
 </div>
 
 <style>
-  .selection-info {
+  .selection-info,
+  .selection {
     display: flex;
     align-items: center;
-    justify-content: end;
     gap: 1ch;
+  }
+
+  .selection-info {
+    justify-content: space-between;
+    flex-wrap: wrap;
     min-block-size: calc(var(--el-line-height) + var(--el-padding-block) * 2);
     margin-block-end: 1rem;
+  }
+
+  .selection {
+    margin-inline-start: auto;
   }
 </style>

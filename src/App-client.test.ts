@@ -501,6 +501,7 @@ describe("mounted history interactions", () => {
     expect(historyLinks()).toEqual([]);
     expect(target.querySelector(".heatmap")).toBeNull();
     expect(target.textContent).not.toContain("Clear selection");
+    expect(target.textContent).not.toContain("By flow");
 
     await switchView("Days");
     await vi.waitFor(() =>
@@ -668,6 +669,34 @@ describe("hash routing", () => {
     expect(viewLink("Stats").getAttribute("href")).toBe("#/stats?group=flow");
     await switchView("Days");
     expect(location.hash).toBe("#/days?group=flow");
+  });
+
+  it("switches the grouping without adding history entries", async () => {
+    await loadHistory();
+    const pressed = () =>
+      ["By time", "By flow"].filter(
+        (name) => button(name).getAttribute("aria-pressed") === "true",
+      );
+    expect(pressed()).toEqual(["By time"]);
+    const entries = history.length;
+
+    button("By flow").click();
+    await atHash("#/days?group=flow");
+    await tick();
+    expect(pressed()).toEqual(["By flow"]);
+    expect(history.length).toBe(entries);
+
+    await switchView("Hours");
+    expect(location.hash).toBe("#/hours?group=flow");
+    history.back();
+    await vi.waitFor(() => expect(currentView()).toBe("Days"));
+    expect(location.hash).toBe("#/days?group=flow");
+    expect(pressed()).toEqual(["By flow"]);
+
+    button("By time").click();
+    await atHash("#/days");
+    await tick();
+    expect(pressed()).toEqual(["By time"]);
   });
 
   it("falls back to days for an unknown view", async () => {
