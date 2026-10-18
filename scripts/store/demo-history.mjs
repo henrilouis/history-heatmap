@@ -386,11 +386,14 @@ function recordSession(context, kind, startTime) {
       time += random.int(5, 60) * 1000;
       recorder.record(url, title, time, ["reload", visitId]);
     }
-    // Launched pages open in quick succession; read pages take a while.
-    time += SESSION_KINDS[kind].independent
-      ? random.int(2, 20) * 1000
-      : random.int(20, 240) * 1000;
+    time += timeOnPage(random, kind);
   }
+}
+
+/** Launched pages open in quick succession; read pages take a while. */
+function timeOnPage(random, kind) {
+  const [min, max] = SESSION_KINDS[kind].independent ? [2, 20] : [20, 240];
+  return random.int(min, max) * 1000;
 }
 
 /**
