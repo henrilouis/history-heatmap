@@ -660,6 +660,16 @@ describe("hash routing", () => {
     expect(viewLink("Days").getAttribute("href")).toBe("#/days?q=other");
   });
 
+  it("keeps the grouping when switching views", async () => {
+    await mountApp("#/hours?group=flow");
+    completeSearch();
+    await vi.waitFor(() => expect(currentView()).toBe("Hours"));
+
+    expect(viewLink("Stats").getAttribute("href")).toBe("#/stats?group=flow");
+    await switchView("Days");
+    expect(location.hash).toBe("#/days?group=flow");
+  });
+
   it("falls back to days for an unknown view", async () => {
     await mountApp("#/nope");
     await loadHistory();

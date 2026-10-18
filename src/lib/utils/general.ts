@@ -2,6 +2,8 @@ import { toLocalZonedDateTime } from "./date";
 
 export type CalendarMode = "days" | "hours";
 export type ViewMode = CalendarMode | "stats";
+/** How the history list groups visits into cards. */
+export type Grouping = "time" | "flow";
 
 export const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
   weekday: "long",

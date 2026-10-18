@@ -1,4 +1,4 @@
-import type { ViewMode } from "../utils/general";
+import type { Grouping, ViewMode } from "../utils/general";
 import { formatHash, parseHash } from "../utils/route";
 
 // The extension replaces chrome://history with index.html, which has no server
@@ -6,6 +6,7 @@ import { formatHash, parseHash } from "../utils/route";
 const initial = parseHash(location.hash);
 let view = $state<ViewMode>(initial.view);
 let search = $state(initial.search);
+let grouping = $state<Grouping>(initial.grouping);
 // Counts history navigations, so views can react to one even when the
 // destination's view and search equal the current ones.
 let navigation = $state(0);
@@ -14,6 +15,7 @@ function syncFromLocation(): void {
   const route = parseHash(location.hash);
   view = route.view;
   search = route.search;
+  grouping = route.grouping;
   navigation++;
 }
 
@@ -32,7 +34,7 @@ function connect(): () => void {
 }
 
 function hrefFor(target: ViewMode): string {
-  return formatHash({ view: target, search });
+  return formatHash({ view: target, search, grouping });
 }
 
 /**
@@ -42,7 +44,22 @@ function hrefFor(target: ViewMode): string {
 function setSearch(query: string): void {
   if (query === search) return;
   search = query;
-  history.replaceState(history.state, "", formatHash({ view, search }));
+  replaceRoute();
+}
+
+/** Like the search, grouping is how a view is shown, not a place to go back to. */
+function setGrouping(value: Grouping): void {
+  if (value === grouping) return;
+  grouping = value;
+  replaceRoute();
+}
+
+function replaceRoute(): void {
+  history.replaceState(
+    history.state,
+    "",
+    formatHash({ view, search, grouping }),
+  );
 }
 
 export const routeStore = {
@@ -52,10 +69,14 @@ export const routeStore = {
   get search() {
     return search;
   },
+  get grouping() {
+    return grouping;
+  },
   get navigation() {
     return navigation;
   },
   connect,
   hrefFor,
   setSearch,
+  setGrouping,
 };
