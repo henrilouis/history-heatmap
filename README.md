@@ -31,19 +31,19 @@ the deepest rabbit hole, and top searches. Websites group by host, with `www.`
 merged into the bare domain. Averages span every day in the loaded history,
 including days without visits.
 
-### Navigation trails
+### By time or by flow
 
-A subway-style graph connects visits using Chrome's recorded referring visits.
-Colors identify browsing trails, not tabs; branches show one visit leading to
-others. The list stays newest-first, with newer visits branching upward. Hollow
-dots mark reloads, which can also represent restored pages or reopened tabs.
-Tunnel shadows indicate known connections outside the current card or search
-results, or connections condensed to keep the graph compact. Unknown referrers
-remain unconnected. The graph includes accessible labels and requires no
-additional permissions.
+The switch above the history list groups visits into cards **By time** (one
+card per day, or per selected day or hour) or **By flow**. A flow is a stretch
+of browsing: pages opened from one another, using Chrome's recorded referring
+visits, joined with nearby visits to the same website. Each flow card is titled
+by the search it started with or its main website, and shows when it happened.
+A burst of small, unrelated visits, such as several pages opened at once, is
+pooled into one **Other visits** card. Flows respect the search and the selected
+days or hours, and the choice is kept in the page URL.
 
 See [history behavior](docs/history.md) for loading guarantees, synchronization,
-and navigation graph limits.
+and how flows are formed.
 
 ## Development
 
@@ -85,7 +85,7 @@ npm run dev
 ### Testing and CI
 
 Tests live alongside source files and cover history loading, synchronization,
-deletion, calendar/date handling, navigation trails, and UI interactions.
+deletion, calendar/date handling, flow grouping, and UI interactions.
 Chrome APIs are mocked; tests do not access your browsing history.
 
 CI runs tests in UTC, Los Angeles, Tokyo, and São Paulo, plus type checks,

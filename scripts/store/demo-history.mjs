@@ -226,6 +226,23 @@ const SESSION_KINDS = {
       next: blogPost,
     }),
   },
+  // Pages opened one after another from bookmarks or the address bar, none
+  // linking to the next, such as starting the working day.
+  launch: {
+    length: [3, 5],
+    independent: true,
+    start: ({ random }) => ({
+      first: [],
+      next: () => {
+        if (random.chance(0.25)) {
+          const [host, name] = random.pick(NEWS);
+          return [`https://www.${host}/`, name];
+        }
+        const [host, path, title] = random.pick(WORK);
+        return [`https://${host}${path}`, title];
+      },
+    }),
+  },
 };
 
 function outletSession(random) {
@@ -251,6 +268,7 @@ const SESSION_MIX = {
     ["dev", 8],
     ["work", 6],
     ["search", 3],
+    ["launch", 2],
     ["news", 2],
     ["music", 1],
     ["social", 1],
@@ -265,6 +283,7 @@ const SESSION_MIX = {
     ["dev", 2],
     ["music", 1],
     ["work", 1],
+    ["launch", 1],
   ],
 };
 const WORK_HOURS = new Set([9, 10, 11, 12, 13, 14, 15, 16, 17]);
@@ -276,7 +295,7 @@ function sessionMix(hour, weekend) {
 }
 
 /** Share of sessions opened from a bookmark rather than typed. */
-const BOOKMARKED = { music: 0.6, work: 0.6 };
+const BOOKMARKED = { music: 0.6, work: 0.6, launch: 0.7 };
 
 function sessionPages(context, kind) {
   const { length, start } = SESSION_KINDS[kind];
@@ -290,7 +309,7 @@ function sessionPages(context, kind) {
 
 /** How a page was reached: [transition, referring visit ID]. */
 function arrival({ random }, kind, url, previous) {
-  return previous.length
+  return previous.length && !SESSION_KINDS[kind].independent
     ? followLink(random, previous)
     : openSession(random, kind, url);
 }
@@ -367,7 +386,10 @@ function recordSession(context, kind, startTime) {
       time += random.int(5, 60) * 1000;
       recorder.record(url, title, time, ["reload", visitId]);
     }
-    time += random.int(20, 240) * 1000;
+    // Launched pages open in quick succession; read pages take a while.
+    time += SESSION_KINDS[kind].independent
+      ? random.int(2, 20) * 1000
+      : random.int(20, 240) * 1000;
   }
 }
 
