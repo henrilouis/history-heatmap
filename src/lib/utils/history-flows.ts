@@ -25,6 +25,17 @@ export type Flow = {
   topic: FlowTopic;
 };
 
+export function flowTitle(topic: FlowTopic): string {
+  switch (topic.kind) {
+    case "search":
+      return `“${topic.term}”`;
+    case "site":
+      return topic.site;
+    case "other":
+      return "Other visits";
+  }
+}
+
 type Entry = {
   visit: HistoryVisit;
   /** Position newest first. */

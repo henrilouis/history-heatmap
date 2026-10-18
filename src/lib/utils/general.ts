@@ -28,6 +28,25 @@ export function formatMomentKey(key: string, timestamp?: number): string {
 }
 
 /**
+ * Format the local time span of visits, like "Friday, October 9, 2026,
+ * 16:38 – 16:50". The date is repeated only when the span crosses midnight.
+ */
+export function formatTimeRange(
+  start: number,
+  end: number,
+  timeZone = Temporal.Now.timeZoneId(),
+  locales?: Intl.LocalesArgument,
+): string {
+  return new Intl.DateTimeFormat(locales, {
+    ...dateTimeFormatOptions,
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+    timeZone,
+  }).formatRange(Math.trunc(start), Math.trunc(end));
+}
+
+/**
  * A stable hue in degrees for a key, so the same trail or website keeps its
  * colour across renders and sessions.
  */

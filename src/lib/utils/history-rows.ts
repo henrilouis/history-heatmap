@@ -1,7 +1,15 @@
 import type { HistoryVisit } from "./chrome-api";
+import type { FlowTopic } from "./history-flows";
 
-/** A day or hour of visits, displayed as one card. */
-export type HistoryGroup = { key: string; items: HistoryVisit[] };
+/**
+ * Visits displayed as one card: a day or an hour, or a flow when it has a
+ * topic.
+ */
+export type HistoryGroup = {
+  key: string;
+  items: HistoryVisit[];
+  topic?: FlowTopic;
+};
 
 /**
  * One row of the virtualized history list. Cards are flattened into rows so a

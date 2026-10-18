@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Attachment } from "svelte/attachments";
   import VisitRow from "./VisitRow.svelte";
-  import { formatMomentKey } from "../../utils/general";
+  import { formatMomentKey, formatTimeRange } from "../../utils/general";
+  import { flowTitle } from "../../utils/history-flows";
   import type {
     NavigationIndex,
     layoutNavigation,
@@ -30,7 +31,21 @@
     measure: Attachment<HTMLElement>;
   } = $props();
 
-  const label = $derived(formatMomentKey(group.key, group.items[0]?.visitTime));
+  const label = $derived(
+    group.topic
+      ? flowTitle(group.topic)
+      : formatMomentKey(group.key, group.items[0]?.visitTime),
+  );
+  // Flows are not tied to a moment, so they say when they happened.
+  const span = $derived.by(() => {
+    if (!group.topic) return;
+    const { items } = group;
+    const visits = `${items.length} ${items.length === 1 ? "visit" : "visits"}`;
+    const start = items[items.length - 1]?.visitTime;
+    const end = items[0]?.visitTime;
+    if (start === undefined || end === undefined) return visits;
+    return `${formatTimeRange(start, end)} · ${visits}`;
+  });
   // Only the first row of a card is a heading.
   const heading = $derived(
     rows[indexes[0]]?.type === "heading" ? indexes[0] : undefined,
@@ -55,7 +70,10 @@
       data-index={heading}
       {@attach measure}
     >
-      <h3>{label}</h3>
+      <h3 class:with-span={span}>{label}</h3>
+      {#if span}
+        <p class="span text-secondary">{span}</p>
+      {/if}
       {#if empty}
         No results for this time
       {/if}
@@ -89,6 +107,15 @@
   .heading {
     display: flow-root;
     padding-block-start: 1.5rem;
+  }
+
+  .heading .with-span {
+    margin-block-end: 0.25rem;
+  }
+
+  .span {
+    margin-block: 0 1.25rem;
+    font-size: 0.875rem;
   }
 
   .fragment :global(.card-end) {

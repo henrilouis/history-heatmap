@@ -276,6 +276,62 @@ describe("mounted history interactions", () => {
     ).toBeNull();
   });
 
+  it("groups the list into flows, also within a selection", async () => {
+    visitsByUrl.set(repeatedUrl, [
+      chromeVisit("older", new Date(2026, 8, 10, 18)),
+      chromeVisit("root", new Date(2026, 8, 12, 9)),
+      chromeVisit("again", new Date(2026, 8, 12, 9, 5), {
+        referringVisitId: "next",
+      }),
+    ]);
+    visitsByUrl.set(otherUrl, [
+      chromeVisit("next", new Date(2026, 8, 12, 9, 2), {
+        referringVisitId: "root",
+      }),
+    ]);
+    completeSearch();
+    await vi.waitFor(() => expect(historyLinks()).toHaveLength(4));
+    const cards = () =>
+      [...target.querySelectorAll(".moments header")].map((header) => ({
+        title: header.querySelector("h3")?.textContent,
+        span: header.querySelector("p")?.textContent,
+      }));
+
+    button("By flow").click();
+    await vi.waitFor(() =>
+      expect(cards()).toEqual([
+        { title: "example.com", span: expect.stringMatching(/ · 3 visits$/) },
+        { title: "example.com", span: expect.stringMatching(/ · 1 visit$/) },
+      ]),
+    );
+    expect(historyLinks()).toEqual([
+      repeatedUrl,
+      otherUrl,
+      repeatedUrl,
+      repeatedUrl,
+    ]);
+
+    button("Toggle moment for 2026-09-10").click();
+    await vi.waitFor(() => expect(historyLinks()).toEqual([repeatedUrl]));
+    expect(cards()).toEqual([
+      { title: "example.com", span: expect.stringMatching(/ · 1 visit$/) },
+    ]);
+
+    // A search can leave nothing to show in the selection.
+    location.hash = "#/days?q=other&group=flow";
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No results found"),
+    );
+
+    button("By time").click();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No results for this time"),
+    );
+    expect(cards()).toEqual([
+      { title: expect.stringContaining("2026"), span: undefined },
+    ]);
+  });
+
   it("removes all visits from the list and calendar only after deletion succeeds", async () => {
     const callback = await startDeletion();
 

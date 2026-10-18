@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { HistoryVisit } from "./chrome-api";
 import { historyVisit } from "./history-fixtures";
-import { groupByFlow } from "./history-flows";
+import { flowTitle, groupByFlow } from "./history-flows";
 import { indexNavigation } from "./history-graph";
 
 const START = Date.UTC(2026, 0, 15, 12);
@@ -205,5 +205,13 @@ describe("groupByFlow", () => {
 
   it("returns no flows without visits", () => {
     expect(flows([])).toEqual([]);
+  });
+
+  it("titles a flow after its topic", () => {
+    expect(flowTitle({ kind: "search", term: "svelte runes" })).toBe(
+      "“svelte runes”",
+    );
+    expect(flowTitle({ kind: "site", site: "github.com" })).toBe("github.com");
+    expect(flowTitle({ kind: "other" })).toBe("Other visits");
   });
 });

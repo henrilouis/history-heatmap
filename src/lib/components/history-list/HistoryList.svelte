@@ -9,6 +9,7 @@
   import CardFragment from "./CardFragment.svelte";
   import { observeScrollOffset } from "../../utils/dom";
   import { layoutNavigation } from "../../utils/history-graph";
+  import { groupByFlow } from "../../utils/history-flows";
   import {
     chunkHistoryRows,
     flattenHistoryGroups,
@@ -17,19 +18,30 @@
     type HistoryRow,
   } from "../../utils/history-rows";
   import { historyStore } from "../../stores/history.svelte";
+  import { routeStore } from "../../stores/route.svelte";
 
   let { scrollElement }: { scrollElement?: HTMLElement } = $props();
 
+  const selected = $derived(historyStore.selectedMoments.length > 0);
   const groups = $derived<HistoryGroup[]>(
-    historyStore.selectedMoments.length > 0
-      ? historyStore.selectedMoments.map((key) => ({
-          key,
-          items: historyStore.getItemsForMoment(key),
-        }))
-      : Object.entries(historyStore.byDay).map(([key, items]) => ({
-          key,
-          items,
-        })),
+    routeStore.grouping === "flow"
+      ? groupByFlow(
+          selected
+            ? historyStore.selectedMoments.flatMap(
+                historyStore.getItemsForMoment,
+              )
+            : historyStore.filtered,
+          historyStore.navigation,
+        )
+      : selected
+        ? historyStore.selectedMoments.map((key) => ({
+            key,
+            items: historyStore.getItemsForMoment(key),
+          }))
+        : Object.entries(historyStore.byDay).map(([key, items]) => ({
+            key,
+            items,
+          })),
   );
   const rows = $derived(flattenHistoryGroups(groups));
   const rowIndexes = $derived(new Map(rows.map((row, i) => [row.key, i])));
@@ -67,7 +79,9 @@
     if (!row) return 0;
     if (row.type === "gap") return 1 * rem;
     const visits = groups[row.group].items.length;
-    if (row.type === "heading") return (visits ? 4.5 : 6) * rem;
+    // A flow's heading adds a line with its time span.
+    if (row.type === "heading")
+      return ((visits ? 4.5 : 6) + (groups[row.group].topic ? 1.625 : 0)) * rem;
     return (row.position === visits - 1 ? 4.5 : 3) * rem;
   }
 
@@ -177,11 +191,11 @@
 </script>
 
 <section class="moments">
-  {#if historyStore.selectedMoments.length === 0 && historyStore.isLoading}
+  {#if !selected && historyStore.isLoading}
     <Card loading={true} />
     <Card loading={true} />
     <Card loading={true} />
-  {:else if historyStore.selectedMoments.length === 0 && historyStore.filtered.length === 0}
+  {:else if groups.length === 0}
     <Card>
       <h3>No results found</h3>
     </Card>
