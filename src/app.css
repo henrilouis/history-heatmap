@@ -260,12 +260,12 @@ ol {
   corner-shape: var(--el-corner-shape);
   padding: var(--button-group-padding);
   box-shadow: var(--el-shadow);
-  &::before{
-    content:'';
-    position:absolute;
+  &::before {
+    content: "";
+    position: absolute;
     position-anchor: --selected;
     inset: anchor(top) anchor(right) anchor(bottom) anchor(left);
-    transition: inset .3s;
+    transition: inset 0.3s;
     z-index: 0;
     background-color: var(--el-bg-primary);
     color: var(--fg-on-primary);
@@ -274,12 +274,14 @@ ol {
   }
   .button {
     padding-block: calc(var(--el-padding-block) - var(--button-group-padding));
-    z-index:0;
+    z-index: 0;
 
     &.selected {
       background: var(--el-bg-hover);
       anchor-name: --selected;
-      transition: background 0.15s, color 0.2s 0.1s;
+      transition:
+        background 0.15s,
+        color 0.2s 0.1s;
     }
   }
 }
