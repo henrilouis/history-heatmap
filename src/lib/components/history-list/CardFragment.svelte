@@ -113,6 +113,6 @@
   }
 
   .fragment :global(li:not(.card-end)) {
-    border-bottom: 1px solid var(--el-border-color-default);
+    border-bottom: var(--el-border-width) solid var(--el-border-color-default);
   }
 </style>
