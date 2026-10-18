@@ -13,7 +13,7 @@ import {
   type HistoryLoadProgress,
 } from "../utils/chrome-api";
 import { mergeHistoryVisits } from "../utils/history-merge";
-import { indexNavigation } from "../utils/history-graph";
+import { indexNavigation } from "../utils/history-navigation";
 
 // ============================================
 // Core State

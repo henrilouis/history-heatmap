@@ -1,24 +1,17 @@
 <script lang="ts">
   import type { HTMLLiAttributes } from "svelte/elements";
-  import { getFaviconURL } from "../../utils/chrome-api";
+  import { getFaviconURL, type HistoryVisit } from "../../utils/chrome-api";
   import { toLocalZonedDateTime } from "../../utils/date";
-  import type { GraphRow, NavigationIndex } from "../../utils/history-graph";
-  import VisitGraph from "./VisitGraph.svelte";
 
   let {
-    row,
-    widthRem,
-    index,
+    visit,
     deleteHistoryUrl,
     ...rest
   }: {
-    row: GraphRow;
-    widthRem: number;
-    index: NavigationIndex;
+    visit: HistoryVisit;
     deleteHistoryUrl: (url: string) => void;
   } & HTMLLiAttributes = $props();
 
-  const visit = $derived(row.visit);
   const hostname = $derived(getHostname(visit.url));
 
   function getHostname(url: string | undefined): string {
@@ -41,7 +34,6 @@
         })
       : ""}</time
   >
-  <VisitGraph {row} {widthRem} {index} />
   <img
     src={visit.url ? getFaviconURL(visit.url) : ""}
     alt={hostname ? `Favicon for ${hostname}` : ""}
@@ -64,9 +56,10 @@
   li {
     font-size: 0.75rem;
     display: grid;
-    grid-template-columns: 4rem var(--graph-width) 1rem minmax(0, 1fr) auto;
+    grid-template-columns: 4rem 1rem minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.5rem;
+    padding-block: 0.25rem;
   }
   a {
     white-space: nowrap;

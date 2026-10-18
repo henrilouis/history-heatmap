@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import VisitRow from "./VisitRow.svelte";
 import type { HistoryVisit } from "../../utils/chrome-api";
 import { historyVisit } from "../../utils/history-fixtures";
-import { indexNavigation, layoutNavigation } from "../../utils/history-graph";
 
 beforeEach(() => {
   vi.stubGlobal("chrome", {
@@ -12,13 +11,11 @@ beforeEach(() => {
 });
 
 function renderRows(items: HistoryVisit[]): string {
-  const index = indexNavigation(items);
-  const { rows, widthRem } = layoutNavigation(items, index);
-  return rows
+  return items
     .map(
-      (row) =>
+      (visit) =>
         render(VisitRow, {
-          props: { row, widthRem, index, deleteHistoryUrl: () => {} },
+          props: { visit, deleteHistoryUrl: () => {} },
         }).body,
     )
     .join("");

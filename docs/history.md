@@ -40,20 +40,33 @@ between consumers and removed when the last consumer disconnects.
   successful Retry so they cannot create a partial heatmap. Clearing all history
   establishes an authoritative empty baseline, from which new visits can sync.
 
-## Navigation trails
+## Flows
 
-The graph connects visits using Chrome's recorded `referringVisitId`, with colors
-identifying browsing trails rather than tabs. The list stays newest-first, so
-newer visits branch upward from older referrers. Hollow dots mark `reload`
-transitions, which Chrome also uses for restored pages and reopened tabs.
+**By flow** groups the visits in view (the search results, or the selected days
+or hours) into cards in these steps:
 
-Each day/time card has a static graph with at most **five connection lanes**;
-an extra lane can hold nodes when those lanes are occupied. Solid connections
-span at most **80 rows**. Tunnel shadows mark known connections outside the card
-or search results, or connections condensed because of these limits.
+1. **Trails.** Visits are linked through Chrome's recorded `referringVisitId`,
+   which covers links, reloads, restored pages, and reopened tabs. A trail is
+   every visit that leads back to the same first visit. Links are taken from all
+   loaded history, so a visit hidden by the search or selection never splits a
+   trail. Unknown, self-referencing, and future referrers stay unlinked, and a
+   deleted visit removes its links.
+2. **Idle splits.** A trail quiet for more than **one hour** ends, so a tab
+   revisited later starts a new flow.
+3. **Same website.** Flows whose main website is the same and that follow
+   within **30 minutes** of each other join, such as pages of one site typed in
+   separately. Flows with a search never join on the search engine, so separate
+   searches stay apart.
+4. **Other visits.** Flows of at most **two visits** that follow within
+   **30 minutes** of each other pool into one **Other visits** card, so a burst
+   of unrelated pages doesn't become a card each. A small flow without
+   neighbours keeps its own card.
 
-Unknown referrers remain unconnected. Filtering and deletion never create
-inferred shortcuts through missing visits. Navigation metadata comes from the
-existing visit requests and requires no additional permissions. Each graph row
-has an accessible label describing its relationships, and graph dimensions use
-`rem` so they scale with the root font size.
+Cards and their visits are newest first. A card is titled by the first search
+on it, recognised as in Stats, or else its most visited website, and shows its
+time span and number of visits. Its identity follows its earliest visit, so a
+growing flow keeps its place while history syncs. Navigation metadata comes
+from the existing visit requests and requires no additional permissions.
+
+The grouping is part of the page URL (`#/days?group=flow`), kept when switching
+views, and changing it doesn't add a history entry.

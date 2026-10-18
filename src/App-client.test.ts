@@ -36,6 +36,8 @@ const originalOffsetHeight = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
   "offsetHeight",
 );
+/** Measured height of every row; the list's estimate for a visit row. */
+const ROW_HEIGHT = 34;
 
 beforeEach(async () => {
   search.mockReset();
@@ -78,7 +80,7 @@ beforeEach(async () => {
   Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
     configurable: true,
     get(this: HTMLElement) {
-      return this.classList.contains("wrapper") ? 800 : 48;
+      return this.classList.contains("wrapper") ? 800 : ROW_HEIGHT;
     },
   });
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
@@ -243,37 +245,60 @@ async function startDeletion() {
 }
 
 describe("mounted history interactions", () => {
-  it("renders a static, accessible reload trail across unrelated visits", async () => {
+  it("groups the list into flows, also within a selection", async () => {
     visitsByUrl.set(repeatedUrl, [
+      chromeVisit("older", new Date(2026, 8, 10, 18)),
       chromeVisit("root", new Date(2026, 8, 12, 9)),
-      chromeVisit("refresh", new Date(2026, 8, 12, 9, 5), {
-        referringVisitId: "root",
-        transition: "reload",
+      chromeVisit("again", new Date(2026, 8, 12, 9, 5), {
+        referringVisitId: "next",
       }),
     ]);
     visitsByUrl.set(otherUrl, [
-      chromeVisit("independent", new Date(2026, 8, 12, 9, 2)),
+      chromeVisit("next", new Date(2026, 8, 12, 9, 2), {
+        referringVisitId: "root",
+      }),
     ]);
     completeSearch();
+    await vi.waitFor(() => expect(historyLinks()).toHaveLength(4));
+    const cards = () =>
+      [...target.querySelectorAll(".moments header")].map((header) => ({
+        title: header.querySelector("h3")?.textContent,
+        span: header.querySelector("p")?.textContent,
+      }));
+
+    button("By flow").click();
     await vi.waitFor(() =>
-      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
+      expect(cards()).toEqual([
+        { title: "example.com", span: expect.stringMatching(/ · 3 visits$/) },
+        { title: "example.com", span: expect.stringMatching(/ · 1 visit$/) },
+      ]),
+    );
+    expect(historyLinks()).toEqual([
+      repeatedUrl,
+      otherUrl,
+      repeatedUrl,
+      repeatedUrl,
+    ]);
+
+    button("Toggle moment for 2026-09-10").click();
+    await vi.waitFor(() => expect(historyLinks()).toEqual([repeatedUrl]));
+    expect(cards()).toEqual([
+      { title: "example.com", span: expect.stringMatching(/ · 1 visit$/) },
+    ]);
+
+    // A search can leave nothing to show in the selection.
+    location.hash = "#/days?q=other&group=flow";
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No results found"),
     );
 
-    const graphs = [...target.querySelectorAll('.visit-graph[role="img"]')];
-    expect(graphs).toHaveLength(3);
-    expect(graphs[0].getAttribute("aria-label")).toContain(
-      "Reload or restored page",
+    button("By time").click();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No results for this time"),
     );
-    expect(graphs[0].querySelector(".graph-node.reload")).not.toBeNull();
-    expect(graphs[2].getAttribute("aria-label")).toContain("Led to 1 visit");
-    // The connecting track still spans the unrelated middle visit.
-    expect(graphs[1].querySelector("path")).not.toBeNull();
-    expect(target.querySelectorAll(".graph-node")).toHaveLength(3);
-    expect(
-      target.querySelector(
-        ".visit-graph button, .visit-graph [tabindex], .visit-graph[tabindex]",
-      ),
-    ).toBeNull();
+    expect(cards()).toEqual([
+      { title: expect.stringContaining("2026"), span: undefined },
+    ]);
   });
 
   it("removes all visits from the list and calendar only after deletion succeeds", async () => {
@@ -501,6 +526,7 @@ describe("mounted history interactions", () => {
     expect(historyLinks()).toEqual([]);
     expect(target.querySelector(".heatmap")).toBeNull();
     expect(target.textContent).not.toContain("Clear selection");
+    expect(target.textContent).not.toContain("By flow");
 
     await switchView("Days");
     await vi.waitFor(() =>
@@ -529,11 +555,11 @@ describe("mounted history interactions", () => {
       target.querySelector(".moments li")?.getAttribute("aria-setsize"),
     ).toBe("3000");
 
-    // Rows measure 48px in this test; jump to the middle of the day.
+    // Rows measure ROW_HEIGHT in this test; jump to the middle of the day.
     const scroller = target.querySelector<HTMLElement>(".wrapper")!;
     Object.defineProperty(scroller, "scrollTop", {
       configurable: true,
-      value: 1500 * 48,
+      value: 1500 * ROW_HEIGHT,
     });
     scroller.dispatchEvent(new Event("scroll"));
     await vi.waitFor(() => expect(rendered()).toContain(1500));
@@ -606,31 +632,31 @@ describe("mounted history interactions", () => {
     };
 
     await vi.waitFor(() => expect(row(1)).not.toBeNull());
-    // Rows measure 48px in this test.
-    await scrollTo(1500 * 48, 1500);
+    // Rows measure ROW_HEIGHT in this test.
+    await scrollTo(1500 * ROW_HEIGHT, 1500);
     const focusTarget = row(1500)!.querySelector("button")!;
     focusTarget.focus();
     expect(document.activeElement).toBe(focusTarget);
 
     // Scroll upward past the focused row: it detaches into its own fragment.
-    await scrollTo(1480 * 48, 1480);
-    await scrollTo(1440 * 48, 1440);
+    await scrollTo(1480 * ROW_HEIGHT, 1480);
+    await scrollTo(1440 * ROW_HEIGHT, 1440);
     await scrollTo(0, 1);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);
     expect(rendered()).toBeLessThan(60);
 
     // Scroll back so the focused row rejoins the visible fragment.
-    await scrollTo(1440 * 48, 1440);
-    await scrollTo(1490 * 48, 1490);
+    await scrollTo(1440 * ROW_HEIGHT, 1440);
+    await scrollTo(1490 * ROW_HEIGHT, 1490);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);
     expect(rendered()).toBeLessThan(60);
 
     // Rows below the focused row, then a jump above it, swap the order of
     // the visible and focused fragments; the focused one must not be moved.
-    await scrollTo(1560 * 48, 1560);
-    await scrollTo(1600 * 48, 1600);
+    await scrollTo(1560 * ROW_HEIGHT, 1560);
+    await scrollTo(1600 * ROW_HEIGHT, 1600);
     await scrollTo(0, 1);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);
@@ -658,6 +684,44 @@ describe("hash routing", () => {
     // Switching views keeps the search.
     expect(viewLink("Stats").getAttribute("href")).toBe("#/stats?q=other");
     expect(viewLink("Days").getAttribute("href")).toBe("#/days?q=other");
+  });
+
+  it("keeps the grouping when switching views", async () => {
+    await mountApp("#/hours?group=flow");
+    completeSearch();
+    await vi.waitFor(() => expect(currentView()).toBe("Hours"));
+
+    expect(viewLink("Stats").getAttribute("href")).toBe("#/stats?group=flow");
+    await switchView("Days");
+    expect(location.hash).toBe("#/days?group=flow");
+  });
+
+  it("switches the grouping without adding history entries", async () => {
+    await loadHistory();
+    const pressed = () =>
+      ["By time", "By flow"].filter(
+        (name) => button(name).getAttribute("aria-pressed") === "true",
+      );
+    expect(pressed()).toEqual(["By time"]);
+    const entries = history.length;
+
+    button("By flow").click();
+    await atHash("#/days?group=flow");
+    await tick();
+    expect(pressed()).toEqual(["By flow"]);
+    expect(history.length).toBe(entries);
+
+    await switchView("Hours");
+    expect(location.hash).toBe("#/hours?group=flow");
+    history.back();
+    await vi.waitFor(() => expect(currentView()).toBe("Days"));
+    expect(location.hash).toBe("#/days?group=flow");
+    expect(pressed()).toEqual(["By flow"]);
+
+    button("By time").click();
+    await atHash("#/days");
+    await tick();
+    expect(pressed()).toEqual(["By time"]);
   });
 
   it("falls back to days for an unknown view", async () => {

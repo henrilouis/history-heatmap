@@ -1,5 +1,5 @@
 import type { HistoryVisit } from "../chrome-api";
-import type { NavigationIndex } from "../history-graph";
+import type { NavigationIndex } from "../history-navigation";
 import { fromDayNumber, type UrlStats, type VisitAggregate } from "./aggregate";
 import type { SiteSummary } from "./discovery";
 

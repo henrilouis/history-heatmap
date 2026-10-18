@@ -253,7 +253,9 @@ ol {
 
 .button-group {
   --button-group-padding: 0.1875rem;
+  anchor-scope: --selected;
   display: flex;
+  position: relative;
   gap: 0.25rem;
   background-color: var(--input-bg-default);
   border-radius: var(--el-border-radius);

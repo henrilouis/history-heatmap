@@ -2,6 +2,8 @@ import { toLocalZonedDateTime } from "./date";
 
 export type CalendarMode = "days" | "hours";
 export type ViewMode = CalendarMode | "stats";
+/** How the history list groups visits into cards. */
+export type Grouping = "time" | "flow";
 
 export const dateTimeFormatOptions: Intl.DateTimeFormatOptions = {
   weekday: "long",
@@ -26,8 +28,27 @@ export function formatMomentKey(key: string, timestamp?: number): string {
 }
 
 /**
- * A stable hue in degrees for a key, so the same trail or website keeps its
- * colour across renders and sessions.
+ * Format the local time span of visits, like "Friday, October 9, 2026,
+ * 16:38 – 16:50". The date is repeated only when the span crosses midnight.
+ */
+export function formatTimeRange(
+  start: number,
+  end: number,
+  timeZone = Temporal.Now.timeZoneId(),
+  locales?: Intl.LocalesArgument,
+): string {
+  return new Intl.DateTimeFormat(locales, {
+    ...dateTimeFormatOptions,
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+    timeZone,
+  }).formatRange(Math.trunc(start), Math.trunc(end));
+}
+
+/**
+ * A stable hue in degrees for a key, so the same website keeps its colour
+ * across renders and sessions.
  */
 export function hueFor(key: string): number {
   let hash = 0;
