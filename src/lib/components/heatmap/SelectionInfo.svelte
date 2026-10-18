@@ -39,8 +39,7 @@
   .selection-info {
     justify-content: space-between;
     flex-wrap: wrap;
-    min-block-size: calc(var(--el-line-height) + var(--el-padding-block) * 2);
-    margin-block-end: 1rem;
+    margin-block: 1rem;
   }
 
   .selection {

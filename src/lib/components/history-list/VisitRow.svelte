@@ -59,6 +59,7 @@
     grid-template-columns: 4rem 1rem minmax(0, 1fr) auto;
     align-items: center;
     gap: 0.5rem;
+    padding-block: 0.25rem;
   }
   a {
     white-space: nowrap;

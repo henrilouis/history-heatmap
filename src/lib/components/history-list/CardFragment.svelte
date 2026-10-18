@@ -113,6 +113,6 @@
   }
 
   .fragment :global(li:not(.card-end)) {
-    box-shadow: inset 0 -0.0625rem var(--el-border-color-default);
+    border-bottom: 1px solid var(--el-border-color-default);
   }
 </style>
