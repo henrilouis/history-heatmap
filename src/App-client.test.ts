@@ -36,6 +36,8 @@ const originalOffsetHeight = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
   "offsetHeight",
 );
+/** Measured height of every row; the list's estimate for a visit row. */
+const ROW_HEIGHT = 34;
 
 beforeEach(async () => {
   search.mockReset();
@@ -78,7 +80,7 @@ beforeEach(async () => {
   Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
     configurable: true,
     get(this: HTMLElement) {
-      return this.classList.contains("wrapper") ? 800 : 48;
+      return this.classList.contains("wrapper") ? 800 : ROW_HEIGHT;
     },
   });
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
@@ -243,39 +245,6 @@ async function startDeletion() {
 }
 
 describe("mounted history interactions", () => {
-  it("renders a static, accessible reload trail across unrelated visits", async () => {
-    visitsByUrl.set(repeatedUrl, [
-      chromeVisit("root", new Date(2026, 8, 12, 9)),
-      chromeVisit("refresh", new Date(2026, 8, 12, 9, 5), {
-        referringVisitId: "root",
-        transition: "reload",
-      }),
-    ]);
-    visitsByUrl.set(otherUrl, [
-      chromeVisit("independent", new Date(2026, 8, 12, 9, 2)),
-    ]);
-    completeSearch();
-    await vi.waitFor(() =>
-      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
-    );
-
-    const graphs = [...target.querySelectorAll('.visit-graph[role="img"]')];
-    expect(graphs).toHaveLength(3);
-    expect(graphs[0].getAttribute("aria-label")).toContain(
-      "Reload or restored page",
-    );
-    expect(graphs[0].querySelector(".graph-node.reload")).not.toBeNull();
-    expect(graphs[2].getAttribute("aria-label")).toContain("Led to 1 visit");
-    // The connecting track still spans the unrelated middle visit.
-    expect(graphs[1].querySelector("path")).not.toBeNull();
-    expect(target.querySelectorAll(".graph-node")).toHaveLength(3);
-    expect(
-      target.querySelector(
-        ".visit-graph button, .visit-graph [tabindex], .visit-graph[tabindex]",
-      ),
-    ).toBeNull();
-  });
-
   it("groups the list into flows, also within a selection", async () => {
     visitsByUrl.set(repeatedUrl, [
       chromeVisit("older", new Date(2026, 8, 10, 18)),
@@ -586,11 +555,11 @@ describe("mounted history interactions", () => {
       target.querySelector(".moments li")?.getAttribute("aria-setsize"),
     ).toBe("3000");
 
-    // Rows measure 48px in this test; jump to the middle of the day.
+    // Rows measure ROW_HEIGHT in this test; jump to the middle of the day.
     const scroller = target.querySelector<HTMLElement>(".wrapper")!;
     Object.defineProperty(scroller, "scrollTop", {
       configurable: true,
-      value: 1500 * 48,
+      value: 1500 * ROW_HEIGHT,
     });
     scroller.dispatchEvent(new Event("scroll"));
     await vi.waitFor(() => expect(rendered()).toContain(1500));
@@ -663,31 +632,31 @@ describe("mounted history interactions", () => {
     };
 
     await vi.waitFor(() => expect(row(1)).not.toBeNull());
-    // Rows measure 48px in this test.
-    await scrollTo(1500 * 48, 1500);
+    // Rows measure ROW_HEIGHT in this test.
+    await scrollTo(1500 * ROW_HEIGHT, 1500);
     const focusTarget = row(1500)!.querySelector("button")!;
     focusTarget.focus();
     expect(document.activeElement).toBe(focusTarget);
 
     // Scroll upward past the focused row: it detaches into its own fragment.
-    await scrollTo(1480 * 48, 1480);
-    await scrollTo(1440 * 48, 1440);
+    await scrollTo(1480 * ROW_HEIGHT, 1480);
+    await scrollTo(1440 * ROW_HEIGHT, 1440);
     await scrollTo(0, 1);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);
     expect(rendered()).toBeLessThan(60);
 
     // Scroll back so the focused row rejoins the visible fragment.
-    await scrollTo(1440 * 48, 1440);
-    await scrollTo(1490 * 48, 1490);
+    await scrollTo(1440 * ROW_HEIGHT, 1440);
+    await scrollTo(1490 * ROW_HEIGHT, 1490);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);
     expect(rendered()).toBeLessThan(60);
 
     // Rows below the focused row, then a jump above it, swap the order of
     // the visible and focused fragments; the focused one must not be moved.
-    await scrollTo(1560 * 48, 1560);
-    await scrollTo(1600 * 48, 1600);
+    await scrollTo(1560 * ROW_HEIGHT, 1560);
+    await scrollTo(1600 * ROW_HEIGHT, 1600);
     await scrollTo(0, 1);
     expect(row(1500)?.contains(focusTarget)).toBe(true);
     expect(document.activeElement).toBe(focusTarget);

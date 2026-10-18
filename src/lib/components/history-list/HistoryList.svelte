@@ -8,7 +8,6 @@
   import Card from "./Card.svelte";
   import CardFragment from "./CardFragment.svelte";
   import { observeScrollOffset } from "../../utils/dom";
-  import { layoutNavigation } from "../../utils/history-graph";
   import { groupByFlow } from "../../utils/history-flows";
   import {
     chunkHistoryRows,
@@ -46,25 +45,6 @@
   const rows = $derived(flattenHistoryGroups(groups));
   const rowIndexes = $derived(new Map(rows.map((row, i) => [row.key, i])));
 
-  // Navigation layout needs a card's complete visits, so rendered rows connect
-  // the same way however far the card is scrolled. Computed on first render of
-  // each card and kept until its visits or the navigation index change.
-  const layouts = $derived.by(() => {
-    void historyStore.navigation;
-    return new WeakMap<
-      HistoryGroup["items"],
-      ReturnType<typeof layoutNavigation>
-    >();
-  });
-  function layoutFor(group: HistoryGroup) {
-    let layout = layouts.get(group.items);
-    if (!layout) {
-      layout = layoutNavigation(group.items, historyStore.navigation);
-      layouts.set(group.items, layout);
-    }
-    return layout;
-  }
-
   const rem =
     typeof document === "undefined"
       ? 16
@@ -82,7 +62,7 @@
     // A flow's heading adds a line with its time span.
     if (row.type === "heading")
       return ((visits ? 4.5 : 6) + (groups[row.group].topic ? 1.625 : 0)) * rem;
-    return (row.position === visits - 1 ? 4.5 : 3) * rem;
+    return (row.position === visits - 1 ? 3.625 : 2.125) * rem;
   }
 
   let listEl = $state<HTMLElement>();
@@ -214,8 +194,6 @@
           {rows}
           indexes={chunk.indexes}
           top={(items.get(chunk.indexes[0])?.start ?? 0) - scrollMargin}
-          layout={layoutFor(group)}
-          navigation={historyStore.navigation}
           deleteHistoryUrl={historyStore.removeUrl}
           {measure}
         />

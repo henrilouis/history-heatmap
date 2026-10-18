@@ -3,10 +3,6 @@
   import VisitRow from "./VisitRow.svelte";
   import { formatMomentKey, formatTimeRange } from "../../utils/general";
   import { flowTitle } from "../../utils/history-flows";
-  import type {
-    NavigationIndex,
-    layoutNavigation,
-  } from "../../utils/history-graph";
   import type { HistoryGroup, HistoryRow } from "../../utils/history-rows";
 
   let {
@@ -14,8 +10,6 @@
     rows,
     indexes,
     top,
-    layout,
-    navigation,
     deleteHistoryUrl,
     measure,
   }: {
@@ -25,8 +19,6 @@
     indexes: number[];
     /** Offset of the first rendered row from the top of the list. */
     top: number;
-    layout: ReturnType<typeof layoutNavigation>;
-    navigation: NavigationIndex;
     deleteHistoryUrl: (url: string) => void;
     measure: Attachment<HTMLElement>;
   } = $props();
@@ -79,12 +71,10 @@
       {/if}
     </header>
   {/if}
-  <ol style:--graph-width="{layout.widthRem}rem">
+  <ol>
     {#each visits as { index, row } (row.key)}
       <VisitRow
-        row={layout.rows[row.position]}
-        widthRem={layout.widthRem}
-        index={navigation}
+        visit={group.items[row.position]}
         {deleteHistoryUrl}
         class={row.position === group.items.length - 1 ? "card-end" : undefined}
         aria-setsize={group.items.length}

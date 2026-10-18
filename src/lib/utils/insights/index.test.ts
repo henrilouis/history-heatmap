@@ -7,7 +7,7 @@ import {
   localVisits,
   TEST_TIME_ZONE,
 } from "../history-fixtures";
-import { indexNavigation } from "../history-graph";
+import { indexNavigation } from "../history-navigation";
 import type { HistoryVisit } from "../chrome-api";
 
 function insights(

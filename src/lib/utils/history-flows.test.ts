@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { HistoryVisit } from "./chrome-api";
 import { historyVisit } from "./history-fixtures";
 import { flowTitle, groupByFlow } from "./history-flows";
-import { indexNavigation } from "./history-graph";
+import { indexNavigation } from "./history-navigation";
 
 const START = Date.UTC(2026, 0, 15, 12);
 

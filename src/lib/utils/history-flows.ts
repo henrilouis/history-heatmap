@@ -1,5 +1,5 @@
 import type { HistoryVisit } from "./chrome-api";
-import type { NavigationIndex } from "./history-graph";
+import type { NavigationIndex } from "./history-navigation";
 import { siteForUrl } from "./history-stats";
 import { parseSearch } from "./insights/searches";
 

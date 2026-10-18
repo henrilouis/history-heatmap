@@ -1,5 +1,5 @@
 import type { HistoryVisit } from "../chrome-api";
-import type { NavigationIndex } from "../history-graph";
+import type { NavigationIndex } from "../history-navigation";
 import { aggregateVisits, toDayNumber, toDayRange } from "./aggregate";
 import { buildDiscovery } from "./discovery";
 import {

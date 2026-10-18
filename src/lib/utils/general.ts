@@ -47,8 +47,8 @@ export function formatTimeRange(
 }
 
 /**
- * A stable hue in degrees for a key, so the same trail or website keeps its
- * colour across renders and sessions.
+ * A stable hue in degrees for a key, so the same website keeps its colour
+ * across renders and sessions.
  */
 export function hueFor(key: string): number {
   let hash = 0;
