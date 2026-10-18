@@ -213,7 +213,7 @@ ol {
   corner-shape: var(--el-corner-shape);
   cursor: pointer;
   transition: all 0.15s ease-in-out;
-  transition-property: border, outline, background-color, scale;
+  transition-property: color, border, outline, background-color, scale;
   font-size: var(--el-font-size);
   line-height: var(--el-line-height);
 
@@ -259,10 +259,31 @@ ol {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   padding: var(--button-group-padding);
+  box-shadow: var(--el-shadow);
+  &::before {
+    content: "";
+    position: absolute;
+    position-anchor: --selected;
+    inset: anchor(top) anchor(right) anchor(bottom) anchor(left);
+    transition: inset 0.3s;
+    z-index: 0;
+    background-color: var(--el-bg-primary);
+    color: var(--fg-on-primary);
+    border-radius: var(--el-border-radius);
+    corner-shape: var(--el-corner-shape);
+  }
   .button {
     padding-block: calc(var(--el-padding-block) - var(--button-group-padding));
+    z-index: 0;
+
+    &.selected {
+      background: var(--el-bg-hover);
+      anchor-name: --selected;
+      transition:
+        background 0.15s,
+        color 0.2s 0.1s;
+    }
   }
-  box-shadow: var(--el-shadow);
 }
 
 input[type="checkbox"] {
