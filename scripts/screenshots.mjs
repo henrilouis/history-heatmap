@@ -87,7 +87,11 @@ async function capture(browser, url, demo, shot) {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error));
     await page.goto(`${url}${shot.route}`);
-    await page.locator("header [role=status]").waitFor({ state: "detached" });
+    // The live region stays mounted after loading; wait for its announcement.
+    await page
+      .locator("header [role=status]")
+      .filter({ hasText: /^History loaded$/ })
+      .waitFor({ state: "attached" });
     await page
       .locator(shot.route === "#/stats" ? ".stats .grid" : "main")
       .waitFor();
