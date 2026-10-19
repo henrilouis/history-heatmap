@@ -141,7 +141,7 @@ async function loadVisits(
   );
 
   // API response order and worker completion order do not define chronology.
-  return visits.sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
+  return visits.toSorted((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0));
 }
 
 export function getHistory(

@@ -62,7 +62,7 @@ function findNewPages({ urls, sites }: VisitAggregate) {
   }
 
   const deepDives = [...perSite]
-    .sort(([a, x], [b, y]) => y - x || a.localeCompare(b))
+    .toSorted(([a, x], [b, y]) => y - x || a.localeCompare(b))
     .slice(0, DEEP_DIVE_LIMIT)
     .map(([site, newPages]) => ({ ...summary(sites.get(site)!), newPages }));
   return { newPagesOnKnownSites: total, deepDives };
@@ -106,7 +106,7 @@ function discoveryCurve(firstVisits: number[]) {
 function findRegulars({ sites }: VisitAggregate): Regular[] {
   return [...sites.values()]
     .filter((site) => site.days.size > 1)
-    .sort(
+    .toSorted(
       (a, b) =>
         b.days.size - a.days.size ||
         b.visits - a.visits ||

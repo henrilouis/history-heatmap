@@ -13,6 +13,11 @@ const groups: HistoryGroup[] = [
   { key: "2026-09-10", items: [historyVisit("c")] },
 ];
 
+const range = (from: number, to: number) =>
+  Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const keyOf = (chunks: HistoryChunk[], index: number) =>
+  chunks.find((chunk) => chunk.indexes.includes(index))?.key;
+
 describe("history list rows", () => {
   it("flattens cards into headings and visits separated by gaps", () => {
     expect(flattenHistoryGroups(groups)).toEqual([
@@ -56,8 +61,6 @@ describe("history list rows", () => {
     ];
     const rows = flattenHistoryGroups(busy);
     const focused = rows[50].key;
-    const range = (from: number, to: number) =>
-      Array.from({ length: to - from + 1 }, (_, i) => from + i);
     const scroll = (steps: number[][]) =>
       steps.reduce<HistoryChunk[][]>((renders, indexes) => {
         const previous = renders.at(-1);
@@ -66,8 +69,6 @@ describe("history list rows", () => {
           chunkHistoryRows(rows, busy, indexes, previous, focused),
         ];
       }, []);
-    const keyOf = (chunks: HistoryChunk[], index: number) =>
-      chunks.find((chunk) => chunk.indexes.includes(index))?.key;
 
     it("keeps the focused row's fragment key when scrolling up splits it", () => {
       const renders = scroll([

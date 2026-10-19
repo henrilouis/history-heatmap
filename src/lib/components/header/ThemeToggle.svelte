@@ -52,6 +52,7 @@
   ::view-transition-old(root) {
     animation-delay: 500ms;
   }
+
   ::view-transition-new(root) {
     animation: circle-in 500ms ease-in-out;
   }
@@ -60,6 +61,7 @@
     from {
       clip-path: circle(0% at calc(100% - 3.25rem) 2.125rem);
     }
+
     to {
       clip-path: circle(150% at calc(100% - 3.25rem) 2.125rem);
     }
@@ -70,23 +72,28 @@
     overflow: hidden;
     height: calc(var(--el-line-height) + calc(var(--el-padding-block) * 2));
     padding: calc(var(--el-padding-block) - 0.0625rem);
+
     & .icon-wrapper {
       display: flex;
       flex-direction: column;
       gap: 1rem;
       transition: transform 0.3s ease-in-out;
       transform: translateY(-2.6125rem);
+
       & svg {
         transition: rotate 0.3s ease-in-out;
       }
+
       & svg:last-child {
         rotate: 360deg;
       }
     }
   }
+
   #theme-toggle-button.dark {
     & .icon-wrapper {
       transform: translateY(-0.125rem);
+
       & svg:last-child {
         rotate: 0deg;
       }

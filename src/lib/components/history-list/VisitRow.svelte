@@ -61,15 +61,18 @@
     gap: 0.5rem;
     padding-block: 0.25rem;
   }
+
   a {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   img {
     width: 1rem;
     height: 1rem;
   }
+
   .visit-details {
     min-width: 0;
     padding-block: 0.375rem;

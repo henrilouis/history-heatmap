@@ -62,14 +62,14 @@ export function groupByFlow(
   const segments = splitIdle(byTrail(toEntries(visits), navigation));
   return poolSmall(mergeBySite(segments))
     .map(toFlow)
-    .sort((a, b) => a.order - b.order)
+    .toSorted((a, b) => a.order - b.order)
     .map(({ flow }) => flow);
 }
 
 function toEntries(visits: HistoryVisit[]): Entry[] {
   const pages = new Map<string, { site: string; search?: string }>();
-  return [...visits]
-    .sort((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0))
+  return visits
+    .toSorted((a, b) => (b.visitTime ?? 0) - (a.visitTime ?? 0))
     .map((visit, order) => {
       let page = pages.get(visit.url);
       if (!page) {
@@ -143,7 +143,7 @@ function mainSite(entries: Entry[]): string {
 function mergeBySite(segments: Segment[]): Segment[] {
   const merged: Segment[] = [];
   const open = new Map<string, Segment>();
-  for (const segment of [...segments].sort(byStart)) {
+  for (const segment of segments.toSorted(byStart)) {
     if (segment.entries.some((entry) => entry.search)) {
       merged.push(segment);
       continue;
@@ -179,7 +179,7 @@ function poolSmall(segments: Segment[]): Pooled[] {
     pool = [];
   };
 
-  for (const segment of [...segments].sort(byStart)) {
+  for (const segment of segments.toSorted(byStart)) {
     if (segment.entries.length > SMALL_FLOW_VISITS) {
       result.push({ ...segment, pooled: false });
       continue;
@@ -193,7 +193,7 @@ function poolSmall(segments: Segment[]): Pooled[] {
 }
 
 function toFlow({ entries, pooled }: Pooled) {
-  const sorted = [...entries].sort((a, b) => a.order - b.order);
+  const sorted = entries.toSorted((a, b) => a.order - b.order);
   const earliest = sorted[sorted.length - 1];
   let search: string | undefined;
   for (let i = sorted.length - 1; i >= 0 && !search; i--)

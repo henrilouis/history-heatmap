@@ -38,7 +38,7 @@
   function organizeCalendarData(
     historyByDayAndHour: HistoryByDayAndHour,
   ): CalendarData {
-    const sortedDates = Object.keys(historyByDayAndHour).sort();
+    const sortedDates = Object.keys(historyByDayAndHour).toSorted();
     if (sortedDates.length === 0) {
       return { days: [], hours: [], months: [] };
     }

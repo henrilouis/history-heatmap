@@ -43,7 +43,7 @@ describe.each([
     const all = [newest, oldest, historyVisit("undated"), middle];
     const result = fill([oldest], all);
 
-    expect(Object.keys(result).sort()).toEqual([
+    expect(Object.keys(result).toSorted()).toEqual([
       ...mondayPadding,
       "2026-09-10",
       "2026-09-11",
@@ -52,11 +52,11 @@ describe.each([
     expect(result["2026-09-10"]).toEqual(populatedDay(oldest));
     expect(result["2026-09-11"]).toEqual(emptyDay);
     expect(result["2026-09-12"]).toEqual(emptyDay);
-    expect(Object.keys(fill([], all)).sort()).toEqual(
-      Object.keys(result).sort(),
+    expect(Object.keys(fill([], all)).toSorted()).toEqual(
+      Object.keys(result).toSorted(),
     );
-    expect(Object.keys(fill(all, all)).sort()).toEqual(
-      Object.keys(result).sort(),
+    expect(Object.keys(fill(all, all)).toSorted()).toEqual(
+      Object.keys(result).toSorted(),
     );
   });
 
@@ -155,7 +155,7 @@ describe.each([
         [historyVisit("end", end), historyVisit("start", start)],
       );
 
-      expect(Object.keys(result).sort()).toEqual(keys);
+      expect(Object.keys(result).toSorted()).toEqual(keys);
       for (const key of keys) expect(result[key]).toEqual(emptyDay);
     },
   );

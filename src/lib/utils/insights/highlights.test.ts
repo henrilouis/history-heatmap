@@ -128,22 +128,22 @@ describe("findStreaks", () => {
   });
 });
 
-describe("findRabbitHole", () => {
-  function trail(length: number, start = "2026-03-01T10:00") {
-    const time = Temporal.PlainDateTime.from(start);
-    const visits: HistoryVisit[] = [];
-    for (let i = 0; i < length; i++) {
-      visits.push(
-        localVisit(
-          `https://site${i % 2}.com/${i}`,
-          time.add({ minutes: i }).toString(),
-          { referringVisitId: visits[i - 1]?.visitId ?? "0" },
-        ),
-      );
-    }
-    return visits;
+function trail(length: number, start = "2026-03-01T10:00") {
+  const time = Temporal.PlainDateTime.from(start);
+  const visits: HistoryVisit[] = [];
+  for (let i = 0; i < length; i++) {
+    visits.push(
+      localVisit(
+        `https://site${i % 2}.com/${i}`,
+        time.add({ minutes: i }).toString(),
+        { referringVisitId: visits[i - 1]?.visitId ?? "0" },
+      ),
+    );
   }
+  return visits;
+}
 
+describe("findRabbitHole", () => {
   it("finds the trail with the most visits", () => {
     const long = trail(5);
     const visits = [...trail(3, "2026-03-02T10:00"), ...long];

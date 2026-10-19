@@ -6,7 +6,6 @@
   --color: oklch(50% 0.3 var(--hue));
   --heatmap-color: oklch(50% 0.3 var(--heatmap-hue));
   --neutral: oklch(0% 0% var(--hue));
-
   --fg-primary: light-dark(
     oklch(from var(--neutral) 5% c h),
     oklch(from var(--neutral) 95% c h)
@@ -19,7 +18,6 @@
     oklch(from var(--neutral) 100% c h),
     oklch(from var(--neutral) 0% c h)
   );
-
   --bg-primary: light-dark(
     oklch(from var(--neutral) 100% c h),
     oklch(from var(--neutral) 30% c h)
@@ -28,24 +26,22 @@
     oklch(from var(--neutral) 95% c h),
     oklch(from var(--neutral) 20% c h)
   );
-
   --el-bg-default: light-dark(
-    oklch(from var(--neutral) 50% c h / 0.15),
-    oklch(from var(--neutral) 50% c h / 0.3)
+    oklch(from var(--neutral) 50% c h / 15%),
+    oklch(from var(--neutral) 50% c h / 30%)
   );
   --el-bg-hover: light-dark(
-    oklch(from var(--neutral) 30% c h / 0.15),
-    oklch(from var(--neutral) 60% c h / 0.3)
+    oklch(from var(--neutral) 30% c h / 15%),
+    oklch(from var(--neutral) 60% c h / 30%)
   );
   --el-bg-selected: light-dark(
-    oklch(from var(--neutral) 0% c h / 0.2),
-    oklch(from var(--neutral) 80% c h / 0.3)
+    oklch(from var(--neutral) 0% c h / 20%),
+    oklch(from var(--neutral) 80% c h / 30%)
   );
   --el-bg-primary: light-dark(
     oklch(from var(--color) 0% c h),
     oklch(from var(--color) 100% 0 h)
   );
-
   --el-border-color-default: light-dark(
     oklch(from var(--neutral) 90% c h),
     oklch(from var(--neutral) 40% c h)
@@ -57,7 +53,6 @@
   --el-border-width: 0.0625rem;
   --el-border-radius: 999rem;
   --el-corner-shape: squircle;
-
   --el-outline-color-selected: light-dark(
     oklch(from var(--color) 80% c h),
     oklch(from var(--color) 100% 0.05 h)
@@ -65,27 +60,23 @@
   --el-outline-width-selected: 0.125rem;
   --el-box-shadow-selected: 0 0 1.25rem
     light-dark(
-      oklch(from var(--color) 80% c h / 0.5),
+      oklch(from var(--color) 80% c h / 50%),
       oklch(from var(--color) 95% c h)
     );
   --el-outline-offset-selected: 0.0625rem;
-
   --el-focus-outline-color: light-dark(
     oklch(from var(--neutral) 20% c h),
     oklch(from var(--neutral) 80% c h)
   );
   --el-focus-outline-width: 0.125rem;
   --el-focus-outline-offset: 0.0625rem;
-
   --el-padding-block: 0.5rem;
   --el-padding-inline: 0.75rem;
   --el-padding: var(--el-padding-block) var(--el-padding-inline);
-
   --el-font-size: 0.8125rem;
   --el-line-height: 1.125rem;
-
-  --el-shadow: 0 0 0.5rem light-dark(oklch(0% 0 0 / 0.1), oklch(0% 0 0 / 0));
-
+  --el-shadow: 0 0 0.5rem
+    light-dark(oklch(0% 0 0deg / 10%), oklch(0% 0 0deg / 0%));
   --input-bg-default: light-dark(
     oklch(from var(--neutral) 100% c h),
     oklch(from var(--neutral) 25% c h)
@@ -94,7 +85,6 @@
     oklch(from var(--neutral) 100% c h),
     oklch(from var(--neutral) 30% c h)
   );
-
   --heatmap-color-0: light-dark(
     oklch(from var(--neutral) 90% c h),
     oklch(from var(--neutral) 25% c h)
@@ -115,21 +105,18 @@
     oklch(from var(--heatmap-color) 0% 0.4 h),
     oklch(from var(--heatmap-color) 100% 0.4 h)
   );
-
   --cn-border-radius: 2rem;
   --cn-corner-shape: squircle;
   --shadow-1: 0 0.25rem 0.5rem
-    light-dark(oklch(0% 0 0 / 0.1), oklch(0% 0 0 / 0.3));
+    light-dark(oklch(0% 0 0deg / 10%), oklch(0% 0 0deg / 30%));
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color: var(--fg-primary);
   background-color: var(--bg-primary);
-
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -221,16 +208,14 @@ ol {
     background: transparent;
   }
 
-  &:hover:not(&.selected),
-  &.quiet:hover:not(&.selected) {
+  /* :where keeps this low enough for the rules below and in .button-group. */
+  &:hover:where(:not(.selected)) {
     background-color: var(--el-bg-hover);
   }
 
   &:focus-visible {
-    outline-color: var(--el-focus-outline-color);
-    outline-width: var(--el-focus-outline-width);
+    outline: var(--el-focus-outline-color) solid var(--el-focus-outline-width);
     outline-offset: var(--el-focus-outline-offset);
-    outline-style: solid;
   }
 
   &:active {
@@ -241,9 +226,10 @@ ol {
     background-color: var(--el-bg-primary);
     color: var(--fg-on-primary);
   }
+
   a& {
     font-weight: inherit;
-    word-break: normal;
+    overflow-wrap: normal;
 
     &:hover {
       text-decoration: none;
@@ -253,6 +239,7 @@ ol {
 
 .button-group {
   --button-group-padding: 0.1875rem;
+
   anchor-scope: --selected;
   display: flex;
   position: relative;
@@ -261,6 +248,7 @@ ol {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   padding: var(--button-group-padding);
+
   &::before {
     content: "";
     position: absolute;
@@ -273,6 +261,7 @@ ol {
     border-radius: var(--el-border-radius);
     corner-shape: var(--el-corner-shape);
   }
+
   .button {
     padding-block: calc(var(--el-padding-block) - var(--button-group-padding));
     z-index: 0;
@@ -298,7 +287,7 @@ a {
   color: var(--fg-primary);
   text-decoration: none;
   font-weight: 600;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
 
@@ -307,17 +296,9 @@ a {
   }
 
   &:focus-visible {
-    outline-color: var(--el-focus-outline-color);
-    outline-width: var(--el-focus-outline-width);
+    outline: var(--el-focus-outline-color) solid var(--el-focus-outline-width);
     outline-offset: var(--el-focus-outline-offset);
-    outline-style: solid;
   }
-}
-
-ol {
-  list-style: none;
-  padding: 0;
-  margin: 0;
 }
 
 :popover-open {

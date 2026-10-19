@@ -110,7 +110,7 @@ function timeTrait(grid: number[][], timed: number, rhythm: Rhythm): Trait {
 function styleTrait({ sites, total }: VisitAggregate): Trait {
   const top = [...sites.values()]
     .map((site) => site.visits)
-    .sort((a, b) => b - a)
+    .toSorted((a, b) => b - a)
     .slice(0, TOP_SITES)
     .reduce((a, b) => a + b, 0);
   const share = top / total;

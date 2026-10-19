@@ -54,7 +54,7 @@
   }
 
   .area {
-    fill: oklch(from var(--heatmap-color-2) l c h / 0.25);
+    fill: oklch(from var(--heatmap-color-2) l c h / 25%);
   }
 
   .line {

@@ -17,6 +17,7 @@ export function installFakeChrome({ items, visitsByUrl, now }) {
   });
 
   // Chrome answers asynchronously; keep that so loading behaves as it does live.
+  // oxlint-disable-next-line unicorn/consistent-function-scoping -- must stay inside, see above
   const reply = (callback, value) => setTimeout(() => callback(value));
   const listeners = { addListener() {}, removeListener() {} };
 

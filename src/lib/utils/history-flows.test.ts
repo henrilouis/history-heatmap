@@ -199,7 +199,7 @@ describe("groupByFlow", () => {
       visit("c", 2, "https://a.example/c", "b"),
     ];
 
-    expect(ids(flows([...visits].reverse())[0].items)).toEqual(["c", "b", "a"]);
+    expect(ids(flows(visits.toReversed())[0].items)).toEqual(["c", "b", "a"]);
     expect(ids(flows(visits)[0].items)).toEqual(["c", "b", "a"]);
   });
 

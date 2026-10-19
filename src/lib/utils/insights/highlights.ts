@@ -49,7 +49,7 @@ export function findTopSites(
   limit = TOP_SITE_LIMIT,
 ): TopSite[] {
   return [...sites.values()]
-    .sort((a, b) => b.visits - a.visits || a.site.localeCompare(b.site))
+    .toSorted((a, b) => b.visits - a.visits || a.site.localeCompare(b.site))
     .slice(0, limit)
     .map((site) => ({
       site: site.site,
@@ -148,14 +148,14 @@ export function findStreaks(
     if (stats.days.size < 2 || stats.days.size <= (site?.length ?? 0)) {
       continue;
     }
-    const run = longestRun([...stats.days].sort(ascending));
+    const run = longestRun([...stats.days].toSorted(ascending));
     if (run.length > 1 && run.length > (site?.length ?? 0)) {
       site = { site: stats.site, topUrl: stats.topUrl, ...run };
     }
   }
 
   return {
-    longest: longestRun([...active].sort(ascending)),
+    longest: longestRun([...active].toSorted(ascending)),
     current,
     site,
   };

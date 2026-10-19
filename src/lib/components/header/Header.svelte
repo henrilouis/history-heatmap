@@ -58,15 +58,18 @@
     corner-shape: var(--cn-corner-shape);
     transition: box-shadow 0.3s;
     z-index: 2;
+
     @container scroll-container scroll-state(scrollable: top) {
       box-shadow: var(--shadow-1);
     }
   }
+
   h1 {
     margin: 0;
     font-size: 1.25rem;
     display: none;
   }
+
   .header-main {
     display: flex;
     flex-wrap: wrap;
@@ -75,10 +78,12 @@
     gap: 0.5rem;
     min-width: 0;
   }
+
   .header-end {
     display: flex;
     justify-content: end;
   }
+
   .loading-status {
     flex: 1 1 auto;
     display: flex;
@@ -87,15 +92,18 @@
     justify-content: center;
     gap: 0.75rem;
   }
-  @media (min-width: 43.75rem) {
+
+  @media (width >= 43.75rem) {
     h1 {
       display: block;
     }
+
     header {
       grid-template-columns: auto 1fr auto;
     }
   }
-  @media (min-width: 56.25rem) {
+
+  @media (width >= 56.25rem) {
     header {
       grid-template-columns: 12rem 1fr 12rem;
     }
