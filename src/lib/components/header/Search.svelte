@@ -3,10 +3,12 @@
     value,
     navigation,
     setSearch,
+    placeholder = "Search...",
   }: {
     value: string;
     navigation: number;
     setSearch: (query: string) => void;
+    placeholder?: string;
   } = $props();
   let input: HTMLInputElement;
   let timer: ReturnType<typeof setTimeout>;
@@ -32,7 +34,7 @@
 
 <input
   type="search"
-  placeholder="Search..."
+  {placeholder}
   {oninput}
   name="Search history"
   bind:this={input}

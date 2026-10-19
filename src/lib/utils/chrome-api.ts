@@ -286,9 +286,48 @@ export function fillEmptyDays(
   allHistory: HistoryVisit[],
 ): HistoryByDay {
   const range = getHistoryDateRange(allHistory);
-  if (!range) return grouped;
-  const { startDate, endDate } = range;
+  return range ? fillDayRange(grouped, range) : grouped;
+}
 
+// Fill empty hours (00-23) for each day
+export function fillEmptyHours(
+  grouped: HistoryByDayAndHour,
+  allHistory: HistoryVisit[],
+): HistoryByDayAndHour {
+  const range = getHistoryDateRange(allHistory);
+  return range ? fillHourRange(grouped, range) : grouped;
+}
+
+type DateRange = { startDate: Temporal.PlainDate; endDate: Temporal.PlainDate };
+
+// Chrome keeps about 90 days of history by default, so a calendar of that span
+// closely matches the layout most users will see once loading finishes.
+const PLACEHOLDER_DAYS = 90;
+
+function placeholderRange(today: Temporal.PlainDate): DateRange {
+  return {
+    startDate: today.subtract({ days: PLACEHOLDER_DAYS - 1 }),
+    endDate: today,
+  };
+}
+
+// Empty calendars shown while history is loading.
+export function placeholderDays(
+  today = Temporal.Now.plainDateISO(),
+): HistoryByDay {
+  return fillDayRange({}, placeholderRange(today));
+}
+
+export function placeholderHours(
+  today = Temporal.Now.plainDateISO(),
+): HistoryByDayAndHour {
+  return fillHourRange({}, placeholderRange(today));
+}
+
+function fillDayRange(
+  grouped: HistoryByDay,
+  { startDate, endDate }: DateRange,
+): HistoryByDay {
   // The day view is a week grid, so pad its first week back to Monday.
   const monday = startDate.subtract({ days: startDate.dayOfWeek - 1 });
 
@@ -299,15 +338,10 @@ export function fillEmptyDays(
   return grouped;
 }
 
-// Fill empty hours (00-23) for each day
-export function fillEmptyHours(
+function fillHourRange(
   grouped: HistoryByDayAndHour,
-  allHistory: HistoryVisit[],
+  { startDate, endDate }: DateRange,
 ): HistoryByDayAndHour {
-  const range = getHistoryDateRange(allHistory);
-  if (!range) return grouped;
-  const { startDate, endDate } = range;
-
   // The hour view is a flat day list and needs no Monday padding.
   for (const current of eachCalendarDate(startDate, endDate)) {
     const dayKey = current.toString();

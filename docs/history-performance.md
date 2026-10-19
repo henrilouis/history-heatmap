@@ -83,8 +83,8 @@ extension API has no bulk visit endpoint. At this measured scale the load takes
 seconds rather than minutes, so concurrency remains at eight instead of increasing
 IPC pressure or silently truncating history.
 
-Long loads now show progress (throttled to roughly ten updates per second) and
-offer Cancel. Cancellation stops queued requests and retries; Chrome calls already
+Long loads now show progress (throttled to roughly ten updates per second).
+Aborting a load stops queued requests and retries; Chrome calls already
 issued cannot be cancelled. New loads abort old work and use a request ID to guard
 data, errors, progress, and loading-state assignments. Each URL gets one retry for
 a transient failure. Persistent failure rejects the load rather than reporting

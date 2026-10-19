@@ -4,38 +4,41 @@
   import ThemeToggle from "./ThemeToggle.svelte";
   import { historyStore } from "../../stores/history.svelte";
   import { routeStore } from "../../stores/route.svelte";
+
+  const percent = new Intl.NumberFormat(undefined, { style: "percent" });
+
+  const placeholder = $derived.by(() => {
+    if (!historyStore.isLoading) return undefined;
+    const { completed = 0, total = 0 } = historyStore.progress ?? {};
+    // Round down so 100% only shows once every URL has loaded.
+    const loaded = total ? Math.floor((completed / total) * 100) / 100 : 0;
+    return total
+      ? `Loading history… ${percent.format(loaded)}`
+      : "Loading history…";
+  });
+
+  // The calendar is inert while loading, so announce the load here instead.
+  // Errors are announced by their own alert.
+  let announcement = $state("");
+  $effect(() => {
+    if (historyStore.isLoading) announcement = "Loading history…";
+    else if (announcement) {
+      announcement = historyStore.error ? "" : "History loaded";
+    }
+  });
 </script>
 
 <header>
   <h1>History heatmap</h1>
   <div class="header-main">
-    {#if historyStore.isLoading}
-      <div class="loading-status" role="status">
-        <span>
-          {#if historyStore.progress}
-            Loading visits: {historyStore.progress.completed.toLocaleString()}
-            of
-            {historyStore.progress.total.toLocaleString()} URLs
-          {:else}
-            Searching history…
-          {/if}
-        </span>
-        <progress
-          aria-label="History URLs loaded"
-          max={historyStore.progress?.total || 1}
-          value={historyStore.progress?.completed}
-        ></progress>
-        <button class="button" onclick={historyStore.cancelFetch}>Cancel</button
-        >
-      </div>
-    {:else}
-      <Search
-        value={routeStore.search}
-        navigation={routeStore.navigation}
-        setSearch={routeStore.setSearch}
-      />
-      <ModeSwitch viewMode={routeStore.view} />
-    {/if}
+    <Search
+      value={routeStore.search}
+      navigation={routeStore.navigation}
+      setSearch={routeStore.setSearch}
+      {placeholder}
+    />
+    <ModeSwitch viewMode={routeStore.view} />
+    <p class="visually-hidden" role="status">{announcement}</p>
   </div>
   <div class="header-end">
     <ThemeToggle />
@@ -82,15 +85,6 @@
   .header-end {
     display: flex;
     justify-content: end;
-  }
-
-  .loading-status {
-    flex: 1 1 auto;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
   }
 
   @media (width >= 43.75rem) {

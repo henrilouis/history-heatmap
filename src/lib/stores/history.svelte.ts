@@ -112,14 +112,6 @@ async function fetch(): Promise<void> {
   }
 }
 
-function cancelFetch(): void {
-  if (!currentLoad) return;
-  stopFetch();
-  pendingVisits.clear();
-  error = "History loading cancelled. Retry to load your visits.";
-  void reconcileVisits();
-}
-
 function stopFetch(): void {
   if (currentLoad) {
     requestId++;
@@ -140,7 +132,7 @@ function stopSync(): void {
 function onVisited(item: chrome.history.HistoryItem): void {
   if (!item.url) return;
   // Without a complete baseline, a single URL would produce partial counts.
-  // A later full Retry will pick up events ignored after failure/cancellation.
+  // A later full Retry will pick up events ignored after a failed load.
   if (!currentLoad && !hasSnapshot) return;
   currentSync?.invalidated.add(item.url);
   pendingVisits.set(item.url, item);
@@ -356,7 +348,6 @@ export const historyStore = {
   // Actions
   connect,
   fetch,
-  cancelFetch,
   removeUrl,
   setSearch,
   toggleMoment,

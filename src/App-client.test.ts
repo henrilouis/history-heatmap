@@ -327,55 +327,33 @@ describe("mounted history interactions", () => {
     expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
   });
 
-  it("shows header progress, cancels loading, ignores late callbacks, and retries", async () => {
-    expect(
-      target.querySelector('header [role="status"]')?.textContent,
-    ).toContain("Searching history");
-    expect(target.querySelector('header input[type="search"]')).toBeNull();
-    const pending: VisitsCallback[] = [];
-    getVisits.mockImplementation((_details, callback) => {
-      pending.push(callback);
+  it("shows loading progress in the search placeholder and announces the load", async () => {
+    const status = () =>
+      target.querySelector('header [role="status"]')?.textContent;
+    const zeroPercent = new Intl.NumberFormat(undefined, {
+      style: "percent",
+    }).format(0);
+    // The inputs stay available while loading; only the placeholder changes.
+    expect(searchInput().placeholder).toBe("Loading history…");
+    expect(currentView()).toBe("Days");
+    expect(status()).toBe("Loading history…");
+    expect(target.querySelector("progress")).toBeNull();
+
+    const pending: [string, VisitsCallback][] = [];
+    getVisits.mockImplementation(({ url }, callback) => {
+      pending.push([url, callback]);
     });
     completeSearch();
     await vi.waitFor(() => expect(pending).toHaveLength(2));
     await tick();
-    expect(target.querySelector('header [role="status"]')?.textContent).toMatch(
-      /Loading visits: 0\s+of\s+2 URLs/,
-    );
-    const progress =
-      target.querySelector<HTMLProgressElement>("header progress")!;
-    expect(progress.value).toBe(0);
-    expect(progress.max).toBe(2);
+    expect(searchInput().placeholder).toBe(`Loading history… ${zeroPercent}`);
 
-    button("Cancel").click();
+    for (const [url, callback] of pending) callback(visitsByUrl.get(url)!);
     await vi.waitFor(() =>
-      expect(target.querySelector('[role="alert"]')?.textContent).toContain(
-        "cancelled",
-      ),
+      expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]),
     );
-    expect(target.querySelector("progress")).toBeNull();
-    expect(target.querySelector('header input[type="search"]')).not.toBeNull();
-    for (const callback of pending) callback(visitsByUrl.get(repeatedUrl)!);
-    await tick();
-    expect(historyLinks()).toEqual([]);
-    expect(target.querySelector('[role="alert"]')?.textContent).toContain(
-      "cancelled",
-    );
-
-    getVisits.mockImplementation(({ url }, callback) =>
-      callback(visitsByUrl.get(url) ?? []),
-    );
-    button("Retry").click();
-    await tick();
-    expect(search).toHaveBeenCalledTimes(2);
-    expect(
-      target.querySelector('header [role="status"]')?.textContent,
-    ).toContain("Searching history");
-    expect(target.querySelector('header input[type="search"]')).toBeNull();
-    await loadHistory();
-    expect(target.querySelector('[role="alert"]')).toBeNull();
-    expect(target.querySelector('[role="status"]')).toBeNull();
-    expect(target.querySelector('header input[type="search"]')).not.toBeNull();
+    expect(searchInput().placeholder).toBe("Search...");
+    expect(status()).toBe("History loaded");
   });
 
   it("renders a failed initial search and recovers through Retry", async () => {
@@ -389,7 +367,9 @@ describe("mounted history interactions", () => {
       ),
     );
     expect(historyLinks()).toEqual([]);
-    expect(target.querySelector("progress")).toBeNull();
+    expect(target.querySelector('header [role="status"]')?.textContent).toBe(
+      "",
+    );
 
     button("Retry").click();
     await tick();
@@ -411,9 +391,9 @@ describe("mounted history interactions", () => {
       .mockImplementationOnce(failVisits);
     visited(records[0]);
     await vi.waitFor(() =>
-      expect(target.querySelector('[role="status"]')?.textContent).toContain(
-        "Some recent visits could not be refreshed",
-      ),
+      expect(
+        target.querySelector('.wrapper > [role="status"]')?.textContent,
+      ).toContain("Some recent visits could not be refreshed"),
     );
     expect(target.querySelector('[role="alert"]')).toBeNull();
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
@@ -436,7 +416,7 @@ describe("mounted history interactions", () => {
         repeatedUrl,
       ]),
     );
-    expect(target.querySelector('[role="status"]')).toBeNull();
+    expect(target.querySelector('.wrapper > [role="status"]')).toBeNull();
     expect(target.querySelector('[role="alert"]')).toBeNull();
   });
 

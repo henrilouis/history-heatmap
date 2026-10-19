@@ -5,10 +5,12 @@
 
   let {
     data,
+    loading = false,
     selectedMoments,
     onToggleMoment,
   }: {
     data: HistoryByDayAndHour;
+    loading?: boolean;
     selectedMoments: string[];
     onToggleMoment: (key: string) => void;
   } = $props();
@@ -113,7 +115,12 @@
 {#if calendarData.days.length === 0}
   <p>No history data available to display the heatmap.</p>
 {:else}
-  <div class="heatmap" {@attach scrollRight}>
+  <div
+    class={["heatmap", { loading }]}
+    aria-busy={loading}
+    inert={loading}
+    {@attach scrollRight}
+  >
     <table>
       <thead>
         <tr class="months">
@@ -133,11 +140,12 @@
         {#each calendarData.hours as row}
           <tr>
             <th>{row.hourLabel}</th>
-            {#each row.cells as cell}
+            {#each row.cells as cell, column}
               <td>
                 <button
                   data-level={cell.level}
                   data-selected={selectedMoments.includes(cell.key)}
+                  style:--wave={column + row.hour / 2}
                   disabled={cell.count === 0 &&
                     !selectedMoments.includes(cell.key)}
                   aria-label={`Toggle moment for ${cell.date} at ${row.hourLabel}`}
@@ -170,5 +178,10 @@
   td button {
     width: 0.75rem;
     height: 0.75rem;
+  }
+
+  .heatmap {
+    /* Hour cells are narrower, so step faster to keep the wave's pace. */
+    --wave-step: 50ms;
   }
 </style>

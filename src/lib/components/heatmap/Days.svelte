@@ -5,10 +5,12 @@
 
   let {
     data,
+    loading = false,
     selectedMoments,
     onToggleMoment,
   }: {
     data: HistoryByDay;
+    loading?: boolean;
     selectedMoments: string[];
     onToggleMoment: (date: string) => void;
   } = $props();
@@ -95,19 +97,14 @@
 </script>
 
 {#if weeks.length === 0}
-  <div
-    style="display: grid; grid-template-rows: repeat(9, 1.5rem); gap: 0.25rem; padding-block:3rem 0"
-  >
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-    <div class="skeleton"></div>
-  </div>
+  <p>No history data available to display the heatmap.</p>
 {:else}
-  <div class="heatmap" {@attach scrollRight}>
+  <div
+    class={["heatmap", { loading }]}
+    aria-busy={loading}
+    inert={loading}
+    {@attach scrollRight}
+  >
     <table>
       <thead>
         <tr>
@@ -118,15 +115,16 @@
         </tr>
       </thead>
       <tbody>
-        {#each weeks as week}
+        {#each weeks as week, row}
           <tr>
             <th>{week.dayName}</th>
-            {#each week.days as day}
+            {#each week.days as day, column}
               <td>
                 <button
                   data-level={day.level}
                   data-date={day.date}
                   data-selected={selectedMoments.includes(day.date)}
+                  style:--wave={column + row}
                   aria-label={`Toggle moment for ${day.date}`}
                   disabled={day.count === 0 &&
                     !selectedMoments.includes(day.date)}

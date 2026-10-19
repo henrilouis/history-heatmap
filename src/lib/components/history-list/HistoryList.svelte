@@ -213,6 +213,12 @@
 </section>
 
 <style>
+  .moments {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
   .virtual-list {
     position: relative;
 

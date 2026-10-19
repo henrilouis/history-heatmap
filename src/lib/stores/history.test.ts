@@ -143,21 +143,6 @@ describe("visit-level store actions", () => {
     await second;
     expect(historyStore.raw).toEqual([other]);
   });
-
-  it("cancels loading without accepting late results or losing existing visits", async () => {
-    const pending = deferred<HistoryVisit[]>();
-    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
-    const fetching = historyStore.fetch();
-    const options = vi.mocked(getHistory).mock.lastCall![1]!;
-    historyStore.cancelFetch();
-
-    expect(options.signal?.aborted).toBe(true);
-    expect(historyStore.isLoading).toBe(false);
-    expect(historyStore.error).toContain("cancelled");
-    pending.resolve([other]);
-    await fetching;
-    expect(historyStore.raw).toEqual(visits);
-  });
 });
 
 function historyEvent<T>() {
@@ -508,44 +493,26 @@ describe("live history synchronization", () => {
     expect(historyStore.raw).toEqual([]);
   });
 
-  it.each(["failure", "cancellation"])(
-    "does not reconcile queued or later visits after load %s",
-    async (outcome) => {
-      const pending = deferred<HistoryVisit[]>();
-      vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
-      const fetching = historyStore.fetch();
-      onVisited.emit(item);
-      if (outcome === "failure") pending.reject(new Error("Load failed"));
-      else {
-        historyStore.cancelFetch();
-        pending.resolve(visits);
-      }
-      await fetching;
-      onVisited.emit(item);
-      expect(getHistoryForUrls).not.toHaveBeenCalled();
-      expect(historyStore.raw).toEqual(outcome === "failure" ? [] : visits);
-      expect(historyStore.error).not.toBeNull();
+  it("does not reconcile queued or later visits after a failed load", async () => {
+    const pending = deferred<HistoryVisit[]>();
+    vi.mocked(getHistory).mockReturnValueOnce(pending.promise);
+    const fetching = historyStore.fetch();
+    onVisited.emit(item);
+    pending.reject(new Error("Load failed"));
+    await fetching;
+    onVisited.emit(item);
+    expect(getHistoryForUrls).not.toHaveBeenCalled();
+    expect(historyStore.raw).toEqual([]);
+    expect(historyStore.error).not.toBeNull();
 
-      vi.mocked(getHistory).mockResolvedValueOnce([
-        revisit,
-        newer,
-        other,
-        older,
-      ]);
-      await historyStore.fetch();
-      expect(historyStore.raw).toEqual([revisit, newer, other, older]);
-      expect(historyStore.error).toBeNull();
-      vi.mocked(getHistoryForUrls).mockResolvedValueOnce([
-        revisit,
-        newer,
-        older,
-      ]);
-      onVisited.emit(item);
-      await vi.waitFor(() =>
-        expect(getHistoryForUrls).toHaveBeenCalledTimes(1),
-      );
-    },
-  );
+    vi.mocked(getHistory).mockResolvedValueOnce([revisit, newer, other, older]);
+    await historyStore.fetch();
+    expect(historyStore.raw).toEqual([revisit, newer, other, older]);
+    expect(historyStore.error).toBeNull();
+    vi.mocked(getHistoryForUrls).mockResolvedValueOnce([revisit, newer, older]);
+    onVisited.emit(item);
+    await vi.waitFor(() => expect(getHistoryForUrls).toHaveBeenCalledTimes(1));
+  });
 
   it("resumes syncing from an authoritative clear-all after a failed load", async () => {
     vi.mocked(getHistory).mockRejectedValueOnce(new Error("Load failed"));

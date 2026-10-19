@@ -10,7 +10,8 @@ using at most eight requests in flight. Repeated visits remain separate in the
 list and heatmap. Dates and hours use the current system timezone; Chrome supplies
 timestamps, not the timezone originally used when browsing.
 
-Loading reports progress in completed URLs and can be cancelled. A failed visit
+Loading reports progress in completed URLs, shown as a percentage in the search
+field while a wave animates across a placeholder calendar. A failed visit
 request is retried once for that URL. If it fails again, the load shows an error
 and Retry rather than displaying partial counts. Starting a new full load cancels
 the previous one, and stale results cannot replace the newer load. Chrome calls
@@ -36,7 +37,7 @@ between consumers and removed when the last consumer disconnects.
 - Background refresh failures show a separate, non-blocking notice and preserve
   loaded history. The notice clears when affected URLs recover or are removed,
   or when a new full refresh starts.
-- After a full load fails or is cancelled, incremental updates wait for a
+- After a full load fails, incremental updates wait for a
   successful Retry so they cannot create a partial heatmap. Clearing all history
   establishes an authoritative empty baseline, from which new visits can sync.
 

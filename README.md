@@ -17,7 +17,8 @@ but stop receiving updates until Chrome meets the minimum version. See
 - Dates and hours use your current system timezone, not the timezone where you
   originally browsed.
 - Open pages stay synchronized with new visits and external history deletions.
-- Loading shows progress and can be cancelled. Failed loads offer Retry;
+- While loading, the calendar animates and the search field shows progress.
+  Failed loads offer Retry;
   background refresh failures preserve the history already displayed.
 - **Delete all visits** removes every visit to a URL, including visits on other days.
 

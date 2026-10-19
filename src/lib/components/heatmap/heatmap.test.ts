@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import Days from "./Days.svelte";
 import Hours from "./Hours.svelte";
 import { historyVisit } from "../../utils/history-fixtures";
+import { placeholderDays, placeholderHours } from "../../utils/chrome-api";
 
 const selection = { selectedMoments: [], onToggleMoment: () => {} };
 
@@ -56,5 +57,42 @@ describe("calendar date rendering", () => {
 
     expect(headerTexts(body)).toContain("1");
     expect(headerTexts(body)).toContain(month);
+  });
+});
+
+describe.each([
+  { name: "Days", component: Days, data: placeholderDays(), rows: 7 },
+  { name: "Hours", component: Hours, data: placeholderHours(), rows: 24 },
+] as const)("$name loading state", ({ component, data, rows }) => {
+  it("draws an inert calendar with a wave position on every cell", () => {
+    const { body } = render(component as typeof Days, {
+      props: { ...selection, data: data as never, loading: true },
+    });
+    const bodyRows = body.match(/<tbody\b[\s\S]*<\/tbody>/)![0];
+    const cells = bodyRows.match(/<button\b[^>]*>/g)!;
+
+    expect(body).toMatch(/class="heatmap loading[^"]*"[^>]*aria-busy="true"/);
+    expect(body).toMatch(/<div\b[^>]*\binert\b/);
+    expect(bodyRows.match(/<tr\b/g)).toHaveLength(rows);
+    expect(cells.length).toBeGreaterThan(rows);
+    expect(cells.every((cell) => /--wave:\s*[\d.]+/.test(cell))).toBe(true);
+  });
+
+  it("shows an empty message instead of a calendar without data", () => {
+    const { body } = render(component as typeof Days, {
+      props: { ...selection, data: {} },
+    });
+
+    expect(body).toContain("No history data available");
+    expect(body).not.toContain("<table");
+  });
+
+  it("does not mark loaded calendars as loading", () => {
+    const { body } = render(component as typeof Days, {
+      props: { ...selection, data: data as never },
+    });
+
+    expect(body).not.toContain("loading");
+    expect(body).not.toMatch(/\binert\b/);
   });
 });
