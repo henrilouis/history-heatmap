@@ -261,7 +261,6 @@ ol {
   border-radius: var(--el-border-radius);
   corner-shape: var(--el-corner-shape);
   padding: var(--button-group-padding);
-  box-shadow: var(--el-shadow);
   &::before {
     content: "";
     position: absolute;
