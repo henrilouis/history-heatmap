@@ -88,9 +88,11 @@
     container-type: scroll-state;
     container-name: scroll-container;
   }
+
   .dark {
     color-scheme: only dark;
   }
+
   .light {
     color-scheme: only light;
   }

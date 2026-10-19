@@ -359,7 +359,7 @@ function createRecorder() {
         typedCount: visits.filter((visit) => visit.transition === "typed")
           .length,
       }))
-      .sort((a, b) => b.lastVisitTime - a.lastVisitTime);
+      .toSorted((a, b) => b.lastVisitTime - a.lastVisitTime);
     const visitsByUrl = Object.fromEntries(
       entries.map(({ url, visits }) => [url, visits]),
     );
@@ -419,7 +419,7 @@ function sessionStarts(random, date, count, weekend) {
       minute: random.int(0, 59),
       second: random.int(0, 59),
     }),
-  ).sort(Temporal.PlainDateTime.compare);
+  ).toSorted(Temporal.PlainDateTime.compare);
 }
 
 function recordDay(context, date, progress, holiday) {

@@ -4,7 +4,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir, cpus, platform, arch } from "node:os";
-import { join, resolve } from "node:path";
+import { join, resolve as resolvePath } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { build } from "vite";
 
@@ -32,7 +32,7 @@ await build({
     outDir: extension,
     minify: false,
     lib: {
-      entry: resolve("src/lib/utils/chrome-api.ts"),
+      entry: resolvePath("src/lib/utils/chrome-api.ts"),
       formats: ["es"],
       fileName: () => "history.js",
     },
@@ -191,14 +191,14 @@ const insertVisit = db.prepare(
 );
 const now = Date.now() - 60_000;
 const day = 86_400_000;
+const chromeTime = (timestamp) =>
+  BigInt(timestamp + 11_644_473_600_000) * 1000n;
 let visitId = 0;
 for (let urlId = 1; urlId <= urlCount; urlId++) {
   const times = Array.from(
     { length: visitsPerUrl },
     (_, visit) => now - ((urlId * 7919 + visit * 17 * day) % (89 * day)),
   );
-  const chromeTime = (timestamp) =>
-    BigInt(timestamp + 11_644_473_600_000) * 1000n;
   insertUrl.run(
     urlId,
     `https://site-${urlId % 1000}.example/page/${urlId}`,

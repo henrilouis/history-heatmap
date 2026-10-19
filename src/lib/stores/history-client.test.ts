@@ -122,8 +122,8 @@ describe("reactive views after search changes", () => {
       // Evaluate a different active search first, including for the clear case.
       store.setSearch("sensitive");
       expect(store.filtered).toHaveLength(2);
-      expect(Object.keys(store.byDayWithEmpty).sort()).toEqual(dayKeys);
-      expect(Object.keys(store.byDayAndHourWithEmpty).sort()).toEqual(
+      expect(Object.keys(store.byDayWithEmpty).toSorted()).toEqual(dayKeys);
+      expect(Object.keys(store.byDayAndHourWithEmpty).toSorted()).toEqual(
         hourDayKeys,
       );
       expect(store.byDayWithEmpty["2026-09-10"]).toHaveLength(1);
@@ -132,8 +132,8 @@ describe("reactive views after search changes", () => {
       store.setSearch(query);
 
       expect(store.filtered).toHaveLength(total);
-      expect(Object.keys(store.byDayWithEmpty).sort()).toEqual(dayKeys);
-      expect(Object.keys(store.byDayAndHourWithEmpty).sort()).toEqual(
+      expect(Object.keys(store.byDayWithEmpty).toSorted()).toEqual(dayKeys);
+      expect(Object.keys(store.byDayAndHourWithEmpty).toSorted()).toEqual(
         hourDayKeys,
       );
       expect(store.byDayWithEmpty["2026-09-10"]).toHaveLength(sensitiveCount);
@@ -173,8 +173,8 @@ describe("reactive views after history events", () => {
     async ({ query, initial, updated }) => {
       store.setSearch(query);
       expectSearchViews(initial);
-      const dayKeys = Object.keys(store.byDayWithEmpty).sort();
-      const hourDayKeys = Object.keys(store.byDayAndHourWithEmpty).sort();
+      const dayKeys = Object.keys(store.byDayWithEmpty).toSorted();
+      const hourDayKeys = Object.keys(store.byDayAndHourWithEmpty).toSorted();
       visitsByUrl.set(sensitiveUrl, [
         ...visitsByUrl.get(sensitiveUrl)!,
         chromeVisit("revisit", new Date(2026, 8, 12, 9, 30)),
@@ -184,8 +184,8 @@ describe("reactive views after history events", () => {
 
       await vi.waitFor(() => expect(store.raw).toHaveLength(4));
       expectSearchViews(updated);
-      expect(Object.keys(store.byDayWithEmpty).sort()).toEqual(dayKeys);
-      expect(Object.keys(store.byDayAndHourWithEmpty).sort()).toEqual(
+      expect(Object.keys(store.byDayWithEmpty).toSorted()).toEqual(dayKeys);
+      expect(Object.keys(store.byDayAndHourWithEmpty).toSorted()).toEqual(
         hourDayKeys,
       );
     },

@@ -129,6 +129,7 @@
   .days ol {
     display: grid;
     grid-template-columns: repeat(var(--days), minmax(0, 1fr));
+
     /* Gaps shrink with the cells, so a long history stays a solid strip. */
     gap: min(0.1875rem, calc(20cqi / var(--days)));
     height: 3rem;
@@ -137,19 +138,19 @@
   /* The card is heatmap blue, so the levels become a ramp of the card's
      white text colour instead of the usual blue shades. */
   .days li {
-    background-color: oklch(from var(--fg-primary) l c h / 0.15);
+    background-color: oklch(from var(--fg-primary) l c h / 15%);
     border-radius: min(0.25rem, calc(25cqi / var(--days)));
 
     &[data-level="1"] {
-      background-color: oklch(from var(--fg-primary) l c h / 0.35);
+      background-color: oklch(from var(--fg-primary) l c h / 35%);
     }
 
     &[data-level="2"] {
-      background-color: oklch(from var(--fg-primary) l c h / 0.55);
+      background-color: oklch(from var(--fg-primary) l c h / 55%);
     }
 
     &[data-level="3"] {
-      background-color: oklch(from var(--fg-primary) l c h / 0.8);
+      background-color: oklch(from var(--fg-primary) l c h / 80%);
     }
 
     &[data-level="4"] {

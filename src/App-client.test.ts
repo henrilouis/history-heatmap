@@ -663,10 +663,10 @@ describe("mounted history interactions", () => {
   });
 });
 
-describe("hash routing", () => {
-  const atHash = (hash: string) =>
-    vi.waitFor(() => expect(location.hash).toBe(hash));
+const atHash = (hash: string) =>
+  vi.waitFor(() => expect(location.hash).toBe(hash));
 
+describe("hash routing", () => {
   function typeSearch(query: string) {
     const input = searchInput();
     input.value = query;

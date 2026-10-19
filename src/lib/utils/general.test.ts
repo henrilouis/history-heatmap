@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { formatTimeRange, hueFor } from "./general";
 
+const at = (local: string) =>
+  Temporal.PlainDateTime.from(local).toZonedDateTime("Europe/Amsterdam")
+    .epochMilliseconds;
+
 describe("time ranges", () => {
-  const at = (local: string) =>
-    Temporal.PlainDateTime.from(local).toZonedDateTime("Europe/Amsterdam")
-      .epochMilliseconds;
   // Intl separates times with narrow and thin spaces.
   const format = (start: string, end: string) =>
     formatTimeRange(at(start), at(end), "Europe/Amsterdam", "en-US").replace(

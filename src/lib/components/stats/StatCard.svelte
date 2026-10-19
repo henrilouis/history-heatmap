@@ -55,10 +55,10 @@
     /* Solid heatmap blue with white text in both themes, slightly deeper on
        a dark page so it doesn't glare. */
     &[data-variant="hero"] {
-      --fg-primary: oklch(100% 0 0);
-      --fg-secondary: oklch(100% 0 0 / 0.8);
+      --fg-primary: oklch(100% 0 0deg);
+      --fg-secondary: oklch(100% 0 0deg / 80%);
       --accent: var(--fg-primary);
-      --bar-bg: oklch(100% 0 0 / 0.2);
+      --bar-bg: oklch(100% 0 0deg / 20%);
 
       color: var(--fg-primary);
       background-color: light-dark(

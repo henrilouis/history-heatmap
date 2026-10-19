@@ -23,7 +23,7 @@
   };
 
   function organizeCalendar(historyByDay: HistoryByDay) {
-    const sortedDates = Object.keys(historyByDay).sort();
+    const sortedDates = Object.keys(historyByDay).toSorted();
     if (sortedDates.length === 0) return { weeks: [], months: [] };
 
     // Find max count for level calculation

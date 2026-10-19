@@ -113,7 +113,7 @@ describe("cached local time keys", () => {
       const offsets = [-3_600_001, -1_800_001, -1, 0, 1, 1_800_001, 3_600_001];
       for (const offset of [
         ...offsets,
-        ...[...offsets].reverse(),
+        ...offsets.toReversed(),
         0,
         -1,
         1,

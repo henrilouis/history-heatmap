@@ -54,14 +54,17 @@
   // The first and last row of a card also carry its 1.5rem vertical padding.
   function estimateSize(
     row: HistoryRow | undefined,
-    groups: HistoryGroup[],
+    currentGroups: HistoryGroup[],
   ): number {
     if (!row) return 0;
     if (row.type === "gap") return 1 * rem;
-    const visits = groups[row.group].items.length;
+    const visits = currentGroups[row.group].items.length;
     // A flow's heading adds a line with its time span.
     if (row.type === "heading")
-      return ((visits ? 4.5 : 6) + (groups[row.group].topic ? 1.625 : 0)) * rem;
+      return (
+        ((visits ? 4.5 : 6) + (currentGroups[row.group].topic ? 1.625 : 0)) *
+        rem
+      );
     return (row.position === visits - 1 ? 3.625 : 2.125) * rem;
   }
 
@@ -81,7 +84,7 @@
     const indexes = defaultRangeExtractor(range);
     const index = focused && rowIndexes.get(focused.key);
     if (index === undefined || indexes.includes(index)) return indexes;
-    return [...indexes, index].sort((a, b) => a - b);
+    return [...indexes, index].toSorted((a, b) => a - b);
   }
 
   const virtualizer = createVirtualizer<HTMLElement, HTMLElement>({
@@ -161,12 +164,19 @@
     );
   });
 
-  function nearestVisit(rows: HistoryRow[], from: number): number | undefined {
-    if (rows.length === 0) return;
-    for (let i = Math.min(from, rows.length - 1); i < rows.length; i++)
-      if (rows[i].type === "visit") return i;
-    for (let i = Math.min(from, rows.length) - 1; i >= 0; i--)
-      if (rows[i].type === "visit") return i;
+  function nearestVisit(
+    currentRows: HistoryRow[],
+    from: number,
+  ): number | undefined {
+    if (currentRows.length === 0) return;
+    for (
+      let i = Math.min(from, currentRows.length - 1);
+      i < currentRows.length;
+      i++
+    )
+      if (currentRows[i].type === "visit") return i;
+    for (let i = Math.min(from, currentRows.length) - 1; i >= 0; i--)
+      if (currentRows[i].type === "visit") return i;
   }
 </script>
 
@@ -205,6 +215,7 @@
 <style>
   .virtual-list {
     position: relative;
+
     /* Rows are placed by the virtualizer, which corrects for size changes
        above the viewport itself. */
     overflow-anchor: none;

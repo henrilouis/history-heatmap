@@ -127,7 +127,7 @@ describe("getHistory", () => {
       "2026-09-10": { "18": [expected[3]] },
     });
     // The unfiltered calendar range must include earlier visits to this same URL.
-    expect(Object.keys(fillEmptyDays({}, history)).sort()).toEqual([
+    expect(Object.keys(fillEmptyDays({}, history)).toSorted()).toEqual([
       "2026-09-07",
       "2026-09-08",
       "2026-09-09",
@@ -325,14 +325,14 @@ describe("visit request scheduling", () => {
     const visits = await result;
     expect(peak).toBe(8);
     expect(getVisits).toHaveBeenCalledTimes(records.length);
-    expect(getVisits.mock.calls.map(([details]) => details.url).sort()).toEqual(
-      records.map((record) => record.url).sort(),
-    );
+    expect(
+      getVisits.mock.calls.map(([details]) => details.url).toSorted(),
+    ).toEqual(records.map((record) => record.url).toSorted());
     expect(visits.map((visit) => visit.visitId)).toEqual(
-      records.map((_, i) => `visit-${i}`).reverse(),
+      records.map((_, i) => `visit-${i}`).toReversed(),
     );
     expect(visits.map((visit) => visit.url)).toEqual(
-      records.map((record) => record.url).reverse(),
+      records.map((record) => record.url).toReversed(),
     );
   });
 

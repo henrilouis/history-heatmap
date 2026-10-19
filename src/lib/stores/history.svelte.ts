@@ -284,7 +284,7 @@ function setSearch(query: string): void {
 function toggleMoment(date: string): void {
   const index = selectedMoments.indexOf(date);
   if (index === -1) {
-    selectedMoments = [...selectedMoments, date].sort().reverse();
+    selectedMoments = [...selectedMoments, date].toSorted().toReversed();
   } else {
     selectedMoments = selectedMoments.filter((_, i) => i !== index);
   }

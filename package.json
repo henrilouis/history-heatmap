@@ -29,7 +29,8 @@
     "format:check": "oxfmt --check ."
   },
   "simple-git-hooks": {
-    "pre-commit": "npm run fallow -- --quiet --gate-marker pre-commit"
+    "pre-commit": "npm run lint && npm run format:check && npm run fallow -- --quiet --gate-marker pre-commit",
+    "pre-push": "npm run check && npm test"
   },
   "dependencies": {
     "@tanstack/svelte-virtual": "^3.13.39"
@@ -48,6 +49,7 @@
     "postcss-html": "^2.0.0",
     "simple-git-hooks": "^2.14.0",
     "stylelint": "^17.15.0",
+    "stylelint-config-standard": "^40.0.0",
     "svelte": "^5.57.0",
     "svelte-check": "^4.7.6",
     "typescript": "~6.0.3",

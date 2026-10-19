@@ -39,7 +39,7 @@
         count: transitions.other,
         color: "var(--heatmap-color-0)",
       },
-    ].sort((a, b) => b.count - a.count),
+    ].toSorted((a, b) => b.count - a.count),
   );
   const top = $derived(parts[0]);
 </script>

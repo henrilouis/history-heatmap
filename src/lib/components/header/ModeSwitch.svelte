@@ -28,3 +28,9 @@
     </a>
   {/each}
 </nav>
+
+<style>
+  .button-group {
+    box-shadow: var(--el-shadow);
+  }
+</style>

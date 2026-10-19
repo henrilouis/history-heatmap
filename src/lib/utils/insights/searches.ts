@@ -116,11 +116,11 @@ export function buildSearches({ urls }: VisitAggregate): Searches {
     total,
     uniqueTerms: terms.size,
     terms: [...terms.values()]
-      .sort((a, b) => b.count - a.count || a.term.localeCompare(b.term))
+      .toSorted((a, b) => b.count - a.count || a.term.localeCompare(b.term))
       .slice(0, TERM_LIMIT)
       .map(({ term, count, url }) => ({ term, count, url })),
     engines: [...engines]
       .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+      .toSorted((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
   };
 }

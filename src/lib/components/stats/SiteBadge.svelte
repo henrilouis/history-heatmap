@@ -49,7 +49,7 @@
       width: 2rem;
       height: 2rem;
       padding: 0.25rem;
-      background-color: oklch(100% 0 0);
+      background-color: oklch(100% 0 0deg);
       border-radius: 0.5rem;
       corner-shape: var(--el-corner-shape);
     }
