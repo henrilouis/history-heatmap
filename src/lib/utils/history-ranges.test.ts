@@ -4,6 +4,8 @@ import {
   fillEmptyHours,
   groupHistoryByDay,
   groupHistoryByDayAndHour,
+  placeholderDays,
+  placeholderHours,
   type HistoryVisit,
 } from "./chrome-api";
 import { historyVisit } from "./history-fixtures";
@@ -175,5 +177,31 @@ describe.each([
       "2026-09-08": emptyDay,
       "2026-09-09": emptyDay,
     });
+  });
+});
+
+describe("placeholder calendars", () => {
+  // A Monday: 90 days back is Wednesday 2026-07-22, padded back to Monday 07-20.
+  const today = Temporal.PlainDate.from("2026-10-19");
+
+  it("covers the last 90 days in the day view, padded back to Monday", () => {
+    const keys = Object.keys(placeholderDays(today)).toSorted();
+
+    expect(keys[0]).toBe("2026-07-20");
+    expect(keys.at(-1)).toBe("2026-10-19");
+    expect(keys).toHaveLength(92);
+    for (const day of Object.values(placeholderDays(today))) {
+      expect(day).toEqual([]);
+    }
+  });
+
+  it("covers the last 90 days with all hours in the hour view", () => {
+    const result = placeholderHours(today);
+    const keys = Object.keys(result).toSorted();
+
+    expect(keys[0]).toBe("2026-07-22");
+    expect(keys.at(-1)).toBe("2026-10-19");
+    expect(keys).toHaveLength(90);
+    for (const day of Object.values(result)) expect(day).toEqual(emptyHours);
   });
 });

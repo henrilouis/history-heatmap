@@ -110,3 +110,46 @@ thead tr.days th {
     font-size: 0.75rem;
   }
 }
+
+/* While history loads, a wave of heatmap colors sweeps diagonally across the
+   calendar. Each cell's --wave is its distance along the diagonal. */
+.heatmap.loading button {
+  background-color: var(--heatmap-color-0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .heatmap.loading button {
+    animation: heatmap-wave 2s linear infinite;
+
+    /* Negative delays start the wave mid-sweep, moving left to right. */
+    animation-delay: calc(var(--wave) * var(--wave-step, 100ms) - 60s);
+  }
+}
+
+@keyframes heatmap-wave {
+  0%,
+  50%,
+  100% {
+    background-color: var(--heatmap-color-0);
+  }
+
+  60% {
+    background-color: var(--heatmap-color-1);
+  }
+
+  70% {
+    background-color: var(--heatmap-color-2);
+  }
+
+  77% {
+    background-color: var(--heatmap-color-3);
+  }
+
+  83% {
+    background-color: var(--heatmap-color-4);
+  }
+
+  90% {
+    background-color: var(--heatmap-color-2);
+  }
+}
