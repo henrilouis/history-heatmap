@@ -90,7 +90,7 @@
     gap: 0.25rem;
   }
 
-  @media (width >= 43.75rem) {
+  @media (width >= 46.25rem) {
     h1 {
       display: block;
     }
