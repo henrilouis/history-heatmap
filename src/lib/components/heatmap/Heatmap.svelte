@@ -33,6 +33,6 @@
     />
   {/if}
 {/key}
-{#if viewMode !== "stats"}
+{#if viewMode === "days" || viewMode === "hours"}
   <SelectionInfo calendarMode={viewMode} />
 {/if}

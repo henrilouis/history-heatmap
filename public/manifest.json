@@ -5,6 +5,7 @@
   "version": "1.7.0",
   "description": "Visualize and manage your browsing history",
   "permissions": ["history", "favicon"],
+  "optional_permissions": ["sessions", "tabs"],
   "chrome_url_overrides": {
     "history": "index.html"
   },

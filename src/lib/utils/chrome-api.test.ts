@@ -7,6 +7,7 @@ import {
   groupHistoryByDayAndHour,
   fillEmptyDays,
   openClearBrowsingData,
+  openSyncSettings,
 } from "./chrome-api";
 import { chromeVisit } from "./history-fixtures";
 
@@ -542,7 +543,7 @@ describe("deleteUrl", () => {
   );
 });
 
-describe("openClearBrowsingData", () => {
+describe("openClearBrowsingData and openSyncSettings", () => {
   function completeUpdate(error?: chrome.runtime.LastError) {
     const [, callback] = updateTab.mock.lastCall!;
     completeCallback(() => callback(), error);
@@ -553,6 +554,17 @@ describe("openClearBrowsingData", () => {
 
     expect(updateTab).toHaveBeenCalledExactlyOnceWith(
       { url: "chrome://settings/clearBrowserData" },
+      expect.any(Function),
+    );
+    completeUpdate();
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it("opens Chrome's sync settings in the current tab", async () => {
+    const result = openSyncSettings();
+
+    expect(updateTab).toHaveBeenCalledExactlyOnceWith(
+      { url: "chrome://settings/syncSetup" },
       expect.any(Function),
     );
     completeUpdate();

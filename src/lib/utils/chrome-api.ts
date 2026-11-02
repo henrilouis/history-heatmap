@@ -374,18 +374,24 @@ export async function deleteUrl(url: string): Promise<void> {
   });
 }
 
-const CLEAR_BROWSING_DATA_URL = "chrome://settings/clearBrowserData";
+export function openClearBrowsingData(): Promise<void> {
+  return openChromePage("chrome://settings/clearBrowserData");
+}
+
+export function openSyncSettings(): Promise<void> {
+  return openChromePage("chrome://settings/syncSetup");
+}
 
 // Extension pages cannot follow chrome:// links, but the tabs API can open
 // them without the "tabs" permission. This replaces the page, as Chrome does.
-export function openClearBrowsingData(): Promise<void> {
+function openChromePage(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!globalThis.chrome?.tabs) {
       reject(new Error("Chrome tabs API not available"));
       return;
     }
 
-    chrome.tabs.update({ url: CLEAR_BROWSING_DATA_URL }, () => {
+    chrome.tabs.update({ url }, () => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
       } else {

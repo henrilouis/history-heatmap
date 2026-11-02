@@ -47,6 +47,29 @@ between consumers and removed when the last consumer disconnects.
   successful Retry so they cannot create a partial heatmap. Clearing all history
   establishes an authoritative empty baseline, from which new visits can sync.
 
+## Tabs from other devices
+
+The **Devices** view reads Chrome's synced open tabs with
+`chrome.sessions.getDevices()`. Chrome strips the URL and title of synced tabs
+unless the extension also holds `tabs`, so both `sessions` and `tabs` are
+requested together as optional permissions, from the view's button. With
+`history` already granted, they add no install warning, so Chrome grants them
+without a prompt.
+
+- Each device becomes one card, newest first, with the windows flattened as on
+  Chrome's own page. Chrome leaves out new tab pages and returns at most 25
+  windows per device. It has no per-tab time, so a card shows when the device
+  last synced.
+- Chrome sends no event when another device syncs, so the list reloads when the
+  view opens, when the page becomes visible or regains focus, and every minute
+  while visible. A failed reload keeps the tabs shown and offers Retry.
+- Without tab sync, Chrome returns no devices, the same as when there are none.
+  The empty state links to Chrome's sync settings.
+- Revoking either permission removes the tabs from the page.
+- Favicons come from Chrome's local favicon cache, so pages only opened on
+  another device may show Chrome's default icon. The view never loads icons
+  from the websites themselves.
+
 ## Flows
 
 **By flow** groups the visits in view (the search results, or the selected days

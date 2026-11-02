@@ -6,7 +6,7 @@ export interface Route {
   grouping: Grouping;
 }
 
-const viewModes: readonly ViewMode[] = ["days", "hours", "stats"];
+const viewModes: readonly ViewMode[] = ["days", "hours", "stats", "devices"];
 
 function isViewMode(value: string): value is ViewMode {
   return (viewModes as readonly string[]).includes(value);

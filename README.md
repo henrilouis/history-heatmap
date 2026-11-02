@@ -35,6 +35,15 @@ the deepest rabbit hole, and top searches. Websites group by host, with `www.`
 merged into the bare domain. Averages span every day in the loaded history,
 including days without visits.
 
+### Devices
+
+The **Devices** view shows the tabs open in Chrome on your other signed-in
+devices, one card per device, like Chrome's own "Tabs from other devices" page.
+It needs the optional `sessions` and `tabs` permissions, which the view asks for
+the first time you use it. They add no install warning beyond the existing
+history access. Tabs only appear when you're signed in and syncing open tabs,
+and the search filters them by title and URL.
+
 ### By time or by flow
 
 The switch above the history list groups visits into cards **By time** (one

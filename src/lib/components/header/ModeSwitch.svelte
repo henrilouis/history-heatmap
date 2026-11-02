@@ -8,6 +8,7 @@
     { mode: "days", label: "Days" },
     { mode: "hours", label: "Hours" },
     { mode: "stats", label: "Stats" },
+    { mode: "devices", label: "Devices" },
   ];
 </script>
 
