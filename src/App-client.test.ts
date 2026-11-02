@@ -49,6 +49,10 @@ const originalOffsetHeight = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
   "offsetHeight",
 );
+const originalClientHeight = Object.getOwnPropertyDescriptor(
+  Element.prototype,
+  "clientHeight",
+);
 /** Measured height of every row; the list's estimate for a visit row. */
 const ROW_HEIGHT = 34;
 
@@ -85,7 +89,7 @@ beforeEach(async () => {
   );
   // jsdom has no layout. Charts measure their container through
   // ResizeObserver; the virtualized list sizes its viewport from the scroll
-  // container and measures rendered rows through offsetHeight.
+  // container's clientHeight and measures rendered rows through offsetHeight.
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -98,6 +102,12 @@ beforeEach(async () => {
     configurable: true,
     get(this: HTMLElement) {
       return this.classList.contains("wrapper") ? 800 : ROW_HEIGHT;
+    },
+  });
+  Object.defineProperty(Element.prototype, "clientHeight", {
+    configurable: true,
+    get(this: Element) {
+      return this.classList.contains("wrapper") ? 800 : 0;
     },
   });
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
@@ -185,6 +195,12 @@ afterEach(async () => {
       HTMLElement.prototype,
       "offsetHeight",
       originalOffsetHeight,
+    );
+  if (originalClientHeight)
+    Object.defineProperty(
+      Element.prototype,
+      "clientHeight",
+      originalClientHeight,
     );
 });
 
