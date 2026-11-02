@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import Card from "../history-list/Card.svelte";
   import DeviceList from "./DeviceList.svelte";
+  import DevicesNotice from "./DevicesNotice.svelte";
   import DevicesPermission from "./DevicesPermission.svelte";
   import { devicesStore } from "../../stores/devices.svelte";
   import { routeStore } from "../../stores/route.svelte";
@@ -32,6 +33,9 @@
 </script>
 
 <section class="devices">
+  {#if devicesStore.error && status !== "permission"}
+    <DevicesNotice failed={status === "failed"} />
+  {/if}
   {#if status === "permission"}
     <DevicesPermission />
   {:else if status === "loading"}
@@ -47,8 +51,8 @@
         >Open sync settings</button
       >
     </Card>
-  {:else}
-    <DeviceList {groups} failed={status === "failed"} {now} />
+  {:else if status === "devices"}
+    <DeviceList {groups} {now} />
   {/if}
 </section>
 

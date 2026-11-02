@@ -1000,4 +1000,46 @@ describe("devices view", () => {
     button("Retry").click();
     await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
   });
+
+  it("hides tabs when access is revoked while a refresh is starting", async () => {
+    containsPermissions.mockResolvedValue(true);
+    getDevices.mockResolvedValue(devices);
+    await openDevices();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
+
+    // Without sessions, the refresh fails; it must not keep the old tabs.
+    containsPermissions.mockResolvedValue(false);
+    getDevices.mockRejectedValue(new Error("Permission denied"));
+    permissionsRemoved!({ permissions: ["sessions"] });
+    window.dispatchEvent(new Event("focus"));
+
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("needs permission"),
+    );
+    await tick();
+    expect(deviceCards().flatMap((card) => card.links)).toEqual([]);
+    expect(target.textContent).not.toContain("Couldn't refresh");
+  });
+
+  it("offers Retry when a refresh fails after finding no devices", async () => {
+    containsPermissions.mockResolvedValue(true);
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No tabs from other devices"),
+    );
+
+    getDevices.mockRejectedValue(new Error("Sync unavailable"));
+    window.dispatchEvent(new Event("focus"));
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain(
+        "Couldn't refresh tabs from other devices.",
+      ),
+    );
+    expect(target.textContent).toContain("No tabs from other devices");
+
+    getDevices.mockResolvedValue(devices);
+    button("Retry").click();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
+    expect(target.textContent).not.toContain("Couldn't refresh");
+  });
 });

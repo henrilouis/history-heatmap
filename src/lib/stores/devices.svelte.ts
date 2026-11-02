@@ -17,17 +17,19 @@ let access = $state<Access>("unknown");
 let groups = $state.raw<DeviceGroup[] | null>(null);
 let isLoading = $state(false);
 let error = $state<string | null>(null);
-let requestId = 0;
+// Separate counters, so a refresh cannot discard a pending permission check.
+let accessId = 0;
+let loadId = 0;
 let connected = false;
 
 async function checkAccess(): Promise<void> {
-  const id = ++requestId;
+  const id = ++accessId;
   try {
     const granted = await hasDevicePermissions();
-    if (id !== requestId) return;
+    if (id !== accessId) return;
     setAccess(granted ? "granted" : "denied");
   } catch (e) {
-    if (id !== requestId) return;
+    if (id !== accessId) return;
     access = "denied";
     error = message(e, "Failed to check permissions");
   }
@@ -39,7 +41,7 @@ function setAccess(next: Access): void {
     void refresh();
   } else {
     // Revoking access must not leave previously read tabs on screen.
-    requestId++;
+    loadId++;
     groups = null;
     isLoading = false;
     error = null;
@@ -48,18 +50,18 @@ function setAccess(next: Access): void {
 
 async function refresh(): Promise<void> {
   if (access !== "granted") return;
-  const id = ++requestId;
+  const id = ++loadId;
   isLoading = true;
   try {
     const loaded = await getDeviceGroups();
-    if (id !== requestId) return;
+    if (id !== loadId) return;
     groups = loaded;
     error = null;
   } catch (e) {
-    if (id !== requestId) return;
+    if (id !== loadId) return;
     error = message(e, "Failed to load tabs from other devices");
   } finally {
-    if (id === requestId) isLoading = false;
+    if (id === loadId) isLoading = false;
   }
 }
 
@@ -67,7 +69,9 @@ async function refresh(): Promise<void> {
 async function requestAccess(): Promise<void> {
   try {
     const granted = await requestDevicePermissions();
-    if (granted) setAccess("granted");
+    if (!granted) return;
+    accessId++;
+    setAccess("granted");
   } catch (e) {
     error = message(e, "Failed to request permission");
   }
@@ -77,8 +81,15 @@ function message(e: unknown, fallback: string): string {
   return e instanceof Error ? e.message : fallback;
 }
 
-function onPermissionsChanged(changed: chrome.permissions.Permissions): void {
+function onPermissionsAdded(changed: chrome.permissions.Permissions): void {
   if (affectsDevicePermissions(changed)) void checkAccess();
+}
+
+// Losing either permission ends access, so there is nothing to check.
+function onPermissionsRemoved(changed: chrome.permissions.Permissions): void {
+  if (!affectsDevicePermissions(changed)) return;
+  accessId++;
+  setAccess("denied");
 }
 
 function onVisible(): void {
@@ -89,8 +100,8 @@ function connect(): () => void {
   if (connected) return () => {};
   connected = true;
   const permissions = globalThis.chrome?.permissions;
-  permissions?.onAdded?.addListener(onPermissionsChanged);
-  permissions?.onRemoved?.addListener(onPermissionsChanged);
+  permissions?.onAdded?.addListener(onPermissionsAdded);
+  permissions?.onRemoved?.addListener(onPermissionsRemoved);
   document.addEventListener("visibilitychange", onVisible);
   window.addEventListener("focus", onVisible);
   const interval = setInterval(onVisible, REFRESH_INTERVAL);
@@ -98,10 +109,11 @@ function connect(): () => void {
 
   return () => {
     connected = false;
-    requestId++;
+    accessId++;
+    loadId++;
     isLoading = false;
-    permissions?.onAdded?.removeListener(onPermissionsChanged);
-    permissions?.onRemoved?.removeListener(onPermissionsChanged);
+    permissions?.onAdded?.removeListener(onPermissionsAdded);
+    permissions?.onRemoved?.removeListener(onPermissionsRemoved);
     document.removeEventListener("visibilitychange", onVisible);
     window.removeEventListener("focus", onVisible);
     clearInterval(interval);
