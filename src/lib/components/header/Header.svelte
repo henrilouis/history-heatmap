@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ClearBrowsingDataButton from "./ClearBrowsingDataButton.svelte";
   import ModeSwitch from "./ModeSwitch.svelte";
   import Search from "./Search.svelte";
   import ThemeToggle from "./ThemeToggle.svelte";
@@ -41,6 +42,7 @@
     <p class="visually-hidden" role="status">{announcement}</p>
   </div>
   <div class="header-end">
+    <ClearBrowsingDataButton />
     <ThemeToggle />
   </div>
 </header>
@@ -85,6 +87,7 @@
   .header-end {
     display: flex;
     justify-content: end;
+    gap: 0.25rem;
   }
 
   @media (width >= 43.75rem) {

@@ -6,6 +6,7 @@ import {
   groupHistoryByDay,
   groupHistoryByDayAndHour,
   fillEmptyDays,
+  openClearBrowsingData,
 } from "./chrome-api";
 import { chromeVisit } from "./history-fixtures";
 
@@ -23,6 +24,13 @@ const getVisits =
   >();
 const deleteHistoryUrl =
   vi.fn<(details: chrome.history.UrlDetails, callback: () => void) => void>();
+const updateTab =
+  vi.fn<
+    (
+      properties: chrome.tabs.UpdateProperties,
+      callback: (tab?: chrome.tabs.Tab) => void,
+    ) => void
+  >();
 let runtime: { lastError?: chrome.runtime.LastError };
 
 function completeCallback(
@@ -55,6 +63,7 @@ beforeEach(() => {
   runtime = {};
   vi.stubGlobal("chrome", {
     history: { search, getVisits, deleteUrl: deleteHistoryUrl },
+    tabs: { update: updateTab },
     runtime,
   });
 });
@@ -529,6 +538,43 @@ describe("deleteUrl", () => {
         "Chrome history API not available",
       );
       expect(deleteHistoryUrl).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe("openClearBrowsingData", () => {
+  function completeUpdate(error?: chrome.runtime.LastError) {
+    const [, callback] = updateTab.mock.lastCall!;
+    completeCallback(() => callback(), error);
+  }
+
+  it("opens Chrome's clear browsing data settings in the current tab", async () => {
+    const result = openClearBrowsingData();
+
+    expect(updateTab).toHaveBeenCalledExactlyOnceWith(
+      { url: "chrome://settings/clearBrowserData" },
+      expect.any(Function),
+    );
+    completeUpdate();
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it("rejects with the error reported by the tabs API", async () => {
+    const result = openClearBrowsingData();
+    completeUpdate({ message: "Cannot navigate" });
+
+    await expect(result).rejects.toThrow("Cannot navigate");
+  });
+
+  it.each([undefined, {}])(
+    "rejects when Chrome tabs are unavailable (%j)",
+    async (chromeApi) => {
+      vi.stubGlobal("chrome", chromeApi);
+
+      await expect(openClearBrowsingData()).rejects.toThrow(
+        "Chrome tabs API not available",
+      );
+      expect(updateTab).not.toHaveBeenCalled();
     },
   );
 });

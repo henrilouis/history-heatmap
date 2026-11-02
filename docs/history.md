@@ -20,6 +20,12 @@ already in flight may finish after cancellation, but their results are ignored.
 **Delete all visits** removes every visit to a URL, including visits on other days.
 A failed deletion preserves the displayed visits and shows an error.
 
+**Delete browsing data** opens `chrome://settings/clearBrowserData` in the
+current tab, as Chrome's own history page does. Extension pages cannot follow
+`chrome://` links, so it navigates with `chrome.tabs.update()`, which needs no
+extra permission. Deletions made there reach open history pages through the
+usual removal events.
+
 ## Live synchronization
 
 Open pages subscribe to Chrome history events while mounted. Listeners are shared

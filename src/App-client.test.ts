@@ -19,6 +19,10 @@ const getVisits =
   >();
 const deleteUrl =
   vi.fn<(details: chrome.history.UrlDetails, callback: () => void) => void>();
+const updateTab =
+  vi.fn<
+    (properties: chrome.tabs.UpdateProperties, callback: () => void) => void
+  >();
 let visitsByUrl: Map<string, chrome.history.VisitItem[]>;
 let runtime: {
   lastError?: chrome.runtime.LastError;
@@ -115,6 +119,7 @@ beforeEach(async () => {
       },
       onVisitRemoved: { addListener: vi.fn(), removeListener: vi.fn() },
     },
+    tabs: { update: updateTab },
   });
   await mountApp();
 });
@@ -325,6 +330,15 @@ describe("mounted history interactions", () => {
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
     expect(button("Toggle moment for 2026-09-10").disabled).toBe(false);
     expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
+  });
+
+  it("opens Chrome's clear browsing data settings from the header", () => {
+    button("Delete browsing data").click();
+
+    expect(updateTab).toHaveBeenCalledExactlyOnceWith(
+      { url: "chrome://settings/clearBrowserData" },
+      expect.any(Function),
+    );
   });
 
   it("shows loading progress in the search placeholder and announces the load", async () => {

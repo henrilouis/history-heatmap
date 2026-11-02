@@ -21,6 +21,9 @@ but stop receiving updates until Chrome meets the minimum version. See
   Failed loads offer Retry;
   background refresh failures preserve the history already displayed.
 - **Delete all visits** removes every visit to a URL, including visits on other days.
+- **Delete browsing data** (the bin icon in the header) opens Chrome's own
+  dialog at `chrome://settings/clearBrowserData`, for clearing history by time
+  range along with cookies and cache.
 
 ### Stats
 
