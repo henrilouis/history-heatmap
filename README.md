@@ -40,9 +40,11 @@ including days without visits.
 The **Devices** view shows the tabs open in Chrome on your other signed-in
 devices, one card per device, like Chrome's own "Tabs from other devices" page.
 It needs the optional `sessions` and `tabs` permissions, which the view asks for
-the first time you use it. They add no install warning beyond the existing
-history access. Tabs only appear when you're signed in and syncing open tabs,
-and the search filters them by title and URL.
+the first time you use it. They're optional, so installing the extension shows
+no extra warning; Chrome asks once, when you click the view's button, to "Read
+your browsing history on all your signed-in devices". Tabs only appear when
+you're signed in and syncing open tabs, and the search filters them by title and
+URL.
 
 ### By time or by flow
 

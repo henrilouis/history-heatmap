@@ -52,9 +52,9 @@ between consumers and removed when the last consumer disconnects.
 The **Devices** view reads Chrome's synced open tabs with
 `chrome.sessions.getDevices()`. Chrome strips the URL and title of synced tabs
 unless the extension also holds `tabs`, so both `sessions` and `tabs` are
-requested together as optional permissions, from the view's button. With
-`history` already granted, they add no install warning, so Chrome grants them
-without a prompt.
+requested together as optional permissions, from the view's button. Being
+optional, they add nothing to the install warning. The request does show a
+Chrome dialog, "Read your browsing history on all your signed-in devices".
 
 - Each device becomes one card, newest first, with the windows flattened as on
   Chrome's own page. Chrome leaves out new tab pages and returns at most 25
@@ -69,6 +69,24 @@ without a prompt.
 - Favicons come from Chrome's local favicon cache, so pages only opened on
   another device may show Chrome's default icon. The view never loads icons
   from the websites themselves.
+
+### Testing without a second device
+
+Chrome's local sync backend, meant for roaming profiles, syncs open tabs through
+a file instead of a Google account. Two Chrome instances with their own
+`--user-data-dir` and the same backend file see each other as devices. On macOS
+the flag takes the file itself, not a folder:
+
+```sh
+CHROME="/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
+"$CHROME" --user-data-dir=/tmp/device-a --enable-local-sync-backend \
+  --local-sync-backend-dir=/tmp/local-sync/sync.pb
+```
+
+Open some tabs, quit, then start a second instance with
+`--user-data-dir=/tmp/device-b` and the same backend file, and load the
+extension there. Each instance reads the file only when it starts, so restart
+the second one to pick up changes made by the first.
 
 ## Flows
 
