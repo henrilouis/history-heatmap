@@ -5,5 +5,12 @@
     "correctness": "error",
     "suspicious": "error"
   },
+  "overrides": [
+    {
+      // Test helpers stay next to the describe block that uses them.
+      "files": ["**/*.test.ts"],
+      "rules": { "unicorn/consistent-function-scoping": "off" }
+    }
+  ],
   "ignorePatterns": ["dist/**", "dist-ssr/**", ".fallow/**"]
 }

@@ -7,8 +7,9 @@
   import { themeStore } from "./lib/stores/theme.svelte";
   import Header from "./lib/components/header/Header.svelte";
 
-  // Stats code is only needed once someone opens the stats view.
+  // Stats and devices code is only needed once someone opens that view.
   const loadStats = () => import("./lib/components/stats/Stats.svelte");
+  const loadDevices = () => import("./lib/components/devices/Devices.svelte");
 
   let scrollElement = $state<HTMLElement>();
 
@@ -63,6 +64,14 @@
       {:catch}
         <div class="error-banner" role="alert">
           <span>Failed to load stats.</span>
+        </div>
+      {/await}
+    {:else if routeStore.view === "devices"}
+      {#await loadDevices() then { default: Devices }}
+        <Devices />
+      {:catch}
+        <div class="error-banner" role="alert">
+          <span>Failed to load devices.</span>
         </div>
       {/await}
     {:else}

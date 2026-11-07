@@ -21,6 +21,9 @@ but stop receiving updates until Chrome meets the minimum version. See
   Failed loads offer Retry;
   background refresh failures preserve the history already displayed.
 - **Delete all visits** removes every visit to a URL, including visits on other days.
+- **Delete browsing data** (the bin icon in the header) opens Chrome's own
+  dialog at `chrome://settings/clearBrowserData`, for clearing history by time
+  range along with cookies and cache.
 
 ### Stats
 
@@ -31,6 +34,17 @@ returning websites, regulars, highlights such as the busiest day, streaks and
 the deepest rabbit hole, and top searches. Websites group by host, with `www.`
 merged into the bare domain. Averages span every day in the loaded history,
 including days without visits.
+
+### Devices
+
+The **Devices** view shows the tabs open in Chrome on your other signed-in
+devices, one card per device, like Chrome's own "Tabs from other devices" page.
+It needs the optional `sessions` and `tabs` permissions, which the view asks for
+the first time you use it. They're optional, so installing the extension shows
+no extra warning; Chrome asks once, when you click the view's button, to "Read
+your browsing history on all your signed-in devices". Tabs only appear when
+you're signed in and syncing open tabs, and the search filters them by title and
+URL.
 
 ### By time or by flow
 

@@ -19,6 +19,19 @@ const getVisits =
   >();
 const deleteUrl =
   vi.fn<(details: chrome.history.UrlDetails, callback: () => void) => void>();
+const updateTab =
+  vi.fn<
+    (properties: chrome.tabs.UpdateProperties, callback: () => void) => void
+  >();
+const containsPermissions =
+  vi.fn<(permissions: chrome.permissions.Permissions) => Promise<boolean>>();
+const requestPermissions =
+  vi.fn<(permissions: chrome.permissions.Permissions) => Promise<boolean>>();
+const getDevices = vi.fn<() => Promise<chrome.sessions.Device[]>>();
+type PermissionsListener = (
+  permissions: chrome.permissions.Permissions,
+) => void;
+let permissionsRemoved: PermissionsListener | undefined;
 let visitsByUrl: Map<string, chrome.history.VisitItem[]>;
 let runtime: {
   lastError?: chrome.runtime.LastError;
@@ -36,6 +49,10 @@ const originalOffsetHeight = Object.getOwnPropertyDescriptor(
   HTMLElement.prototype,
   "offsetHeight",
 );
+const originalClientHeight = Object.getOwnPropertyDescriptor(
+  Element.prototype,
+  "clientHeight",
+);
 /** Measured height of every row; the list's estimate for a visit row. */
 const ROW_HEIGHT = 34;
 
@@ -43,6 +60,10 @@ beforeEach(async () => {
   search.mockReset();
   getVisits.mockReset();
   deleteUrl.mockReset();
+  containsPermissions.mockResolvedValue(false);
+  requestPermissions.mockResolvedValue(true);
+  getDevices.mockResolvedValue([]);
+  permissionsRemoved = undefined;
   visitsByUrl = new Map([
     [
       repeatedUrl,
@@ -68,7 +89,7 @@ beforeEach(async () => {
   );
   // jsdom has no layout. Charts measure their container through
   // ResizeObserver; the virtualized list sizes its viewport from the scroll
-  // container and measures rendered rows through offsetHeight.
+  // container's clientHeight and measures rendered rows through offsetHeight.
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -81,6 +102,12 @@ beforeEach(async () => {
     configurable: true,
     get(this: HTMLElement) {
       return this.classList.contains("wrapper") ? 800 : ROW_HEIGHT;
+    },
+  });
+  Object.defineProperty(Element.prototype, "clientHeight", {
+    configurable: true,
+    get(this: Element) {
+      return this.classList.contains("wrapper") ? 800 : 0;
     },
   });
   // jsdom has no Web Animations API. Finish transitions in a microtask so DOM
@@ -115,6 +142,19 @@ beforeEach(async () => {
       },
       onVisitRemoved: { addListener: vi.fn(), removeListener: vi.fn() },
     },
+    tabs: { update: updateTab },
+    permissions: {
+      contains: containsPermissions,
+      request: requestPermissions,
+      onAdded: { addListener: vi.fn(), removeListener: vi.fn() },
+      onRemoved: {
+        addListener: (listener: PermissionsListener) => {
+          permissionsRemoved = listener;
+        },
+        removeListener: vi.fn(),
+      },
+    },
+    sessions: { getDevices },
   });
   await mountApp();
 });
@@ -155,6 +195,12 @@ afterEach(async () => {
       HTMLElement.prototype,
       "offsetHeight",
       originalOffsetHeight,
+    );
+  if (originalClientHeight)
+    Object.defineProperty(
+      Element.prototype,
+      "clientHeight",
+      originalClientHeight,
     );
 });
 
@@ -325,6 +371,15 @@ describe("mounted history interactions", () => {
     expect(historyLinks()).toEqual([repeatedUrl, otherUrl, repeatedUrl]);
     expect(button("Toggle moment for 2026-09-10").disabled).toBe(false);
     expect(button("Toggle moment for 2026-09-12").disabled).toBe(false);
+  });
+
+  it("opens Chrome's clear browsing data settings from the header", () => {
+    button("Delete browsing data").click();
+
+    expect(updateTab).toHaveBeenCalledExactlyOnceWith(
+      { url: "chrome://settings/clearBrowserData" },
+      expect.any(Function),
+    );
   });
 
   it("shows loading progress in the search placeholder and announces the load", async () => {
@@ -786,5 +841,221 @@ describe("hash routing", () => {
     expect(location.hash).toBe("#/days?q=repeated");
     expect(searchInput().value).toBe("repeated");
     expect(historyLinks()).toEqual([repeatedUrl, repeatedUrl]);
+  });
+});
+
+describe("devices view", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const devices: chrome.sessions.Device[] = [
+    {
+      deviceName: "Pixel",
+      sessions: [
+        {
+          lastModified: now - 5 * 60,
+          window: {
+            tabs: [
+              { url: "https://news.example/", title: "Morning news" },
+              { url: "https://docs.example/", title: "Docs" },
+            ],
+          } as chrome.windows.Window,
+        },
+      ],
+    },
+    {
+      deviceName: "Laptop",
+      sessions: [
+        {
+          lastModified: now - 3 * 3600,
+          window: {
+            tabs: [{ url: "https://code.example/", title: "Code review" }],
+          } as chrome.windows.Window,
+        },
+      ],
+    },
+  ];
+
+  function deviceCards(): { name: string; links: string[] }[] {
+    return [...target.querySelectorAll(".devices article")].map((card) => ({
+      name: card.getAttribute("aria-label") ?? "",
+      links: [...card.querySelectorAll("a")].map((link) => link.href),
+    }));
+  }
+
+  async function openDevices(hash = "#/devices") {
+    // Warm the lazily loaded view, as for stats, so waitFor stays short.
+    await import("./lib/components/devices/Devices.svelte");
+    await mountApp(hash);
+  }
+
+  it("asks for permission, then shows the tabs of each device", async () => {
+    getDevices.mockResolvedValue(devices);
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("needs permission"),
+    );
+    expect(getDevices).not.toHaveBeenCalled();
+    expect(currentView()).toBe("Devices");
+    expect(target.querySelector(".heatmap")).toBeNull();
+
+    button("Show tabs from other devices").click();
+    expect(requestPermissions).toHaveBeenCalledExactlyOnceWith({
+      permissions: ["sessions", "tabs"],
+    });
+    await vi.waitFor(() =>
+      expect(deviceCards()).toEqual([
+        {
+          name: "Pixel",
+          links: ["https://news.example/", "https://docs.example/"],
+        },
+        { name: "Laptop", links: ["https://code.example/"] },
+      ]),
+    );
+    expect(target.textContent).toMatch(/Updated 5 minutes ago · 2 tabs/);
+    expect(target.textContent).toMatch(/Updated 3 hours ago · 1 tab\b/);
+  });
+
+  it("stays on the permission card when the request is declined", async () => {
+    requestPermissions.mockResolvedValue(false);
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("needs permission"),
+    );
+
+    button("Show tabs from other devices").click();
+    await tick();
+    await Promise.resolve();
+
+    expect(getDevices).not.toHaveBeenCalled();
+    expect(target.textContent).toContain("needs permission");
+  });
+
+  it("filters tabs by the search", async () => {
+    containsPermissions.mockResolvedValue(true);
+    getDevices.mockResolvedValue(devices);
+    await openDevices("#/devices?q=docs");
+
+    await vi.waitFor(() =>
+      expect(deviceCards()).toEqual([
+        { name: "Pixel", links: ["https://docs.example/"] },
+      ]),
+    );
+    expect(viewLink("Days").getAttribute("href")).toBe("#/days?q=docs");
+  });
+
+  it("explains how to sync tabs when there are no other devices", async () => {
+    containsPermissions.mockResolvedValue(true);
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No tabs from other devices"),
+    );
+
+    button("Open sync settings").click();
+    expect(updateTab).toHaveBeenCalledExactlyOnceWith(
+      { url: "chrome://settings/syncSetup" },
+      expect.any(Function),
+    );
+  });
+
+  it("refreshes when the page regains focus and hides tabs once access is revoked", async () => {
+    containsPermissions.mockResolvedValue(true);
+    getDevices.mockResolvedValue(devices.slice(1));
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(deviceCards().map((card) => card.name)).toEqual(["Laptop"]),
+    );
+
+    getDevices.mockResolvedValue(devices);
+    window.dispatchEvent(new Event("focus"));
+    await vi.waitFor(() =>
+      expect(deviceCards().map((card) => card.name)).toEqual([
+        "Pixel",
+        "Laptop",
+      ]),
+    );
+
+    containsPermissions.mockResolvedValue(false);
+    permissionsRemoved!({ permissions: ["tabs"] });
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("needs permission"),
+    );
+    expect(deviceCards().flatMap((card) => card.links)).toEqual([]);
+  });
+
+  it("keeps the shown tabs when a refresh fails and recovers through Retry", async () => {
+    containsPermissions.mockResolvedValue(true);
+    getDevices.mockResolvedValue(devices.slice(1));
+    await openDevices();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(1));
+
+    getDevices.mockRejectedValue(new Error("Sync unavailable"));
+    window.dispatchEvent(new Event("focus"));
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain(
+        "Couldn't refresh tabs from other devices.",
+      ),
+    );
+    expect(deviceCards().map((card) => card.name)).toEqual(["Laptop"]);
+
+    getDevices.mockResolvedValue(devices);
+    button("Retry").click();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
+    expect(target.textContent).not.toContain("Couldn't refresh");
+  });
+
+  it("shows a first load failure with Retry", async () => {
+    containsPermissions.mockResolvedValue(true);
+    getDevices.mockRejectedValue(new Error("Sync unavailable"));
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(target.querySelector('[role="alert"]')?.textContent).toContain(
+        "Sync unavailable",
+      ),
+    );
+
+    getDevices.mockResolvedValue(devices);
+    button("Retry").click();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
+  });
+
+  it("hides tabs when access is revoked while a refresh is starting", async () => {
+    containsPermissions.mockResolvedValue(true);
+    getDevices.mockResolvedValue(devices);
+    await openDevices();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
+
+    // Without sessions, the refresh fails; it must not keep the old tabs.
+    containsPermissions.mockResolvedValue(false);
+    getDevices.mockRejectedValue(new Error("Permission denied"));
+    permissionsRemoved!({ permissions: ["sessions"] });
+    window.dispatchEvent(new Event("focus"));
+
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("needs permission"),
+    );
+    await tick();
+    expect(deviceCards().flatMap((card) => card.links)).toEqual([]);
+    expect(target.textContent).not.toContain("Couldn't refresh");
+  });
+
+  it("offers Retry when a refresh fails after finding no devices", async () => {
+    containsPermissions.mockResolvedValue(true);
+    await openDevices();
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain("No tabs from other devices"),
+    );
+
+    getDevices.mockRejectedValue(new Error("Sync unavailable"));
+    window.dispatchEvent(new Event("focus"));
+    await vi.waitFor(() =>
+      expect(target.textContent).toContain(
+        "Couldn't refresh tabs from other devices.",
+      ),
+    );
+    expect(target.textContent).toContain("No tabs from other devices");
+
+    getDevices.mockResolvedValue(devices);
+    button("Retry").click();
+    await vi.waitFor(() => expect(deviceCards()).toHaveLength(2));
+    expect(target.textContent).not.toContain("Couldn't refresh");
   });
 });

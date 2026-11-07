@@ -9,6 +9,8 @@ describe("hash routes", () => {
     { hash: "#/days", view: "days", search: "" },
     { hash: "#/hours", view: "hours", search: "" },
     { hash: "#/stats", view: "stats", search: "" },
+    { hash: "#/devices", view: "devices", search: "" },
+    { hash: "#/devices?q=github", view: "devices", search: "github" },
     { hash: "#stats/", view: "stats", search: "" },
     { hash: "#/unknown", view: "days", search: "" },
     { hash: "#/Stats", view: "days", search: "" },

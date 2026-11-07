@@ -1,7 +1,7 @@
 {
   "name": "history-heatmap",
   "private": true,
-  "version": "1.7.0",
+  "version": "1.8.0",
   "type": "module",
   "engines": {
     "node": "26.x"
@@ -33,28 +33,28 @@
     "pre-push": "npm run check && npm test"
   },
   "dependencies": {
-    "@tanstack/svelte-virtual": "^3.13.39"
+    "@tanstack/svelte-virtual": "^3.13.51"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tsconfig/svelte": "^5.0.8",
-    "@types/chrome": "^0.2.9",
-    "@types/node": "^26.5.1",
-    "fallow": "3.33.1",
-    "jsdom": "^30.0.1",
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "fallow": "3.38.1",
+    "jsdom": "^30.1.3",
     "lightningcss": "^1.33.0",
-    "oxfmt": "^0.67.0",
-    "oxlint": "^1.82.0",
-    "playwright-core": "^1.64.0",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "playwright-core": "^1.64.1",
     "postcss-html": "^2.0.0",
     "simple-git-hooks": "^2.14.0",
     "stylelint": "^17.15.0",
     "stylelint-config-standard": "^40.0.0",
-    "svelte": "^5.57.0",
-    "svelte-check": "^4.7.6",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
     "typescript": "~6.0.3",
     "typescript-native": "npm:typescript@7.0.2",
-    "vite": "^8.3.0",
-    "vitest": "^5.0.0"
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
   }
 }

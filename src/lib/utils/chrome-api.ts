@@ -374,6 +374,33 @@ export async function deleteUrl(url: string): Promise<void> {
   });
 }
 
+export function openClearBrowsingData(): Promise<void> {
+  return openChromePage("chrome://settings/clearBrowserData");
+}
+
+export function openSyncSettings(): Promise<void> {
+  return openChromePage("chrome://settings/syncSetup");
+}
+
+// Extension pages cannot follow chrome:// links, but the tabs API can open
+// them without the "tabs" permission. This replaces the page, as Chrome does.
+function openChromePage(url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (!globalThis.chrome?.tabs) {
+      reject(new Error("Chrome tabs API not available"));
+      return;
+    }
+
+    chrome.tabs.update({ url }, () => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
 export function getFaviconURL(pageUrl: string) {
   const url = new URL(chrome.runtime.getURL("/_favicon/"));
   url.searchParams.set("pageUrl", pageUrl);
