@@ -10,11 +10,12 @@
   class="button {themeStore.colorScheme === 'dark' ? 'dark' : ''}"
   id="theme-toggle-button"
 >
+  <!-- Lucide "moon" and "sun" icons (ISC license): https://lucide.dev -->
   <div class="icon-wrapper">
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -22,12 +23,14 @@
       stroke-linecap="round"
       stroke-linejoin="round"
     >
-      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+      <path
+        d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+      ></path>
     </svg>
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -59,11 +62,11 @@
 
   @keyframes circle-in {
     from {
-      clip-path: circle(0% at calc(100% - 3.25rem) 2.125rem);
+      clip-path: circle(0% at calc(100% - 3.125rem) 2.125rem);
     }
 
     to {
-      clip-path: circle(150% at calc(100% - 3.25rem) 2.125rem);
+      clip-path: circle(150% at calc(100% - 3.125rem) 2.125rem);
     }
   }
 
@@ -78,7 +81,7 @@
       flex-direction: column;
       gap: 1rem;
       transition: transform 0.3s ease-in-out;
-      transform: translateY(-2.6125rem);
+      transform: translateY(-2.25rem);
 
       & svg {
         transition: rotate 0.3s ease-in-out;
@@ -92,7 +95,7 @@
 
   #theme-toggle-button.dark {
     & .icon-wrapper {
-      transform: translateY(-0.125rem);
+      transform: translateY(0);
 
       & svg:last-child {
         rotate: 0deg;
